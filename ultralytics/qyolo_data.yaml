@@ -1,0 +1,22 @@
+# YOLOv10 Quadrilateral License Plate Dataset
+path: E:/Repos/Ultralytics/ultralytics/assets/good_all  # dataset root directory
+train: images/train  # train images (relative to 'path')
+val: images/val      # val images (relative to 'path')
+test: images/test    # test images (relative to 'path')
+
+# Classes
+nc: 9  # number of classes
+names:
+  0: P1-1
+  1: P1-2
+  2: P1-3
+  3: P1-4
+  4: P2
+  5: P3
+  6: P4
+  7: P5
+  8: P6
+
+# Dataset settings
+task: detect  # task type
+dataset_type: QuadrilateralDataset  # specific dataset class to use

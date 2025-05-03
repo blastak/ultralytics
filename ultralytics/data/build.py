@@ -9,7 +9,7 @@ import torch
 from PIL import Image
 from torch.utils.data import dataloader, distributed
 
-from ultralytics.data.dataset import GroundingDataset, YOLODataset, YOLOMultiModalDataset
+from ultralytics.data.dataset import GroundingDataset, YOLODataset, YOLOMultiModalDataset, QuadrilateralDataset
 from ultralytics.data.loaders import (
     LOADERS,
     LoadImagesAndVideos,
@@ -105,14 +105,29 @@ def seed_worker(worker_id):  # noqa
 
 def build_yolo_dataset(cfg, img_path, batch, data, mode="train", rect=False, stride=32, multi_modal=False):
     """Build and return a YOLO dataset based on configuration parameters."""
-    dataset = YOLOMultiModalDataset if multi_modal else YOLODataset
-    return dataset(
+    # 데이터셋 타입 매핑
+    dataset_map = {
+        "YOLODataset": YOLODataset,
+        "YOLOMultiModalDataset": YOLOMultiModalDataset,
+        "QuadrilateralDataset": QuadrilateralDataset
+    }
+
+    # 데이터셋 타입 결정 (설정에서 가져오거나 기본값 설정)
+    dataset_type = cfg.get("dataset_type", "YOLODataset")
+    if multi_modal and dataset_type == "YOLODataset":
+        dataset_type = "YOLOMultiModalDataset"
+
+    # 해당 데이터셋 클래스 가져오기
+    dataset_cls = dataset_map.get(dataset_type, YOLODataset)
+
+    # 데이터셋 생성 및 반환
+    return dataset_cls(
         img_path=img_path,
         imgsz=cfg.imgsz,
         batch_size=batch,
-        augment=mode == "train",  # augmentation
-        hyp=cfg,  # TODO: probably add a get_hyps_from_cfg function
-        rect=cfg.rect or rect,  # rectangular batches
+        augment=mode == "train",
+        hyp=cfg,
+        rect=cfg.rect or rect,
         cache=cfg.cache or None,
         single_cls=cfg.single_cls or False,
         stride=int(stride),

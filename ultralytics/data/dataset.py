@@ -830,3 +830,156 @@ class ClassificationDataset:
             x["msgs"] = msgs  # warnings
             save_dataset_cache_file(self.prefix, path, x, DATASET_CACHE_VERSION)
             return samples
+
+
+class QuadrilateralDataset(YOLODataset):
+    """
+    Dataset class for loading quadrilateral detection labels in LabelMe JSON format.
+    """
+
+    def __init__(self, *args, data=None, task="detect", **kwargs):
+        """
+        Initialize the QuadrilateralDataset.
+        """
+        super().__init__(*args, data=data, task=task, **kwargs)
+
+    def get_img_files(self, img_path):
+        """
+        Get image files using standard YOLO pattern.
+        """
+        # 기본 YOLODataset의 get_img_files 메서드 사용
+        return super().get_img_files(img_path)
+
+    def get_labels(self):
+        """
+        Get labels by parsing JSON files instead of looking for .txt files.
+        """
+        # 이미지 파일 경로를 얻음
+        self.label_files = [Path(f).parents[1] / "labels" / Path(f).parent.name / f"{Path(f).stem}.json"
+                            for f in self.im_files]
+
+        cache_path = Path(self.label_files[0]).parent.with_suffix('.cache')
+        try:
+            cache, exists = load_dataset_cache_file(cache_path), True
+            assert cache["version"] == DATASET_CACHE_VERSION
+            assert cache["hash"] == get_hash(self.label_files + self.im_files)
+        except (FileNotFoundError, AssertionError, AttributeError):
+            cache, exists = self.cache_labels(cache_path), False
+
+        # Display cache
+        nf, nm, ne, nc, n = cache.pop("results")  # found, missing, empty, corrupt, total
+
+        # Get labels
+        labels = cache["labels"]
+
+        self.im_files = [lb["im_file"] for lb in labels]
+        return labels
+
+    def cache_labels(self, path=Path("./labels.cache")):
+        """
+        Cache dataset labels by parsing JSON files and extracting quadrilateral points directly.
+        """
+        x = {"labels": []}
+        nm, nf, ne, nc, msgs = 0, 0, 0, 0, []  # number missing, found, empty, corrupt, messages
+
+        # 클래스 이름 및 매핑 가져오기
+        names = self.data["names"]
+        label_to_cls = {name: idx for idx, name in names.items()}
+
+        # 각 이미지와 레이블 파일 처리
+        for im_file, json_file in zip(self.im_files, self.label_files):
+            try:
+                # 레이블 파일 존재 확인
+                if not os.path.exists(json_file):
+                    nm += 1  # missing label
+                    continue
+
+                # JSON 파일 읽기
+                with open(json_file, 'r', encoding='utf-8') as f:
+                    data = json.load(f)
+
+                if not data.get('shapes'):
+                    ne += 1  # empty label
+                    continue
+
+                img_h, img_w = data['imageHeight'], data['imageWidth']
+
+                # 이미지 크기 확인
+                if img_h <= 0 or img_w <= 0:
+                    nc += 1  # corrupt label
+                    continue
+
+                quads = []  # 쿼드릴래터럴 좌표 저장 리스트
+
+                # 각 도형 처리
+                for shape in data['shapes']:
+                    if shape['shape_type'] != 'polygon' or len(shape['points']) != 4:
+                        continue
+
+                    # 클래스 추출
+                    label = shape['label']
+                    prefix = label.split('_')[0] if '_' in label else label
+
+                    cls_id = None
+                    # 직접 이름으로 매핑
+                    for key, val in label_to_cls.items():
+                        if prefix == str(key) or prefix == val:
+                            cls_id = int(key)
+                            break
+
+                    if cls_id is None:
+                        continue
+
+                    # 포인트 정규화
+                    points = np.array(shape['points'], dtype=np.float32)
+                    points[:, 0] /= img_w
+                    points[:, 1] /= img_h
+
+                    # 쿼드릴래터럴 좌표 추가 - 클래스 ID와 함께
+                    quad = [cls_id] + points.flatten().tolist()
+                    quads.append(quad)
+
+                # 레이블 추가
+                if quads:
+                    quads_array = np.array(quads, dtype=np.float32)
+
+                    # 바운딩 박스 계산 (YOLO 호환성을 위해)
+                    bboxes = []
+                    for quad in quads:
+                        points = np.array(quad[1:]).reshape(-1, 2)
+                        x_min, y_min = points.min(axis=0)
+                        x_max, y_max = points.max(axis=0)
+                        x_center = (x_min + x_max) / 2
+                        y_center = (y_min + y_max) / 2
+                        width = x_max - x_min
+                        height = y_max - y_min
+                        bboxes.append([x_center, y_center, width, height])
+
+                    bboxes_array = np.array(bboxes, dtype=np.float32)
+
+                    nf += 1  # found label
+                    x["labels"].append(
+                        {
+                            "im_file": im_file,
+                            "shape": (img_h, img_w),
+                            "cls": quads_array[:, 0:1],  # 클래스 ID
+                            "bboxes": bboxes_array,  # 바운딩 박스
+                            "segments": quads,  # 쿼드릴래터럴 좌표
+                            "normalized": True,
+                            "bbox_format": "xywh",
+                        }
+                    )
+                else:
+                    ne += 1  # empty label
+
+            except Exception as e:
+                nc += 1  # corrupt label
+                msgs.append(f"{self.prefix}WARNING: Error processing {json_file}: {e}")
+
+        # 캐시 저장
+        x["hash"] = get_hash(self.label_files + self.im_files)
+        x["results"] = nf, nm, ne, nc, len(self.im_files)
+        x["msgs"] = msgs  # warnings
+
+        save_dataset_cache_file(self.prefix, path, x, DATASET_CACHE_VERSION)
+        return x
