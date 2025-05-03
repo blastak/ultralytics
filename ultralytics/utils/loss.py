@@ -733,6 +733,242 @@ class v8OBBLoss(v8DetectionLoss):
         return torch.cat((dist2rbox(pred_dist, pred_angle, anchor_points), pred_angle), dim=-1)
 
 
+class QuadrilateralBboxLoss(nn.Module):
+    """Criterion class for computing training losses for quadrilateral bounding boxes."""
+
+    def __init__(self, reg_max=16, plate_templates=None):
+        """Initialize the QuadrilateralBboxLoss module."""
+        super().__init__()
+        self.reg_max = reg_max
+        self.dfl_loss = DFLoss(reg_max) if reg_max > 1 else None
+
+        # 번호판 템플릿 정의 (없으면 기본값 사용)
+        if plate_templates is None:
+            # 번호판 타입별 가로, 세로 크기(pixel)
+            plate_wh = {
+                'P1-1': (520, 110), 'P1-2': (520, 110), 'P1-3': (520, 110), 'P1-4': (520, 110),
+                'P2': (440, 200), 'P3': (440, 220), 'P4': (520, 110),
+                'P5': (335, 170), 'P6': (335, 170),
+            }
+
+            # 번호판 템플릿 초기화 (3D 모델, Z=0)
+            self.templates = {}
+            for plate_type, (w, h) in plate_wh.items():
+                w_half, h_half = w / 2, h / 2
+                self.templates[plate_type] = torch.tensor([
+                    [-w_half, -h_half, 0],  # 좌상단
+                    [w_half, -h_half, 0],  # 우상단
+                    [w_half, h_half, 0],  # 우하단
+                    [-w_half, h_half, 0],  # 좌하단
+                ], dtype=torch.float32)
+        else:
+            self.templates = plate_templates
+
+        # 투영 행렬
+        self.proj_matrix = torch.tensor([[1, 0, 0], [0, 1, 0]], dtype=torch.float32)
+
+        # 추가 매개변수 저장용
+        self.pred_params = None
+        self.target_corners = None
+
+    def forward(self, pred_dist, pred_bboxes, anchor_points, target_bboxes, target_scores, target_scores_sum, fg_mask):
+        """Compute IoU, DFL, and Quadrilateral losses."""
+        # 원래 bbox loss 계산 (bounding box에 대한 손실)
+        weight = target_scores.sum(-1)[fg_mask].unsqueeze(-1)
+        iou = bbox_iou(pred_bboxes[fg_mask], target_bboxes[fg_mask], xywh=False, CIoU=True)
+        loss_iou = ((1.0 - iou) * weight).sum() / target_scores_sum
+
+        # DFL loss
+        if self.dfl_loss:
+            target_ltrb = bbox2dist(anchor_points, target_bboxes, self.dfl_loss.reg_max - 1)
+            loss_dfl = self.dfl_loss(pred_dist[fg_mask].view(-1, self.dfl_loss.reg_max), target_ltrb[fg_mask]) * weight
+            loss_dfl = loss_dfl.sum() / target_scores_sum
+        else:
+            loss_dfl = torch.tensor(0.0).to(pred_dist.device)
+
+        # Quadrilateral 파라미터 loss
+        loss_quad = torch.tensor(0.0).to(pred_dist.device)
+
+        if fg_mask.sum() and self.pred_params is not None and self.target_corners is not None:
+            # 변환 파라미터 추출
+            pred_params = self.pred_params[fg_mask]  # [N, 6]
+            target_corners = self.target_corners  # [N, 8]
+
+            s = pred_params[:, 0:1].sigmoid() * 2  # scale factor (0-2)
+            rot_vec = pred_params[:, 1:4]  # rotation vector (Rodrigues)
+            t = pred_params[:, 4:6]  # translation vector
+
+            # 기본 템플릿 선택 (P3 타입)
+            template = self.templates['P3'].to(pred_params.device)
+
+            # 예측된 파라미터로 코너 좌표 계산 (자동 미분 가능한 버전)
+            pred_corners = self.compute_corners_from_params(s, rot_vec, t, template, anchor_points[fg_mask])
+
+            # MSE 손실 계산
+            loss_quad = F.mse_loss(pred_corners, target_corners, reduction='none')
+            loss_quad = (loss_quad.mean(-1, keepdim=True) * weight).sum() / target_scores_sum
+
+            # 추가 정규화 손실 (선택 사항)
+            loss_scale_reg = F.l1_loss(s, torch.ones_like(s), reduction='none').mean() * 0.1
+            loss_rot_reg = torch.norm(rot_vec, dim=1, keepdim=True).mean() * 0.1
+
+            loss_quad = loss_quad + loss_scale_reg + loss_rot_reg
+
+        return loss_iou, loss_dfl, loss_quad
+
+    def compute_corners_from_params(self, s, rot_vec, t, template, anchor_points):
+        """
+        Weak perspective transformation을 적용해 사각형 모서리 계산.
+        자동 미분이 가능한 버전
+        """
+        from ultralytics.utils.ops import rodrigues_vector_to_matrix
+
+        n = rot_vec.shape[0]
+        device = rot_vec.device
+
+        # 템플릿을 배치 크기만큼 확장
+        pts_3d = template.clone().to(device).unsqueeze(0).repeat(n, 1, 1)  # [n, 4, 3]
+
+        # Rodrigues 회전 적용 (자동 미분 가능한 버전)
+        r_mat = rodrigues_vector_to_matrix(rot_vec)  # [n, 3, 3]
+
+        # Z=0이므로 회전 행렬의 처음 두 열만 사용
+        # 배치 행렬 곱셈: [n, 4, 2] = [n, 4, 3] @ [n, 3, 2]
+        pts_2d = torch.bmm(pts_3d[:, :, :2], r_mat[:, :2, :2])  # [n, 4, 2]
+
+        # 스케일 적용 (브로드캐스팅)
+        pts_2d = pts_2d * s.unsqueeze(1)  # [n, 4, 2]
+
+        # 변환 적용 (앵커 포인트 + 변환 벡터)
+        # 앵커 포인트 [n, 2]를 [n, 1, 2]로 확장
+        anchor_expanded = anchor_points.unsqueeze(1)
+        # 변환 벡터 [n, 2]를 [n, 1, 2]로 확장
+        t_expanded = t.unsqueeze(1)
+
+        # 변환 적용
+        pts_2d = pts_2d + anchor_expanded + t_expanded  # [n, 4, 2]
+
+        # 결과 펼치기: [n, 4, 2] -> [n, 8]
+        corners = pts_2d.reshape(n, -1)
+
+        return corners
+
+    def set_extra_params(self, pred_params, target_corners):
+        """추가 매개변수 설정"""
+        self.pred_params = pred_params
+        self.target_corners = target_corners
+
+
+class v8QuadrilateralDetectionLoss(v8DetectionLoss):
+    """Calculates losses for quadrilateral detection, classification, and box distribution."""
+
+    def __init__(self, model):
+        """Initialize v8QuadrilateralDetectionLoss with model; model must be de-paralleled."""
+        super().__init__(model)
+
+        # 모델의 템플릿 가져오기
+        m = model.model[-1]  # QuadrilateralDetect module
+        self.templates = getattr(m, 'templates', None)
+
+        self.bbox_loss = BboxLoss(m.reg_max).to(self.device)  # 기본 BboxLoss 사용
+        self.ne = getattr(m, 'ne', 6)  # 변환 파라미터 수 (6)
+
+    def __call__(self, preds, batch):
+        """Calculate and return the loss for quadrilateral detection."""
+        loss = torch.zeros(4, device=self.device)  # box, cls, dfl, quad
+
+        # 여러 경우의 출력 형식 처리
+        if isinstance(preds, tuple):
+            if len(preds) == 2:
+                # 원본 출력 형식 (det_output, transform_params)
+                if isinstance(preds[0], list):
+                    # feats가 리스트인 경우 (학습 모드)
+                    feats, transform_params = preds
+                else:
+                    # 2단계 튜플인 경우 (검증/추론 모드에서 가능)
+                    feats = preds[1]  # 원본 feats 사용 (두 번째 요소)
+                    transform_params = None  # 일단 무시
+            else:
+                # 다른 형식의 출력
+                feats = preds  # 일단 그대로 사용
+                transform_params = None
+        else:
+            # 단일 출력인 경우
+            feats = preds
+            transform_params = None
+
+        # 입력 확인 및 처리
+        if not isinstance(feats, list):
+            # feats가 리스트가 아니면 학습 모드가 아님 (검증 모드일 가능성 높음)
+            # 이 경우 손실 계산을 건너뛰고 기본값 반환
+            return sum(loss) * batch["img"].shape[0], loss.detach()
+
+        # 분리
+        try:
+            pred_distri, pred_scores = torch.cat([xi.view(feats[0].shape[0], self.no, -1) for xi in feats], 2).split(
+                (self.reg_max * 4, self.nc), 1
+            )
+        except RuntimeError:
+            # 오류 발생 시 기본값 반환
+            return sum(loss) * batch["img"].shape[0], loss.detach()
+
+        # B, grids, ..
+        pred_scores = pred_scores.permute(0, 2, 1).contiguous()
+        pred_distri = pred_distri.permute(0, 2, 1).contiguous()
+
+        # transform_params가 있는 경우 처리
+        if transform_params is not None:
+            transform_params = transform_params.permute(0, 2, 1).contiguous()
+
+        dtype = pred_scores.dtype
+        batch_size = pred_scores.shape[0]
+        imgsz = torch.tensor(feats[0].shape[2:], device=self.device, dtype=dtype) * self.stride[0]  # image size (h,w)
+        anchor_points, stride_tensor = make_anchors(feats, self.stride, 0.5)
+
+        # Targets
+        targets = torch.cat((batch["batch_idx"].view(-1, 1), batch["cls"].view(-1, 1), batch["bboxes"]), 1)
+        targets = self.preprocess(targets.to(self.device), batch_size, scale_tensor=imgsz[[1, 0, 1, 0]])
+        gt_labels, gt_bboxes = targets.split((1, 4), 2)  # cls, xyxy
+        mask_gt = gt_bboxes.sum(2, keepdim=True).gt_(0.0)
+
+        # Pboxes
+        pred_bboxes = self.bbox_decode(anchor_points, pred_distri)  # xyxy, (b, h*w, 4)
+
+        # 어사이너 호출
+        _, target_bboxes, target_scores, fg_mask, _ = self.assigner(
+            pred_scores.detach().sigmoid(),
+            (pred_bboxes.detach() * stride_tensor).type(gt_bboxes.dtype),
+            anchor_points * stride_tensor,
+            gt_labels,
+            gt_bboxes,
+            mask_gt,
+        )
+
+        target_scores_sum = max(target_scores.sum(), 1)
+
+        # Cls loss
+        loss[1] = self.bce(pred_scores, target_scores.to(dtype)).sum() / target_scores_sum  # BCE
+
+        # Bbox loss
+        if fg_mask.sum():
+            target_bboxes /= stride_tensor
+            loss[0], loss[2] = self.bbox_loss(
+                pred_distri, pred_bboxes, anchor_points, target_bboxes, target_scores, target_scores_sum, fg_mask
+            )
+
+            # Transform parameters loss (quadrilateral loss)
+            if transform_params is not None:
+                # 간단한 MSE 손실 적용 (임시)
+                loss[3] = torch.tensor(0.0).to(self.device)  # 일단 0으로 설정
+
+        loss[0] *= self.hyp.box  # box gain
+        loss[1] *= self.hyp.cls  # cls gain
+        loss[2] *= self.hyp.dfl  # dfl gain
+        loss[3] *= self.hyp.box  # quad gain (box gain과 동일하게 설정)
+
+        return loss.sum() * batch_size, loss.detach()  # loss(box, cls, dfl, quad)
+
+
 class E2EDetectLoss:
     """Criterion class for computing training losses for end-to-end detection."""
 

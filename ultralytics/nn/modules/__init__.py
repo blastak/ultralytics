@@ -88,6 +88,7 @@ from .head import (
     YOLOEDetect,
     YOLOESegment,
     v10Detect,
+    QuadrilateralDetect,
 )
 from .transformer import (
     AIFI,

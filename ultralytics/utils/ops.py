@@ -14,6 +14,110 @@ from ultralytics.utils import LOGGER
 from ultralytics.utils.metrics import batch_probiou
 
 
+class RodriguesTransform(torch.autograd.Function):
+    """Rodrigues rotation vector to rotation matrix with autograd support."""
+
+    @staticmethod
+    def forward(ctx, rotation_vector):
+        """
+        rotation_vector: Bx3 tensor of rotation vectors
+        """
+        batch_size = rotation_vector.shape[0]
+        device = rotation_vector.device
+
+        # 초기화 - identity 행렬
+        rotation_matrix = torch.eye(3, device=device).unsqueeze(0).repeat(batch_size, 1, 1)
+
+        # 0에 가까운 벡터 처리 (매우 작은 회전)
+        theta = torch.norm(rotation_vector, dim=1, keepdim=True)
+        small_angle_mask = (theta < 1e-6).squeeze(-1)
+
+        # 작은 각도가 아닌 경우 처리
+        if not small_angle_mask.all():
+            # 정규화된 회전 벡터
+            v = rotation_vector[~small_angle_mask] / theta[~small_angle_mask]
+
+            # sin(theta), cos(theta)
+            sin_theta = torch.sin(theta[~small_angle_mask])
+            cos_theta = torch.cos(theta[~small_angle_mask])
+
+            # v*v^T 계산
+            v_cross = torch.zeros(v.shape[0], 3, 3, device=device)
+            v_cross[:, 0, 1] = -v[:, 2]
+            v_cross[:, 0, 2] = v[:, 1]
+            v_cross[:, 1, 0] = v[:, 2]
+            v_cross[:, 1, 2] = -v[:, 0]
+            v_cross[:, 2, 0] = -v[:, 1]
+            v_cross[:, 2, 1] = v[:, 0]
+
+            # Rodrigues 공식 적용: R = I + sin(θ)*K + (1-cos(θ))*K^2
+            v_dot_vT = torch.bmm(v.unsqueeze(2), v.unsqueeze(1))
+
+            rotation_matrix[~small_angle_mask] = (
+                    torch.eye(3, device=device).unsqueeze(0) +
+                    sin_theta.view(-1, 1, 1) * v_cross +
+                    (1 - cos_theta).view(-1, 1, 1) * v_dot_vT
+            )
+
+        # 컨텍스트에 필요한 값 저장
+        ctx.save_for_backward(rotation_vector, rotation_matrix)
+        return rotation_matrix
+
+    @staticmethod
+    def backward(ctx, grad_output):
+        """
+        grad_output: 회전 행렬에 대한 gradient
+        """
+        rotation_vector, rotation_matrix = ctx.saved_tensors
+
+        # 그래디언트 초기화
+        grad_rotation_vector = torch.zeros_like(rotation_vector)
+
+        # 각 배치 및 요소에 대한 그래디언트 계산
+        batch_size = rotation_vector.shape[0]
+        for i in range(batch_size):
+            # 회전 벡터의 크기
+            theta = torch.norm(rotation_vector[i])
+
+            if theta < 1e-6:
+                # 작은 각도의 경우 근사값 사용
+                J = torch.eye(3, device=rotation_vector.device) - 0.5 * torch.cross(
+                    rotation_vector[i], torch.eye(3, device=rotation_vector.device)
+                )
+            else:
+                # 회전 벡터의 정규화
+                v = rotation_vector[i] / theta
+
+                # 야코비안 계산
+                v_cross = torch.zeros(3, 3, device=rotation_vector.device)
+                v_cross[0, 1] = -v[2]
+                v_cross[0, 2] = v[1]
+                v_cross[1, 0] = v[2]
+                v_cross[1, 2] = -v[0]
+                v_cross[2, 0] = -v[1]
+                v_cross[2, 1] = v[0]
+
+                v_dot_vT = torch.outer(v, v)
+
+                J = (
+                        torch.sin(theta) / theta * torch.eye(3, device=rotation_vector.device) +
+                        (1 - torch.sin(theta) / theta) * v_dot_vT +
+                        (1 - torch.cos(theta)) / theta * v_cross
+                )
+
+            # 그래디언트 계산: 회전 행렬의 그래디언트를 야코비안을 통해 회전 벡터로 변환
+            flat_grad = grad_output[i].view(-1)
+            grad_rotation_vector[i] = torch.matmul(J.T, flat_grad)
+
+        return grad_rotation_vector
+
+
+# 편의 함수 제공
+def rodrigues_vector_to_matrix(rotation_vector):
+    """Converts rotation vector to rotation matrix with autograd support."""
+    return RodriguesTransform.apply(rotation_vector)
+
+
 class Profile(contextlib.ContextDecorator):
     """
     YOLOv8 Profile class. Use as a decorator with @Profile() or as a context manager with 'with Profile():'.

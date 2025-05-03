@@ -68,6 +68,7 @@ from ultralytics.nn.modules import (
     YOLOEDetect,
     YOLOESegment,
     v10Detect,
+    QuadrilateralDetect,
 )
 from ultralytics.utils import DEFAULT_CFG_DICT, DEFAULT_CFG_KEYS, LOGGER, colorstr, emojis, yaml_load
 from ultralytics.utils.checks import check_requirements, check_suffix, check_yaml
@@ -78,6 +79,7 @@ from ultralytics.utils.loss import (
     v8OBBLoss,
     v8PoseLoss,
     v8SegmentationLoss,
+    v8QuadrilateralDetectionLoss,
 )
 from ultralytics.utils.ops import make_divisible
 from ultralytics.utils.plotting import feature_visualization
@@ -347,7 +349,11 @@ class DetectionModel(BaseModel):
                 """Perform a forward pass through the model, handling different Detect subclass types accordingly."""
                 if self.end2end:
                     return self.forward(x)["one2many"]
-                return self.forward(x)[0] if isinstance(m, (Segment, YOLOESegment, Pose, OBB)) else self.forward(x)
+
+                result = self.forward(x)
+                if isinstance(m, (Segment, YOLOESegment, Pose, OBB, QuadrilateralDetect)):
+                    return result[0] if isinstance(result, tuple) else result  # return the first tensor or the result itself
+                return result
 
             m.stride = torch.tensor([s / x.shape[-2] for x in _forward(torch.zeros(1, ch, s, s))])  # forward
             self.stride = m.stride
@@ -430,7 +436,14 @@ class DetectionModel(BaseModel):
 
     def init_criterion(self):
         """Initialize the loss criterion for the DetectionModel."""
-        return E2EDetectLoss(self) if getattr(self, "end2end", False) else v8DetectionLoss(self)
+        if getattr(self.model[-1], "end2end", False):
+            return E2EDetectLoss(self)
+        elif isinstance(self.model[-1], OBB):
+            return v8OBBLoss(self)
+        elif isinstance(self.model[-1], QuadrilateralDetect):
+            return v8QuadrilateralDetectionLoss(self)
+        else:
+            return v8DetectionLoss(self)
 
 
 class OBBModel(DetectionModel):
@@ -1469,7 +1482,7 @@ def parse_model(d, ch, verbose=True):  # model_dict, input_channels(3)
         elif m is Concat:
             c2 = sum(ch[x] for x in f)
         elif m in frozenset(
-            {Detect, WorldDetect, YOLOEDetect, Segment, YOLOESegment, Pose, OBB, ImagePoolingAttn, v10Detect}
+            {Detect, WorldDetect, YOLOEDetect, Segment, YOLOESegment, Pose, OBB, ImagePoolingAttn, v10Detect, QuadrilateralDetect}
         ):
             args.append([ch[x] for x in f])
             if m is Segment or m is YOLOESegment:

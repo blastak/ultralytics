@@ -752,3 +752,82 @@ def convert_to_multispectral(path, n_channels=10, replace=False, zip=False):
         multispectral = f(target_wavelengths)
         cv2.imwritemulti(str(output_path), np.clip(multispectral, 0, 255).astype(np.uint8).transpose(2, 0, 1))
         LOGGER.info(f"Converted {output_path}")
+
+
+def convert_labelme_to_yolo_quad(json_file, output_dir, class_mapping=None):
+    """LabelMe JSON 파일을 YOLO 형식으로 변환 (bbox + 4개 코너 좌표)"""
+    # import json
+    # import os
+    # from pathlib import Path
+    # import numpy as np
+
+    # JSON 파일 로드
+    with open(json_file, 'r') as f:
+        data = json.load(f)
+
+    img_height = data['imageHeight']
+    img_width = data['imageWidth']
+
+    # 기본 클래스 매핑 (없으면 라벨의 첫 부분을 사용)
+    if class_mapping is None:
+        class_mapping = {
+            'P1-1': 0, 'P1-2': 1, 'P1-3': 2, 'P1-4': 3,
+            'P2': 4, 'P3': 5, 'P4': 6, 'P5': 7, 'P6': 8
+        }
+
+    lines = []
+    for shape in data['shapes']:
+        if shape['shape_type'] == 'polygon' and len(shape['points']) == 4:
+            # 클래스 파싱 (예: P3_서울71바8669 -> P3)
+            label = shape['label']
+            plate_type = label.split('_')[0] if '_' in label else label
+
+            if plate_type in class_mapping:
+                cls_id = class_mapping[plate_type]
+            else:
+                # 매핑이 없으면 기본값 사용
+                cls_id = 5  # P3을 기본값으로 설정
+
+            # 포인트 정규화 (이미지 크기로 나누어 0~1 범위로)
+            points = np.array(shape['points'])
+            points[:, 0] /= img_width
+            points[:, 1] /= img_height
+
+            # 중심 좌표와 너비, 높이 계산 (일반 YOLO 포맷용)
+            x_min, y_min = points.min(axis=0)
+            x_max, y_max = points.max(axis=0)
+            x_center = (x_min + x_max) / 2
+            y_center = (y_min + y_max) / 2
+            width = x_max - x_min
+            height = y_max - y_min
+
+            # 점들을 좌상단부터 시계방향으로 정렬
+            # 중심점 계산
+            center = points.mean(axis=0)
+            # 각 점에 대한 각도 계산
+            angles = np.arctan2(points[:, 1] - center[1], points[:, 0] - center[0])
+            # 각도에 따라 정렬 인덱스 계산 (-π ~ π)
+            sorted_indices = np.argsort(angles)
+            # 좌상단이 첫 번째가 되도록 오프셋 찾기
+            top_left_idx = np.argmin(points[:, 0] + points[:, 1])
+            offset = np.where(sorted_indices == top_left_idx)[0][0]
+            # 좌상단부터 시계방향으로 인덱스 조정
+            sorted_indices = np.roll(sorted_indices, -offset)
+            # 정렬된 점들
+            sorted_points = points[sorted_indices]
+
+            # 사각형 좌표 평탄화 (x1,y1,x2,y2,x3,y3,x4,y4 형식)
+            quad_coords = sorted_points.flatten().tolist()
+
+            # YOLO 형식 라인 생성 (클래스 + bbox + 사각형 좌표)
+            line = f"{cls_id} {x_center:.6f} {y_center:.6f} {width:.6f} {height:.6f} " + " ".join([f"{p:.6f}" for p in quad_coords])
+            lines.append(line)
+
+    # 결과 저장
+    output_path = Path(output_dir) / f"{Path(json_file).stem}.txt"
+    output_path.parent.mkdir(parents=True, exist_ok=True)
+
+    with open(output_path, 'w') as f:
+        f.write('\n'.join(lines))
+
+    return output_path

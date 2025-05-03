@@ -17,7 +17,7 @@ from .conv import Conv, DWConv
 from .transformer import MLP, DeformableTransformerDecoder, DeformableTransformerDecoderLayer
 from .utils import bias_init_with_prob, linear_init
 
-__all__ = "Detect", "Segment", "Pose", "Classify", "OBB", "RTDETRDecoder", "v10Detect", "YOLOEDetect", "YOLOESegment"
+__all__ = "Detect", "Segment", "Pose", "Classify", "OBB", "RTDETRDecoder", "v10Detect", "YOLOEDetect", "YOLOESegment", "QuadrilateralDetect"
 
 
 class Detect(nn.Module):
@@ -238,6 +238,89 @@ class OBB(Detect):
     def decode_bboxes(self, bboxes, anchors):
         """Decode rotated bounding boxes."""
         return dist2rbox(bboxes, self.angle, anchors, dim=1)
+
+
+class QuadrilateralDetect(Detect):
+    """YOLO Quadrilateral detection head for license plate detection using weak perspective transformation."""
+
+    def __init__(self, nc=80, ch=()):
+        """Initialize QuadrilateralDetect with number of classes and layer channels."""
+        super().__init__(nc, ch)
+        self.ne = 6  # number of parameters for weak perspective transformation (s, R(3), t(2))
+
+        # 기존 no 값 수정 - 현재는 nc + self.reg_max * 4로 설정되어 있음
+        # 새로운 no 값은 클래스 수 + Detect의 box 값
+        self.no = nc + self.reg_max * 4  # 변경하지 않음
+
+        # 번호판 타입별 가로, 세로 크기(pixel)
+        self.plate_types = ['P1-1', 'P1-2', 'P1-3', 'P1-4', 'P2', 'P3', 'P4', 'P5', 'P6']
+        self.plate_wh = {
+            'P1-1': (520, 110), 'P1-2': (520, 110), 'P1-3': (520, 110), 'P1-4': (520, 110),
+            'P2': (440, 200), 'P3': (440, 220), 'P4': (520, 110),
+            'P5': (335, 170), 'P6': (335, 170),
+        }
+
+        # 번호판 템플릿 초기화 (3D 모델, Z=0)
+        self.templates = {}
+        for plate_type, (w, h) in self.plate_wh.items():
+            w_half, h_half = w / 2, h / 2
+            self.templates[plate_type] = torch.tensor([
+                [-w_half, -h_half, 0],  # 좌상단
+                [w_half, -h_half, 0],  # 우상단
+                [w_half, h_half, 0],  # 우하단
+                [-w_half, h_half, 0],  # 좌하단
+            ], dtype=torch.float32)
+
+        # 투영 행렬
+        self.proj_matrix = torch.tensor([[1, 0, 0], [0, 1, 0]], dtype=torch.float32)
+
+        # Transformation parameters 예측을 위한 head
+        c4 = max(ch[0] // 4, self.ne)
+        self.cv4 = nn.ModuleList(nn.Sequential(Conv(x, c4, 3), Conv(c4, c4, 3), nn.Conv2d(c4, self.ne, 1)) for x in ch)
+
+    def forward(self, x):
+        """Concatenates and returns predicted quadrilateral boxes and class probabilities."""
+        bs = x[0].shape[0]  # batch size
+
+        # 변환 파라미터 추출
+        transform_params = torch.cat([self.cv4[i](x[i]).view(bs, self.ne, -1) for i in range(self.nl)], 2)  # transform parameters
+
+        # Detect 클래스 forward를 호출해 box/cls 예측
+        detect_output = super().forward(x)
+
+        if self.training:
+            # 학습 시에는 변환 파라미터 반환
+            return detect_output, transform_params
+
+        # 추론 시 처리
+        if isinstance(detect_output, tuple):
+            # 추론 모드에서 (predictions, features) 형태일 때
+            pred_tensor = detect_output[0]  # 예측값
+
+            # 유효성 검사 및 추가 디버깅은 제거
+
+            # NMS 호환성을 위해 원본 예측값 반환
+            if self.export:
+                return pred_tensor
+            else:
+                # 학습/검증에서는 튜플 반환을 유지
+                return pred_tensor, (detect_output[1], transform_params)
+        else:
+            # detect_output이 이미 텐서인 경우
+            if self.export:
+                return detect_output
+            else:
+                return detect_output, transform_params
+
+    def bias_init(self):
+        """Initialize QuadrilateralDetect() biases, WARNING: requires stride availability."""
+        super().bias_init()  # 기본 Detect bias 초기화
+
+        # Transform 파라미터 초기화
+        for a, s in zip(self.cv4, self.stride):
+            a[-1].bias.data[:] = 0.0  # transform params
+            # Scale 초기값을 1로 설정 (sigmoid 후 1이 되도록)
+            a[-1].bias.data[0] = math.log(1.0 / (1.0 - 0.5))  # scale = 1.0 after sigmoid
 
 
 class Pose(Detect):

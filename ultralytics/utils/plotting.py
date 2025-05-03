@@ -1001,3 +1001,113 @@ def feature_visualization(x, module_type, stage, n=32, save_dir=Path("runs/detec
             plt.savefig(f, dpi=300, bbox_inches="tight")
             plt.close()
             np.save(str(f.with_suffix(".npy")), x[0].cpu().numpy())  # npy save
+
+
+def process_quadrilateral_detections(image, predictions, conf_threshold=0.25, plate_templates=None):
+    """
+    YOLOv10n-quad 모델의 예측 결과를 처리하고 시각화
+
+    Args:
+        image: 원본 이미지 (OpenCV 형식)
+        predictions: 모델의 예측 결과
+        conf_threshold: 신뢰도 임계값
+        plate_templates: 번호판 템플릿 딕셔너리 (없으면 기본값 사용)
+
+    Returns:
+        processed_img: 처리된 이미지
+        frontalized_plates: 프론트화된 번호판 이미지 리스트
+    """
+    import cv2
+    import numpy as np
+
+    # 결과 이미지 복사
+    processed_img = image.copy()
+
+    # 번호판 템플릿 정의 (없으면 기본값 사용)
+    if plate_templates is None:
+        # 번호판 타입별 가로, 세로 크기(pixel)
+        plate_wh = {
+            'P1-1': (520, 110), 'P1-2': (520, 110), 'P1-3': (520, 110), 'P1-4': (520, 110),
+            'P2': (440, 200), 'P3': (440, 220), 'P4': (520, 110),
+            'P5': (335, 170), 'P6': (335, 170),
+        }
+        plate_templates = {}
+
+    # 번호판 타입 이름
+    plate_types = ['P1-1', 'P1-2', 'P1-3', 'P1-4', 'P2', 'P3', 'P4', 'P5', 'P6']
+
+    frontalized_plates = []
+
+    # 예측 결과 처리
+    for det in predictions:
+        # 바운딩 박스, 신뢰도, 클래스
+        x1, y1, x2, y2 = det[:4].astype(np.int32)
+        conf = det[4]
+        cls_id = int(det[5])
+
+        # 신뢰도가 임계값보다 낮으면 무시
+        if conf < conf_threshold:
+            continue
+
+        # 변환 파라미터 (6개)
+        transform_params = det[6:12]
+        s = transform_params[0]
+        rot_vec = transform_params[1:4]
+        t = transform_params[4:6]
+
+        # 번호판 타입 결정
+        plate_type = plate_types[cls_id] if cls_id < len(plate_types) else 'P3'
+
+        # 번호판 기본 크기 가져오기
+        w, h = plate_wh.get(plate_type, (440, 220))
+
+        # 템플릿 코너 (3D 좌표계)
+        template = np.array([
+            [-w / 2, -h / 2, 0],  # 좌상단
+            [w / 2, -h / 2, 0],  # 우상단
+            [w / 2, h / 2, 0],  # 우하단
+            [-w / 2, h / 2, 0],  # 좌하단
+        ])
+
+        # 회전 행렬 계산 (Rodrigues)
+        r_mat, _ = cv2.Rodrigues(rot_vec)
+
+        # 변환 적용 (Z=0이므로 처음 두 열만)
+        pts_2d = np.dot(template[:, :2], r_mat[:2, :2].T)
+
+        # 스케일 적용
+        pts_2d = pts_2d * s
+
+        # 변환 적용 (중심점 + 변환)
+        center_x, center_y = (x1 + x2) / 2, (y1 + y2) / 2
+        pts_2d[:, 0] += center_x + t[0]
+        pts_2d[:, 1] += center_y + t[1]
+
+        # 정수 좌표로 변환
+        quad = pts_2d.astype(np.int32)
+
+        # 사각형 그리기
+        cv2.polylines(processed_img, [quad], True, (0, 255, 0), 2)
+
+        # 클래스 및 신뢰도 표시
+        cv2.putText(processed_img, f"{plate_type} {conf:.2f}",
+                    (quad[0][0], quad[0][1] - 10),
+                    cv2.FONT_HERSHEY_SIMPLEX, 0.5, (0, 255, 0), 2)
+
+        # 번호판 프론트화 (frontalization)
+        # 대상 좌표 (프론트화된 번호판)
+        dst = np.array([
+            [0, 0],
+            [w, 0],
+            [w, h],
+            [0, h]
+        ], dtype=np.float32)
+
+        # 원근 변환 행렬 계산
+        M = cv2.getPerspectiveTransform(quad.astype(np.float32), dst)
+
+        # 번호판 영역 추출 및 프론트화
+        warped = cv2.warpPerspective(image, M, (w, h))
+        frontalized_plates.append(warped)
+
+    return processed_img, frontalized_plates
