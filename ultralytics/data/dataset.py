@@ -842,23 +842,29 @@ class QuadrilateralDataset(YOLODataset):
         Initialize the QuadrilateralDataset.
         """
         super().__init__(*args, data=data, task=task, **kwargs)
-
-    def get_img_files(self, img_path):
-        """
-        Get image files using standard YOLO pattern.
-        """
-        # 기본 YOLODataset의 get_img_files 메서드 사용
-        return super().get_img_files(img_path)
+        self.task = 'detect'  # 기본 작업 유형은 detect
+        LOGGER.info(f"Initialized QuadrilateralDataset with {len(self.im_files)} images")
 
     def get_labels(self):
         """
         Get labels by parsing JSON files instead of looking for .txt files.
         """
         # 이미지 파일 경로를 얻음
-        self.label_files = [Path(f).parents[1] / "labels" / Path(f).parent.name / f"{Path(f).stem}.json"
-                            for f in self.im_files]
+        self.label_files = []
+        for f in self.im_files:
+            img_path = Path(f)
+            # 상대 경로 계산: images/train/file.jpg -> labels/train/file.json
+            img_rel_path = img_path.relative_to(Path(self.img_path))
+            # labels 폴더에 있는 JSON 파일로 매핑
+            label_path = Path(self.img_path).parent / "labels" / img_rel_path.parent.name / f"{img_path.stem}.json"
+            self.label_files.append(str(label_path))
 
-        cache_path = Path(self.label_files[0]).parent.with_suffix('.cache')
+        # 캐시 파일 경로 설정
+        cache_path = Path(self.img_path).parent / f"labels/{Path(self.im_files[0]).parent.name}.cache"
+
+        LOGGER.info(f"캐시 경로: {cache_path}")
+        LOGGER.info(f"레이블 파일 예시: {self.label_files[0] if self.label_files else 'None'}")
+
         try:
             cache, exists = load_dataset_cache_file(cache_path), True
             assert cache["version"] == DATASET_CACHE_VERSION
@@ -868,23 +874,33 @@ class QuadrilateralDataset(YOLODataset):
 
         # Display cache
         nf, nm, ne, nc, n = cache.pop("results")  # found, missing, empty, corrupt, total
+        if exists and LOCAL_RANK in {-1, 0}:
+            d = f"Scanning {cache_path}... {nf} images, {nm + ne} backgrounds, {nc} corrupt"
+            TQDM(None, desc=self.prefix + d, total=n, initial=n)  # display results
+            if cache["msgs"]:
+                LOGGER.info("\n".join(cache["msgs"]))  # display warnings
 
         # Get labels
         labels = cache["labels"]
+        if not labels:
+            LOGGER.warning(f"No labels found in {cache_path}, training may not work correctly. {HELP_URL}")
+        self.im_files = [lb["im_file"] for lb in labels]  # update im_files
 
-        self.im_files = [lb["im_file"] for lb in labels]
         return labels
 
     def cache_labels(self, path=Path("./labels.cache")):
         """
         Cache dataset labels by parsing JSON files and extracting quadrilateral points directly.
         """
+        import json
+        import os
+
         x = {"labels": []}
         nm, nf, ne, nc, msgs = 0, 0, 0, 0, []  # number missing, found, empty, corrupt, messages
 
         # 클래스 이름 및 매핑 가져오기
         names = self.data["names"]
-        label_to_cls = {name: idx for idx, name in names.items()}
+        label_to_cls = {str(idx): idx for idx, name in names.items()}
 
         # 각 이미지와 레이블 파일 처리
         for im_file, json_file in zip(self.im_files, self.label_files):
@@ -902,12 +918,18 @@ class QuadrilateralDataset(YOLODataset):
                     ne += 1  # empty label
                     continue
 
-                img_h, img_w = data['imageHeight'], data['imageWidth']
+                img_h, img_w = data.get('imageHeight', 0), data.get('imageWidth', 0)
 
                 # 이미지 크기 확인
                 if img_h <= 0 or img_w <= 0:
-                    nc += 1  # corrupt label
-                    continue
+                    # 이미지 파일에서 직접 크기 가져오기
+                    try:
+                        from PIL import Image
+                        img = Image.open(im_file)
+                        img_w, img_h = img.size
+                    except Exception:
+                        nc += 1  # corrupt label
+                        continue
 
                 quads = []  # 쿼드릴래터럴 좌표 저장 리스트
 
@@ -921,9 +943,9 @@ class QuadrilateralDataset(YOLODataset):
                     prefix = label.split('_')[0] if '_' in label else label
 
                     cls_id = None
-                    # 직접 이름으로 매핑
+                    # 클래스 이름으로 매핑
                     for key, val in label_to_cls.items():
-                        if prefix == str(key) or prefix == val:
+                        if prefix == str(key) or prefix == str(val):
                             cls_id = int(key)
                             break
 
@@ -980,6 +1002,8 @@ class QuadrilateralDataset(YOLODataset):
         x["hash"] = get_hash(self.label_files + self.im_files)
         x["results"] = nf, nm, ne, nc, len(self.im_files)
         x["msgs"] = msgs  # warnings
+
+        LOGGER.info(f"Cache results: {nf} found, {nm} missing, {ne} empty, {nc} corrupt")
 
         save_dataset_cache_file(self.prefix, path, x, DATASET_CACHE_VERSION)
         return x

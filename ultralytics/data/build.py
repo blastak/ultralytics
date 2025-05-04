@@ -109,13 +109,16 @@ def build_yolo_dataset(cfg, img_path, batch, data, mode="train", rect=False, str
     dataset_map = {
         "YOLODataset": YOLODataset,
         "YOLOMultiModalDataset": YOLOMultiModalDataset,
-        "QuadrilateralDataset": QuadrilateralDataset
+        "QuadrilateralDataset": QuadrilateralDataset,
+        "GroundingDataset": GroundingDataset
     }
 
-    # 데이터셋 타입 결정 (설정에서 가져오거나 기본값 설정)
-    dataset_type = cfg.get("dataset_type", "YOLODataset")
+    # 데이터셋 타입 결정
+    dataset_type = data.get("dataset_type", "YOLODataset")
     if multi_modal and dataset_type == "YOLODataset":
         dataset_type = "YOLOMultiModalDataset"
+
+    print(f"Using dataset type: {dataset_type}")  # 디버깅을 위한 출력 추가
 
     # 해당 데이터셋 클래스 가져오기
     dataset_cls = dataset_map.get(dataset_type, YOLODataset)
