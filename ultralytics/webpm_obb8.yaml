@@ -1,0 +1,5 @@
+path: E:\Repos\Ultralytics\ultralytics\assets\good_all(obb8)
+train: images/train
+val: images/val
+nc: 9
+names: ['P1-1', 'P1-2', 'P1-3', 'P1-4', 'P2', 'P3', 'P4', 'P5', 'P6']
