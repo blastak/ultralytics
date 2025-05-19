@@ -752,3 +752,116 @@ def convert_to_multispectral(path, n_channels=10, replace=False, zip=False):
         multispectral = f(target_wavelengths)
         cv2.imwritemulti(str(output_path), np.clip(multispectral, 0, 255).astype(np.uint8).transpose(2, 0, 1))
         LOGGER.info(f"Converted {output_path}")
+
+
+# Plate type to class index
+plate_types = ['P1-1', 'P1-2', 'P1-3', 'P1-4', 'P2', 'P3', 'P4', 'P5', 'P6']
+plate_type_to_id = {ptype: idx for idx, ptype in enumerate(plate_types)}
+
+
+def convert_json_to_yolo(root_dir: str):
+    """
+    Converts LabelMe JSON quadrilateral annotations to YOLO (class x y w h) format.
+
+    Args:
+        root_dir (str): Root directory containing 'images/{train,val,test}' and 'labels/{train,val,test}'.
+
+    Output:
+        Saves YOLO format labels to 'labels/{split}/{image_id}.txt'.
+    """
+    root_path = Path(root_dir)
+    for split in ['train', 'val', 'test']:
+        json_dir = root_path / 'labels' / (split + '_original')
+        out_dir = root_path / 'labels' / split  # Overwrite in-place
+        out_dir.mkdir(parents=True, exist_ok=True)
+
+        for json_file in list(json_dir.glob("*.json")):
+            with open(json_file, 'r', encoding='utf-8') as f:
+                data = json.load(f)
+
+            image_width = data.get("imageWidth", 1)
+            image_height = data.get("imageHeight", 1)
+            image_name = Path(data["imagePath"]).stem
+            txt_path = out_dir / f"{image_name}.txt"
+
+            with open(txt_path, 'w') as out_f:
+                for shape in data["shapes"]:
+                    label = shape["label"]
+                    if "_" not in label:
+                        continue
+                    plate_type, _ = label.split("_", 1)
+                    if plate_type not in plate_type_to_id:
+                        continue
+
+                    class_id = plate_type_to_id[plate_type]
+                    points = shape["points"]
+                    if len(points) != 4:
+                        continue  # Not a quadrilateral
+
+                    xs = [pt[0] for pt in points]
+                    ys = [pt[1] for pt in points]
+
+                    x_min, x_max = min(xs), max(xs)
+                    y_min, y_max = min(ys), max(ys)
+
+                    x_center = (x_min + x_max) / 2 / image_width
+                    y_center = (y_min + y_max) / 2 / image_height
+                    width = (x_max - x_min) / image_width
+                    height = (y_max - y_min) / image_height
+
+                    out_f.write(f"{class_id} {x_center} {y_center} {width} {height}\n")
+
+
+def convert_json_to_yolo_obb_or_qbb(root_dir: str):
+    """
+    Converts LabelMe JSON format (quadrilateral) to YOLO OBB format.
+
+    Args:
+        root_dir (str): Root path containing 'images/{train,val,test}' and 'labels/{train,val,test}'.
+
+    Output:
+        Saves YOLO OBB format labels to 'labels/{split}/{image_id}.txt'.
+    """
+    root_path = Path(root_dir)
+    for split in ['train', 'val', 'test']:
+        json_dir = root_path / 'labels' / (split + '_original')
+        out_dir = root_path / 'labels' / split  # overwrite in-place or redirect if needed
+        out_dir.mkdir(parents=True, exist_ok=True)
+
+        for json_file in list(json_dir.glob("*.json")):
+            with open(json_file, 'r', encoding='utf-8') as f:
+                data = json.load(f)
+
+            image_width = data.get("imageWidth", 1)
+            image_height = data.get("imageHeight", 1)
+            image_name = Path(data["imagePath"]).stem
+            txt_path = out_dir / f"{image_name}.txt"
+
+            with open(txt_path, 'w') as out_f:
+                for shape in data["shapes"]:
+                    label = shape["label"]
+                    if "_" not in label:
+                        continue
+                    plate_type, _ = label.split("_", 1)
+                    if plate_type not in plate_type_to_id:
+                        continue
+
+                    class_id = plate_type_to_id[plate_type]
+                    points = shape["points"]
+                    if len(points) != 4:
+                        continue  # skip non-quadrilateral
+
+                    # Flatten and normalize points
+                    norm_points = []
+                    for i, (x, y) in enumerate(points):
+                        norm_x = x / image_width
+                        norm_y = y / image_height
+                        norm_points.extend([norm_x, norm_y])
+
+                    out_f.write(f"{class_id} " + " ".join(f"{pt}" for pt in norm_points) + "\n")
+
+
+if __name__ == '__main__':
+    # convert_json_to_yolo(r'..\assets\good_all(bb)')
+    convert_json_to_yolo_obb_or_qbb(r'..\assets\good_all(obb)')
+    pass
