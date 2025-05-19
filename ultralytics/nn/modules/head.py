@@ -185,6 +185,17 @@ class Detect(nn.Module):
         return torch.cat([boxes[i, index // nc], scores[..., None], (index % nc)[..., None].float()], dim=-1)
 
 
+class QBB(Detect):
+    """YOLO QBB detection head for detection with quadrilateral models."""
+
+    def __init__(self, nc=80, ch=()):
+        """Initialize QBB with number of classes `nc` and layer channels `ch`."""
+        super().__init__(nc, ch)
+
+    def forward(self, x):
+        pass
+
+
 class Segment(Detect):
     """YOLO Segment head for segmentation models."""
 
