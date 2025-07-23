@@ -11,6 +11,7 @@ from ultralytics.nn.tasks import (
     DetectionModel,
     OBBModel,
     PoseModel,
+    QBBModel,
     SegmentationModel,
     WorldModel,
     YOLOEModel,
