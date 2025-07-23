@@ -878,6 +878,57 @@ class Format(BaseTransform):
         return torch.from_numpy(bboxes)
 
 
+class LoadVisualPrompt:
+    """Create visual prompts from bounding boxes or masks for model input."""
+
+    def __init__(self, scale_factor: float = 1 / 8) -> None:
+        self.scale_factor = scale_factor
+
+    def make_mask(self, boxes: torch.Tensor, h: int, w: int) -> torch.Tensor:
+        x1, y1, x2, y2 = torch.chunk(boxes[:, :, None], 4, 1)
+        r = torch.arange(w)[None, None, :]
+        c = torch.arange(h)[None, :, None]
+        return (r >= x1) * (r < x2) * (c >= y1) * (c < y2)
+
+    def __call__(self, labels: Dict[str, Any]) -> Dict[str, Any]:
+        imgsz = labels["img"].shape[1:]
+        bboxes, masks = None, None
+        if "bboxes" in labels:
+            bboxes = labels["bboxes"]
+            bboxes = xywh2xyxy(bboxes) * torch.tensor(imgsz)[[1, 0, 1, 0]]
+        cls = labels["cls"].squeeze(-1).to(torch.int)
+        visuals = self.get_visuals(cls, imgsz, bboxes=bboxes, masks=masks)
+        labels["visuals"] = visuals
+        return labels
+
+    def get_visuals(
+        self,
+        category: Union[int, np.ndarray, torch.Tensor],
+        shape: Tuple[int, int],
+        bboxes: Union[np.ndarray, torch.Tensor] = None,
+        masks: Union[np.ndarray, torch.Tensor] = None,
+    ) -> torch.Tensor:
+        masksz = (int(shape[0] * self.scale_factor), int(shape[1] * self.scale_factor))
+        if bboxes is not None:
+            if isinstance(bboxes, np.ndarray):
+                bboxes = torch.from_numpy(bboxes)
+            bboxes *= self.scale_factor
+            masks = self.make_mask(bboxes, *masksz).float()
+        elif masks is not None:
+            if isinstance(masks, np.ndarray):
+                masks = torch.from_numpy(masks)
+            masks = F.interpolate(masks.unsqueeze(1), masksz, mode="nearest").squeeze(1).float()
+        else:
+            raise ValueError("LoadVisualPrompt must have bboxes or masks in the label")
+        if not isinstance(category, torch.Tensor):
+            category = torch.tensor(category, dtype=torch.int)
+        cls_unique, inverse_indices = torch.unique(category, sorted=True, return_inverse=True)
+        visuals = torch.zeros(len(cls_unique), *masksz)
+        for idx, mask in zip(inverse_indices, masks):
+            visuals[idx] = torch.logical_or(visuals[idx], mask)
+        return visuals
+
+
 def v8_transforms(dataset, imgsz, hyp):
     """YOLOv8 default transforms."""
     pre_transform = [
