@@ -1,5 +1,5 @@
 
-
+import sys
 import json
 import shutil
 from pathlib import Path
@@ -9,8 +9,12 @@ from tqdm import tqdm
 from ultralytics.data.converter import convert_labelme_to_yolo_qbb
 
 # 1. 설정
-SOURCE_DATA_DIR = Path("/mnt/d/Dataset/Web_Crawling/20241014_from_안민찬/P1-1_single_row plate(2)_with_json")
-OUTPUT_DATA_DIR = Path("/home/raykim_srv/projects/ultralytics/license_plate_qbb_dataset")
+if sys.platform == 'win32':
+    SOURCE_DATA_DIR = Path(r"E:\Dataset\01_LicensePlate\55_WebPlatemania_1944_完\55_WebPlatemania_jpg_json\good_all")
+    OUTPUT_DATA_DIR = Path(r"E:\Repos\Ultralytics/license_plate_qbb_dataset")
+else:
+    SOURCE_DATA_DIR = Path("/mnt/d/Dataset/Web_Crawling/20241014_from_안민찬/P1-1_single_row plate(2)_with_json")
+    OUTPUT_DATA_DIR = Path("/home/raykim_srv/projects/ultralytics/license_plate_qbb_dataset")
 TRAIN_RATIO = 0.8
 
 CLASS_MAP = {"P1-1": 0, "P1-2": 1, "P1-3": 2, "P1-4": 3, "P2": 4, "P3": 5, "P4": 6, "P6": 7}
