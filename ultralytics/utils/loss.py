@@ -825,7 +825,7 @@ class v8QBBLoss(v8OBBLoss):
         # targets
         try:
             batch_idx = batch["batch_idx"].view(-1, 1)
-            targets = torch.cat((batch_idx, batch["cls"].view(-1, 1), batch["bboxes"].view(-1, 8)), 1)
+            targets = torch.cat((batch_idx, batch["cls"].view(-1, 1), batch["qbb"].view(-1, 8)), 1)
             targets = self.preprocess(targets.to(self.device), batch_size, scale_tensor=imgsz)
             gt_labels, gt_bboxes = targets.split((1, 8), 2)  # cls, xyxyxyxy
             mask_gt = gt_bboxes.sum(2, keepdim=True).gt_(0)
