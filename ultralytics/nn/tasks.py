@@ -20,6 +20,7 @@ from ultralytics.nn.modules import (
     C3TR,
     ELAN1,
     OBB,
+    QBB,
     PSA,
     SPP,
     SPPELAN,
@@ -76,6 +77,7 @@ from ultralytics.utils.loss import (
     v8ClassificationLoss,
     v8DetectionLoss,
     v8OBBLoss,
+    v8QBBLoss,
     v8PoseLoss,
     v8SegmentationLoss,
 )
@@ -533,6 +535,24 @@ class OBBModel(DetectionModel):
     def init_criterion(self):
         """Initialize the loss criterion for the model."""
         return v8OBBLoss(self)
+
+
+class QBBModel(DetectionModel):
+    """
+    YOLO Quadrilateral Bounding Box (QBB) model.
+    """
+
+    def __init__(self, cfg="yolo11-qbb.yaml", ch=3, nc=None, verbose=True):
+        """
+        Initialize YOLO QBB model with given config and parameters.
+        """
+        super().__init__(cfg=cfg, ch=ch, nc=nc, verbose=verbose)
+
+    def init_criterion(self):
+        """
+        Initialize the loss criterion for the model.
+        """
+        return v8QBBLoss(self)
 
 
 class SegmentationModel(DetectionModel):
@@ -1815,6 +1835,8 @@ def guess_model_task(model):
             return "pose"
         if m == "obb":
             return "obb"
+        if m == "qbb":
+            return "qbb"
 
     # Guess from model cfg
     if isinstance(model, dict):
@@ -1837,6 +1859,8 @@ def guess_model_task(model):
                 return "pose"
             elif isinstance(m, OBB):
                 return "obb"
+            elif isinstance(m, QBB):
+                return "qbb"
             elif isinstance(m, (Detect, WorldDetect, YOLOEDetect, v10Detect)):
                 return "detect"
 
@@ -1851,6 +1875,8 @@ def guess_model_task(model):
             return "pose"
         elif "-obb" in model.stem or "obb" in model.parts:
             return "obb"
+        elif "-qbb" in model.stem or "qbb" in model.parts:
+            return "qbb"
         elif "detect" in model.parts:
             return "detect"
 

@@ -248,6 +248,7 @@ class Results(SimpleClass, DataExportMixin):
         probs: Optional[torch.Tensor] = None,
         keypoints: Optional[torch.Tensor] = None,
         obb: Optional[torch.Tensor] = None,
+        qbb: Optional[torch.Tensor] = None,
         speed: Optional[Dict[str, float]] = None,
     ) -> None:
         """
@@ -284,11 +285,12 @@ class Results(SimpleClass, DataExportMixin):
         self.probs = Probs(probs) if probs is not None else None
         self.keypoints = Keypoints(keypoints, self.orig_shape) if keypoints is not None else None
         self.obb = OBB(obb, self.orig_shape) if obb is not None else None
+        self.qbb = QBB(qbb, self.orig_shape) if qbb is not None else None
         self.speed = speed if speed is not None else {"preprocess": None, "inference": None, "postprocess": None}
         self.names = names
         self.path = path
         self.save_dir = None
-        self._keys = "boxes", "masks", "probs", "keypoints", "obb"
+        self._keys = "boxes", "masks", "probs", "keypoints", "obb", "qbb"
 
     def __getitem__(self, idx):
         """
@@ -331,6 +333,7 @@ class Results(SimpleClass, DataExportMixin):
         masks: Optional[torch.Tensor] = None,
         probs: Optional[torch.Tensor] = None,
         obb: Optional[torch.Tensor] = None,
+        qbb: Optional[torch.Tensor] = None,
         keypoints: Optional[torch.Tensor] = None,
     ):
         """
@@ -360,6 +363,8 @@ class Results(SimpleClass, DataExportMixin):
             self.probs = probs
         if obb is not None:
             self.obb = OBB(obb, self.orig_shape)
+        if qbb is not None:
+            self.qbb = QBB(qbb, self.orig_shape)
         if keypoints is not None:
             self.keypoints = Keypoints(keypoints, self.orig_shape)
 
@@ -1655,3 +1660,49 @@ class OBB(BaseTensor):
             if isinstance(x, torch.Tensor)
             else np.stack([x.min(1), y.min(1), x.max(1), y.max(1)], -1)
         )
+
+
+class QBB(BaseTensor):
+    """
+    A class for storing and manipulating Quadrilateral Bounding Boxes (QBB).
+    """
+
+    def __init__(self, boxes: Union[torch.Tensor, np.ndarray], orig_shape: Tuple[int, int]) -> None:
+        """
+        Initialize a QBB instance with quadrilateral bounding box data and original image shape.
+        """
+        if boxes.ndim == 1:
+            boxes = boxes[None, :]
+        n = boxes.shape[-1]
+        assert n in {10, 11}, f"expected 10 or 11 values but got {n}"  # xyxyxyxy, track_id, conf, cls
+        super().__init__(boxes, orig_shape)
+        self.is_track = n == 11
+        self.orig_shape = orig_shape
+
+    @property
+    def xyxyxyxy(self) -> Union[torch.Tensor, np.ndarray]:
+        """
+        Return bounding boxes in [x1, y1, x2, y2, x3, y3, x4, y4] format.
+        """
+        return self.data[:, :8]
+
+    @property
+    def conf(self) -> Union[torch.Tensor, np.ndarray]:
+        """
+        Return the confidence scores for each detection box.
+        """
+        return self.data[:, -2]
+
+    @property
+    def cls(self) -> Union[torch.Tensor, np.ndarray]:
+        """
+        Return the class ID tensor representing category predictions for each bounding box.
+        """
+        return self.data[:, -1]
+
+    @property
+    def id(self) -> Optional[Union[torch.Tensor, np.ndarray]]:
+        """
+        Return the tracking IDs for each detection box if available.
+        """
+        return self.data[:, -3] if self.is_track else None

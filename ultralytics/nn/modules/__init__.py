@@ -155,6 +155,7 @@ __all__ = (
     "MLP",
     "ResNetLayer",
     "OBB",
+    "QBB",
     "WorldDetect",
     "YOLOEDetect",
     "YOLOESegment",

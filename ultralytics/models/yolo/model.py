@@ -118,6 +118,12 @@ class YOLO(Model):
                 "validator": yolo.obb.OBBValidator,
                 "predictor": yolo.obb.OBBPredictor,
             },
+            "qbb": {
+                "model": QBBModel,
+                "trainer": yolo.qbb.QBBTrainer,
+                "validator": yolo.qbb.QBBValidator,
+                "predictor": yolo.qbb.QBBPredictor,
+            },
         }
 
 

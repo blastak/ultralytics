@@ -770,7 +770,112 @@ class v8OBBLoss(v8DetectionLoss):
         return torch.cat((dist2rbox(pred_dist, pred_angle, anchor_points), pred_angle), dim=-1)
 
 
+class v8QBBLoss(v8DetectionLoss):
+    """Calculates losses for object detection, classification, and box distribution in quadrilateral YOLO models."""
+
+    def __init__(self, model):
+        """Initialize v8QBBLoss with model, assigner, and QBB bbox loss; model must be de-paralleled."""
+        super().__init__(model)
+        self.assigner = TaskAlignedAssigner(topk=10, num_classes=self.nc, alpha=0.5, beta=6.0)
+        self.bbox_loss = nn.MSELoss(reduction='sum')
+
+    def preprocess(self, targets: torch.Tensor, batch_size: int, scale_tensor: torch.Tensor) -> torch.Tensor:
+        """Preprocess targets for quadrilateral bounding box detection."""
+        if targets.shape[0] == 0:
+            return torch.zeros(batch_size, 0, 9, device=self.device) # 1 class + 8 coords
+        
+        i = targets[:, 0]  # image index
+        _, counts = i.unique(return_counts=True)
+        counts = counts.to(dtype=torch.int32)
+        out = torch.zeros(batch_size, counts.max(), 9, device=self.device)
+        for j in range(batch_size):
+            matches = i == j
+            if n := matches.sum():
+                qbboxes = targets[matches, 2:]
+                # scale qbb coordinates
+                qbboxes[..., 0::2] *= scale_tensor[0] # x coordinates
+                qbboxes[..., 1::2] *= scale_tensor[1] # y coordinates
+                out[j, :n] = torch.cat([targets[matches, 1:2], qbboxes], dim=-1)
+        return out
+
+    def __call__(self, preds: Any, batch: Dict[str, torch.Tensor]) -> Tuple[torch.Tensor, torch.Tensor]:
+        """Calculate and return the loss for quadrilateral bounding box detection."""
+        loss = torch.zeros(2, device=self.device)  # box, cls
+        feats, pred_qbb_coords = preds if isinstance(preds[0], list) else preds[1]
+        
+        pred_distri, pred_scores = torch.cat([xi.view(feats[0].shape[0], self.no, -1) for xi in feats], 2).split(
+            (self.reg_max * 4, self.nc), 1
+        )
+
+        # b, grids, ..
+        pred_scores = pred_scores.permute(0, 2, 1).contiguous()
+        pred_distri = pred_distri.permute(0, 2, 1).contiguous()
+        pred_qbb_coords = pred_qbb_coords.permute(0, 2, 1).contiguous()
+
+        dtype = pred_scores.dtype
+        batch_size = pred_scores.shape[0]
+        imgsz = torch.tensor(feats[0].shape[2:], device=self.device, dtype=dtype) * self.stride[0]  # image size (h,w)
+        anchor_points, stride_tensor = make_anchors(feats, self.stride, 0.5)
+
+        # targets
+        try:
+            batch_idx = batch["batch_idx"].view(-1, 1)
+            # For QBB, we expect 8 coordinates
+            targets = torch.cat((batch_idx, batch["cls"].view(-1, 1), batch["bboxes"].view(-1, 8)), 1)
+            targets = self.preprocess(targets.to(self.device), batch_size, scale_tensor=imgsz[[1, 0]])
+            gt_labels, gt_bboxes = targets.split((1, 8), 2)  # cls, xyxyxyxy
+            mask_gt = gt_bboxes.sum(2, keepdim=True).gt_(0.0)
+        except RuntimeError as e:
+            raise TypeError(
+                "ERROR ❌ QBB dataset incorrectly formatted or not a QBB dataset.\n"
+                "Verify your dataset is a correctly formatted 'QBB' dataset."
+            ) from e
+
+        # Pboxes
+        pred_bboxes = self.bbox_decode(anchor_points, pred_distri) # Regular bbox for assignment
+
+        _, target_bboxes, target_scores, fg_mask, target_gt_idx = self.assigner(
+            pred_scores.detach().sigmoid(),
+            (pred_bboxes.detach() * stride_tensor).type(gt_bboxes.dtype),
+            anchor_points * stride_tensor,
+            gt_labels,
+            # For assignment, we need a standard bbox representation from QBB.
+            # A simple way is to take min/max of coordinates.
+            torch.cat([gt_bboxes[..., ::2].min(dim=-1, keepdim=True)[0], 
+                       gt_bboxes[..., 1::2].min(dim=-1, keepdim=True)[0],
+                       gt_bboxes[..., ::2].max(dim=-1, keepdim=True)[0],
+                       gt_bboxes[..., 1::2].max(dim=-1, keepdim=True)[0]], dim=-1),
+            mask_gt,
+        )
+
+        target_scores_sum = max(target_scores.sum(), 1)
+
+        # Cls loss
+        loss[1] = self.bce(pred_scores, target_scores.to(dtype)).sum() / target_scores_sum  # BCE
+
+        # Bbox loss (MSE for QBB)
+        if fg_mask.sum():
+            # Select predicted and target qbb coordinates for positive anchors
+            pred_qbb_coords_pos = pred_qbb_coords[fg_mask]
+            # We need to gather the ground truth qbb coordinates that correspond to the positive anchors
+            # This requires indexing the original gt_bboxes with the batch index and the gt index from the assigner
+            batch_idx_pos = torch.where(fg_mask)[0]
+            gt_idx_pos = target_gt_idx[fg_mask]
+            target_qbb_coords_pos = gt_bboxes[batch_idx_pos, gt_idx_pos]
+            
+            # Normalize target coordinates by stride
+            target_qbb_coords_pos /= stride_tensor[fg_mask].repeat(1,4)
+
+            loss[0] = self.bbox_loss(pred_qbb_coords_pos, target_qbb_coords_pos) / target_scores_sum
+
+        loss[0] *= self.hyp.box  # box gain
+        loss[1] *= self.hyp.cls  # cls gain
+
+        return loss.sum() * batch_size, loss.detach()  # loss(box, cls)
+
+
 class E2EDetectLoss:
+
     """Criterion class for computing training losses for end-to-end detection."""
 
     def __init__(self, model):

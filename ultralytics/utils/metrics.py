@@ -1549,3 +1549,16 @@ class OBBMetrics(DetMetrics):
         DetMetrics.__init__(self, names)
         # TODO: probably remove task as well
         self.task = "obb"
+
+
+class QBBMetrics(DetMetrics):
+    """
+    Metrics for evaluating quadrilateral bounding box (QBB) detection.
+    """
+
+    def __init__(self, names: Dict[int, str] = {}) -> None:
+        """
+        Initialize a QBBMetrics instance with class names.
+        """
+        super().__init__(names)
+        self.task = "qbb"

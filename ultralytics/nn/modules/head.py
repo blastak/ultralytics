@@ -18,7 +18,7 @@ from .conv import Conv, DWConv
 from .transformer import MLP, DeformableTransformerDecoder, DeformableTransformerDecoderLayer
 from .utils import bias_init_with_prob, linear_init
 
-__all__ = "Detect", "Segment", "Pose", "Classify", "OBB", "RTDETRDecoder", "v10Detect", "YOLOEDetect", "YOLOESegment"
+__all__ = "Detect", "Segment", "Pose", "Classify", "OBB", "QBB", "RTDETRDecoder", "v10Detect", "YOLOEDetect", "YOLOESegment"
 
 
 class Detect(nn.Module):
@@ -332,6 +332,60 @@ class OBB(Detect):
     def decode_bboxes(self, bboxes: torch.Tensor, anchors: torch.Tensor) -> torch.Tensor:
         """Decode rotated bounding boxes."""
         return dist2rbox(bboxes, self.angle, anchors, dim=1)
+
+
+class QBB(Detect):
+    """
+    YOLO QBB detection head for detection with quadrilateral models.
+
+    This class extends the Detect head to include quadrilateral bounding box prediction.
+
+    Attributes:
+        ne (int): Number of extra parameters (8 for 4 points).
+        cv4 (nn.ModuleList): Convolution layers for QBB coordinate prediction.
+
+    Methods:
+        forward: Concatenate and return predicted bounding boxes, class probabilities, and QBB coordinates.
+    """
+
+    def __init__(self, nc: int = 80, ne: int = 8, ch: Tuple = ()):
+        """
+        Initialize QBB with number of classes `nc` and layer channels `ch`.
+
+        Args:
+            nc (int): Number of classes.
+            ne (int): Number of extra parameters for QBB (8 for 4 points).
+            ch (tuple): Tuple of channel sizes from backbone feature maps.
+        """
+        super().__init__(nc, ch)
+        self.ne = ne  # number of extra parameters (8 for xyxyxyxy)
+        self.no = self.no + self.ne  # number of outputs per anchor
+        c4 = max(ch[0] // 4, self.ne)
+        self.cv4 = nn.ModuleList(nn.Sequential(Conv(x, c4, 3), Conv(c4, c4, 3), nn.Conv2d(c4, self.ne, 1)) for x in ch)
+
+    def forward(self, x: List[torch.Tensor]) -> Union[torch.Tensor, Tuple]:
+        """Concatenate and return predicted bounding boxes and class probabilities."""
+        for i in range(self.nl):
+            x[i] = torch.cat((self.cv2[i](x[i]), self.cv3[i](x[i]), self.cv4[i](x[i])), 1)
+
+        if self.training:
+            return x
+
+        # Inference
+        shape = x[0].shape  # BCHW
+        x_cat = torch.cat([xi.view(shape[0], self.no, -1) for xi in x], 2)
+
+        if self.dynamic or self.shape != shape:
+            self.anchors, self.strides = (x.transpose(0, 1) for x in make_anchors(x, self.stride, 0.5))
+            self.shape = shape
+
+        box, cls, qbb = x_cat.split((self.reg_max * 4, self.nc, self.ne), 1)
+
+        dbox = self.decode_bboxes(self.dfl(box), self.anchors.unsqueeze(0)) * self.strides
+
+        y = torch.cat((dbox, cls.sigmoid(), qbb), 1)
+
+        return y if self.export else (y, x)
 
 
 class Pose(Detect):

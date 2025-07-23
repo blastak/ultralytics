@@ -420,6 +420,74 @@ def convert_segment_masks_to_yolo_seg(masks_dir: str, output_dir: str, classes: 
             LOGGER.info(f"Processed and stored at {output_path} imgsz = {img_height} x {img_width}")
 
 
+def convert_labelme_to_yolo_qbb(source_dir: str, class_map: dict = None):
+    """
+    Converts LabelMe-style JSON annotations to YOLO QBB (Quadrilateral Bounding Box) format.
+
+    This function iterates through all JSON files in the source directory, extracts polygon annotations,
+    and saves them as YOLO QBB format .txt files. The output .txt files will have the same name as
+    the corresponding image files.
+
+    Args:
+        source_dir (str): Path to the directory containing the JSON annotation files and images.
+        class_map (dict, optional): A dictionary mapping class names to integer indices.
+                                    If not provided, it will be generated automatically by
+                                    scanning all JSON files.
+
+    Examples:
+        >>> from ultralytics.data.converter import convert_labelme_to_yolo_qbb
+        >>> convert_labelme_to_yolo_qbb("path/to/your/dataset/")
+    """
+    source_dir = Path(source_dir)
+    json_files = list(source_dir.glob("*.json"))
+
+    if not class_map:
+        LOGGER.info("Class map not provided. Scanning JSON files to create one...")
+        all_labels = set()
+        for json_file in TQDM(json_files, desc="Scanning labels"):
+            with open(json_file, "r", encoding="utf-8") as f:
+                data = json.load(f)
+                for shape in data.get("shapes", []):
+                    all_labels.add(shape["label"])
+        class_map = {name: i for i, name in enumerate(sorted(list(all_labels)))}
+        LOGGER.info(f"Generated class map: {class_map}")
+
+    for json_file in TQDM(json_files, desc="Converting annotations"):
+        with open(json_file, "r", encoding="utf-8") as f:
+            data = json.load(f)
+
+        image_path = source_dir / data["imagePath"]
+        if not image_path.exists():
+            LOGGER.warning(f"Image not found for {json_file.name}, skipping.")
+            continue
+
+        h, w = data["imageHeight"], data["imageWidth"]
+        output_path = image_path.with_suffix(".txt")
+
+        with open(output_path, "w", encoding="utf-8") as f:
+            for shape in data.get("shapes", []):
+                label = shape["label"]
+                if label not in class_map:
+                    LOGGER.warning(f"Label '{label}' in {json_file.name} not in class_map, skipping.")
+                    continue
+
+                class_idx = class_map[label]
+                points = np.array(shape["points"], dtype=np.float32)
+
+                if len(points) != 4:
+                    LOGGER.warning(f"Shape in {json_file.name} is not a quadrilateral, skipping.")
+                    continue
+
+                # Normalize points
+                points[:, 0] /= w
+                points[:, 1] /= h
+
+                # Flatten points to a single line
+                coords = points.flatten()
+                formatted_coords = [f"{coord:.6g}" for coord in coords]
+                f.write(f"{class_idx} {' '.join(formatted_coords)}\n")
+
+
 def convert_dota_to_yolo_obb(dota_root_path: str):
     """
     Convert DOTA dataset annotations to YOLO OBB (Oriented Bounding Box) format.
