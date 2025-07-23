@@ -179,7 +179,7 @@ def verify_image(args: Tuple) -> Tuple:
 
 def verify_image_label(args: Tuple) -> List:
     """Verify one image-label pair."""
-    im_file, lb_file, prefix, keypoint, num_cls, nkpt, ndim, single_cls = args
+    im_file, lb_file, prefix, keypoint, num_cls, nkpt, ndim, single_cls, task = args
     # Number (missing, found, empty, corrupt), message, segments, keypoints
     nm, nf, ne, nc, msg, segments, keypoints = 0, 0, 0, 0, "", [], None
     try:
@@ -211,6 +211,12 @@ def verify_image_label(args: Tuple) -> List:
                 if keypoint:
                     assert lb.shape[1] == (5 + nkpt * ndim), f"labels require {(5 + nkpt * ndim)} columns each"
                     points = lb[:, 5:].reshape(-1, ndim)[:, :2]
+                elif task == 'obb':
+                    assert lb.shape[1] == 6, f"labels require 6 columns, {lb.shape[1]} columns detected"
+                    points = lb[:, 1:]
+                elif task == 'qbb':
+                    assert lb.shape[1] == 9, f"labels require 9 columns, {lb.shape[1]} columns detected"
+                    points = lb[:, 1:]
                 else:
                     assert lb.shape[1] == 5, f"labels require 5 columns, {lb.shape[1]} columns detected"
                     points = lb[:, 1:]
@@ -243,7 +249,12 @@ def verify_image_label(args: Tuple) -> List:
             if ndim == 2:
                 kpt_mask = np.where((keypoints[..., 0] < 0) | (keypoints[..., 1] < 0), 0.0, 1.0).astype(np.float32)
                 keypoints = np.concatenate([keypoints, kpt_mask[..., None]], axis=-1)  # (nl, nkpt, 3)
-        lb = lb[:, :5]
+        
+        if task == 'qbb':
+            lb = lb
+        else:
+            lb = lb[:, :5]
+
         return im_file, lb, shape, segments, keypoints, nm, nf, ne, nc, msg
     except Exception as e:
         nc = 1

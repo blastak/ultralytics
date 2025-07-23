@@ -119,6 +119,7 @@ class YOLODataset(BaseDataset):
                     repeat(nkpt),
                     repeat(ndim),
                     repeat(self.single_cls),
+                    repeat(self.task),
                 ),
             )
             pbar = TQDM(results, desc=desc, total=total)
