@@ -1,0 +1,12 @@
+# YOLOv11-QBB License Plate Dataset
+
+# Train/val sets
+train: /home/raykim_srv/projects/ultralytics/license_plate_qbb_dataset/images/train
+val: /home/raykim_srv/projects/ultralytics/license_plate_qbb_dataset/images/val
+
+# Number of classes
+nc: 1
+
+# Class names
+names:
+  0: license_plate
