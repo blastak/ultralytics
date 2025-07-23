@@ -78,6 +78,7 @@ from .conv import (
 )
 from .head import (
     OBB,
+    QBB,
     Classify,
     Detect,
     LRPCHead,
