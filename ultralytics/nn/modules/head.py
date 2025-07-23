@@ -359,33 +359,23 @@ class QBB(Detect):
         """
         super().__init__(nc, ch)
         self.ne = ne  # number of extra parameters (8 for xyxyxyxy)
-        self.no = self.no + self.ne  # number of outputs per anchor
         c4 = max(ch[0] // 4, self.ne)
         self.cv4 = nn.ModuleList(nn.Sequential(Conv(x, c4, 3), Conv(c4, c4, 3), nn.Conv2d(c4, self.ne, 1)) for x in ch)
 
     def forward(self, x: List[torch.Tensor]) -> Union[torch.Tensor, Tuple]:
         """Concatenate and return predicted bounding boxes and class probabilities."""
-        for i in range(self.nl):
-            x[i] = torch.cat((self.cv2[i](x[i]), self.cv3[i](x[i]), self.cv4[i](x[i])), 1)
+        bs = x[0].shape[0]
+        pred_qbb_coords = torch.cat([self.cv4[i](x[i]).view(bs, self.ne, -1) for i in range(self.nl)], 2)
+        
+        x = Detect.forward(self, x)
 
         if self.training:
-            return x
+            return x, pred_qbb_coords
 
         # Inference
-        shape = x[0].shape  # BCHW
-        x_cat = torch.cat([xi.view(shape[0], self.no, -1) for xi in x], 2)
-
-        if self.dynamic or self.shape != shape:
-            self.anchors, self.strides = (x.transpose(0, 1) for x in make_anchors(x, self.stride, 0.5))
-            self.shape = shape
-
-        box, cls, qbb = x_cat.split((self.reg_max * 4, self.nc, self.ne), 1)
-
-        dbox = self.decode_bboxes(self.dfl(box), self.anchors.unsqueeze(0)) * self.strides
-
-        y = torch.cat((dbox, cls.sigmoid(), qbb), 1)
-
-        return y if self.export else (y, x)
+        y = x[0]
+        y = torch.cat([y, pred_qbb_coords], 1)
+        return y if self.export else (y, (x[1], pred_qbb_coords))
 
 
 class Pose(Detect):
