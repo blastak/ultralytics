@@ -84,6 +84,7 @@ class YOLODataset(BaseDataset):
         self.use_keypoints = task == "pose"
         self.use_obb = task == "obb"
         self.use_qbb = task == "qbb"
+        self.task = task
         self.data = data
         assert not (self.use_segments and self.use_keypoints), "Can not use both segments and keypoints."
         super().__init__(*args, channels=self.data["channels"], **kwargs)
@@ -307,7 +308,7 @@ class YOLODataset(BaseDataset):
                 value = torch.stack(value, 0)
             elif k == "visuals":
                 value = torch.nn.utils.rnn.pad_sequence(value, batch_first=True)
-            if k in {"masks", "keypoints", "bboxes", "cls", "segments", "obb", "qbb"}:
+            elif k in {"masks", "keypoints", "bboxes", "cls", "segments", "obb", "qbb"}:
                 value = torch.cat(value, 0)
             new_batch[k] = value
         new_batch["batch_idx"] = list(new_batch["batch_idx"])
