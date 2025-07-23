@@ -775,7 +775,7 @@ class v8QBBLoss(v8OBBLoss):
 
     def __init__(self, model):
         """Initialize v8QBBLoss with model, assigner, and QBB bbox loss; model must be de-paralleled."""
-        super(v8DetectionLoss, self).__init__(model)  # Call v8DetectionLoss constructor
+        super().__init__(model)  # Call v8OBBLoss constructor
         self.assigner = TaskAlignedAssigner(topk=10, num_classes=self.nc, alpha=0.5, beta=6.0)
         self.bbox_loss = nn.MSELoss(reduction='sum')
         self.stride = model.model[-1].stride
