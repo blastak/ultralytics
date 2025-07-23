@@ -13,8 +13,7 @@ SOURCE_DATA_DIR = Path("/mnt/d/Dataset/Web_Crawling/20241014_from_안민찬/P1-1
 OUTPUT_DATA_DIR = Path("/home/raykim_srv/projects/ultralytics/license_plate_qbb_dataset")
 TRAIN_RATIO = 0.8
 
-# 클래스 이름 -> 클래스 ID 맵. 여기서는 모든 번호판을 단일 클래스로 취급합니다.
-CLASS_MAP = {"license_plate": 0}
+CLASS_MAP = {"P1-1": 0, "P1-2": 1, "P1-3": 2, "P1-4": 3, "P2": 4, "P3": 5, "P4": 6, "P6": 7}
 
 # 2. 출력 디렉토리 생성
 if OUTPUT_DATA_DIR.exists():
@@ -47,9 +46,9 @@ def process_files(file_list, img_dir, desc):
         with open(json_path, 'r', encoding='utf-8') as f:
             data = json.load(f)
         
-        # LabelMe JSON의 label을 공통 클래스 이름으로 변경
+        # LabelMe JSON의 label에서 클래스 정보 추출
         for shape in data.get("shapes", []):
-            shape["label"] = "license_plate"
+            shape["label"] = shape["label"].split('_')[0]
 
         # 수정된 JSON 데이터를 이미지와 동일한 디렉토리에 임시 저장
         temp_json_path = img_dir / json_path.name
