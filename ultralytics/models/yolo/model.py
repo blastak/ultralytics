@@ -9,6 +9,7 @@ from ultralytics.nn.tasks import (
     ClassificationModel,
     DetectionModel,
     OBBModel,
+    QBBModel,
     PoseModel,
     SegmentationModel,
     WorldModel,
@@ -85,6 +86,12 @@ class YOLO(Model):
                 "trainer": yolo.obb.OBBTrainer,
                 "validator": yolo.obb.OBBValidator,
                 "predictor": yolo.obb.OBBPredictor,
+            },
+            "qbb": {
+                "model": QBBModel,
+                "trainer": yolo.qbb.QBBTrainer,
+                "validator": yolo.qbb.QBBValidator,
+                "predictor": yolo.qbb.QBBPredictor,
             },
         }
 
