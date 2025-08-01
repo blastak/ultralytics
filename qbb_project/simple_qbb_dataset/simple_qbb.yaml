@@ -1,5 +1,5 @@
 # Simple YOLOv11 QBB dataset
-path: /workspace/repo/ultralytics/qbb_project/scripts/simple_qbb_dataset
+path: /workspace/repo/ultralytics/qbb_project/simple_qbb_dataset
 train: train/images
 val: val/images
 test: test/images

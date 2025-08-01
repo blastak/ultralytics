@@ -1,4 +1,4 @@
-path: /workspace/repo/ultralytics/webpm_qbb8_dataset
+path: /workspace/repo/ultralytics/qbb_project/datasets/webpm_qbb8_dataset
 train: images/train
 val: images/val
 nc: 1

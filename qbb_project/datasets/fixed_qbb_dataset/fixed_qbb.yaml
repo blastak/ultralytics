@@ -1,4 +1,4 @@
-path: /workspace/repo/ultralytics/fixed_qbb_dataset
+path: /workspace/repo/ultralytics/qbb_project/datasets/fixed_qbb_dataset
 train: train/images
 val: val/images  
 test: test/images
