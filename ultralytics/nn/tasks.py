@@ -20,6 +20,7 @@ from ultralytics.nn.modules import (
     C3TR,
     ELAN1,
     OBB,
+    QBB,
     PSA,
     SPP,
     SPPELAN,
@@ -76,6 +77,7 @@ from ultralytics.utils.loss import (
     v8ClassificationLoss,
     v8DetectionLoss,
     v8OBBLoss,
+    v8QBBLoss,
     v8PoseLoss,
     v8SegmentationLoss,
 )
@@ -451,6 +453,26 @@ class OBBModel(DetectionModel):
     def init_criterion(self):
         """Initialize the loss criterion for the model."""
         return v8OBBLoss(self)
+
+
+class QBBModel(DetectionModel):
+    """YOLO Quadrant Bounding Box (QBB) model."""
+
+    def __init__(self, cfg="yolo11n-qbb.yaml", ch=3, nc=None, verbose=True):
+        """
+        Initialize YOLO QBB model with given config and parameters.
+
+        Args:
+            cfg (str | dict): Model configuration file path or dictionary.
+            ch (int): Number of input channels.
+            nc (int, optional): Number of classes.
+            verbose (bool): Whether to display model information.
+        """
+        super().__init__(cfg=cfg, ch=ch, nc=nc, verbose=verbose)
+
+    def init_criterion(self):
+        """Initialize the loss criterion for the model."""
+        return v8QBBLoss(self)
 
 
 class SegmentationModel(DetectionModel):
