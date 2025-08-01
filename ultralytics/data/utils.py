@@ -591,7 +591,7 @@ class HUBDatasetStats:
         path = Path(path).resolve()
         LOGGER.info(f"Starting HUB dataset checks for {path}....")
 
-        self.task = task  # detect, segment, pose, classify, obb
+        self.task = task  # detect, segment, pose, classify, obb, qbb
         if self.task == "classify":
             unzip_dir = unzip_file(path)
             data = check_cls_dataset(unzip_dir)
@@ -635,7 +635,7 @@ class HUBDatasetStats:
             """Update labels to integer class and 4 decimal place floats."""
             if self.task == "detect":
                 coordinates = labels["bboxes"]
-            elif self.task in {"segment", "obb"}:  # Segment and OBB use segments. OBB segments are normalized xyxyxyxy
+            elif self.task in {"segment", "obb", "qbb"}:  # Segment, OBB and QBB use segments. OBB/QBB segments are normalized xyxyxyxy
                 coordinates = [x.flatten() for x in labels["segments"]]
             elif self.task == "pose":
                 n, nk, nd = labels["keypoints"].shape

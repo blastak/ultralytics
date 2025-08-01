@@ -81,7 +81,7 @@ class YOLODataset(BaseDataset):
         """
         self.use_segments = task == "segment"
         self.use_keypoints = task == "pose"
-        self.use_obb = task == "obb"
+        self.use_obb = task in {"obb", "qbb"}
         self.data = data
         assert not (self.use_segments and self.use_keypoints), "Can not use both segments and keypoints."
         super().__init__(*args, channels=self.data["channels"], **kwargs)
