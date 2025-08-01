@@ -453,6 +453,33 @@ class OBBModel(DetectionModel):
         return v8OBBLoss(self)
 
 
+class QBBModel(DetectionModel):
+    """YOLO Quadrilateral Bounding Box (QBB) model.
+    
+    Note: Currently uses OBB (Oriented Bounding Box) implementation internally for compatibility.
+    Future versions will implement true quadrilateral detection algorithms.
+    """
+
+    def __init__(self, cfg="yolo11n-qbb.yaml", ch=3, nc=None, verbose=True):
+        """
+        Initialize YOLO QBB model with given config and parameters.
+
+        Note: Currently uses OBB loss function for compatibility.
+        Future versions will implement QBB-specific loss functions.
+
+        Args:
+            cfg (str | dict): Model configuration file path or dictionary.
+            ch (int): Number of input channels.
+            nc (int, optional): Number of classes.
+            verbose (bool): Whether to display model information.
+        """
+        super().__init__(cfg=cfg, ch=ch, nc=nc, verbose=verbose)
+
+    def init_criterion(self):
+        """Initialize the loss criterion for the model. Currently uses OBB loss for compatibility."""
+        return v8OBBLoss(self)
+
+
 class SegmentationModel(DetectionModel):
     """YOLO segmentation model."""
 
