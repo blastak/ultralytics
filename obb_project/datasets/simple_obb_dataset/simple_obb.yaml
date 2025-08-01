@@ -1,0 +1,12 @@
+# Simple YOLOv11 OBB dataset
+path: /workspace/repo/ultralytics/simple_obb_dataset
+train: train/images
+val: val/images
+test: test/images
+
+# Classes
+names:
+  0: license_plate
+
+# Number of classes
+nc: 1
