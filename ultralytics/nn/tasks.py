@@ -1597,6 +1597,8 @@ def guess_model_task(model):
             return "pose"
         if m == "obb":
             return "obb"
+        if m == "qbb":
+            return "qbb"
 
     # Guess from model cfg
     if isinstance(model, dict):
