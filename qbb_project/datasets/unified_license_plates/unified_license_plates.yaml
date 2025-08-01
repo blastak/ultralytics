@@ -1,0 +1,22 @@
+# Unified QBB License Plate Dataset
+# Source: WebPlatemania 1944 images
+# Created: /workspace/repo/ultralytics/qbb_project
+
+path: /workspace/repo/ultralytics/qbb_project/datasets/unified_license_plates
+train: train/images
+val: val/images
+test: test/images
+
+# Classes
+names:
+  0: license_plate
+
+# Number of classes
+nc: 1
+
+# Dataset Statistics
+# Total files processed: 1944
+# Successful conversions: 1944
+# Train: 1360 images
+# Val: 389 images  
+# Test: 195 images

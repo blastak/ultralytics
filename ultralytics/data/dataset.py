@@ -81,7 +81,8 @@ class YOLODataset(BaseDataset):
         """
         self.use_segments = task == "segment"
         self.use_keypoints = task == "pose"
-        self.use_obb = task in {"obb", "qbb"}
+        self.use_obb = task == "obb"
+        self.use_qbb = task == "qbb"
         self.data = data
         assert not (self.use_segments and self.use_keypoints), "Can not use both segments and keypoints."
         super().__init__(*args, channels=self.data["channels"], **kwargs)
@@ -118,6 +119,7 @@ class YOLODataset(BaseDataset):
                     repeat(nkpt),
                     repeat(ndim),
                     repeat(self.single_cls),
+                    repeat(self.use_obb or self.use_qbb),  # Add OBB/QBB flag for 6-column support
                 ),
             )
             pbar = TQDM(results, desc=desc, total=total)
@@ -225,7 +227,7 @@ class YOLODataset(BaseDataset):
                 normalize=True,
                 return_mask=self.use_segments,
                 return_keypoint=self.use_keypoints,
-                return_obb=self.use_obb,
+                return_obb=self.use_obb or self.use_qbb,
                 batch_idx=True,
                 mask_ratio=hyp.mask_ratio,
                 mask_overlap=hyp.overlap_mask,
@@ -268,7 +270,7 @@ class YOLODataset(BaseDataset):
         normalized = label.pop("normalized")
 
         # NOTE: do NOT resample oriented boxes
-        segment_resamples = 100 if self.use_obb else 1000
+        segment_resamples = 100 if (self.use_obb or self.use_qbb) else 1000
         if len(segments) > 0:
             # make sure segments interpolate correctly if original length is greater than segment_resamples
             max_len = max(len(s) for s in segments)

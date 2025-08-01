@@ -78,6 +78,7 @@ from ultralytics.utils.loss import (
     v8DetectionLoss,
     v8OBBLoss,
     v8PoseLoss,
+    v8QBBLoss,
     v8SegmentationLoss,
 )
 from ultralytics.utils.ops import make_divisible
@@ -477,8 +478,8 @@ class QBBModel(DetectionModel):
         super().__init__(cfg=cfg, ch=ch, nc=nc, verbose=verbose)
 
     def init_criterion(self):
-        """Initialize the loss criterion for the model. Currently uses OBB loss for compatibility."""
-        return v8OBBLoss(self)
+        """Initialize the loss criterion for the QBB model."""
+        return v8QBBLoss(self)
 
 
 class SegmentationModel(DetectionModel):
