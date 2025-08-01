@@ -16,7 +16,7 @@ import torch
 def create_simple_obb_dataset():
     """간단한 OBB 데이터셋 생성"""
     
-    source_dir = Path('../../DB/01_LicensePlate/55_WebPlatemania_1944/all')
+    source_dir = Path('/workspace/DB/01_LicensePlate/55_WebPlatemania_1944/all')
     target_dir = Path('simple_obb_dataset')
     
     # 기존 디렉토리 삭제 후 재생성

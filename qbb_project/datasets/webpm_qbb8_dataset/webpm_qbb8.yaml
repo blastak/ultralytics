@@ -1,5 +1,0 @@
-path: /workspace/repo/ultralytics/qbb_project/datasets/webpm_qbb8_dataset
-train: images/train
-val: images/val
-nc: 1
-names: ['license_plate']

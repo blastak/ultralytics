@@ -1,9 +1,0 @@
-path: /workspace/repo/ultralytics/qbb_project/datasets/fixed_qbb_dataset
-train: train/images
-val: val/images  
-test: test/images
-
-names:
-  0: license_plate
-
-nc: 1

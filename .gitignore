@@ -146,6 +146,49 @@ runs/
 wandb/
 .DS_Store
 
+# Project specific result files and directories
+*_project/
+*/runs/
+*/results/
+*/output/
+*/logs/
+**/weights/
+**/checkpoints/
+*.log
+*.txt
+!requirements.txt
+!README.txt
+
+# Visualization and plotting files
+*.png
+*.jpg
+*.jpeg
+*.gif
+*.svg
+*.pdf
+!docs/**/*.png
+!docs/**/*.jpg
+!docs/**/*.jpeg
+!docs/**/*.gif
+!docs/**/*.svg
+!docs/**/*.pdf
+
+# Training outputs and metrics
+events.out.tfevents.*
+*.csv
+**/train*/
+**/val*/
+**/test*/
+hyp_*.yaml
+opt_*.yaml
+
+# Dataset files
+*.zip
+*.tar
+*.tar.gz
+*.rar
+*.7z
+
 # Neural Network weights -----------------------------------------------------------------------------------------------
 weights/
 *.weights

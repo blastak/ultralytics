@@ -1,4 +1,4 @@
-path: /workspace/repo/ultralytics/fixed_obb_dataset
+path: /workspace/repo/ultralytics/obb_project/datasets/fixed_obb_dataset
 train: train/images
 val: val/images  
 test: test/images
