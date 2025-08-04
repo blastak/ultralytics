@@ -217,3 +217,7 @@ pnnx*
 
 # calibration image
 calibration_*.npy
+
+# Claude AI files
+.claude/
+CLAUDE.md
