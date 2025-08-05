@@ -25,15 +25,25 @@ def val_visualization_callback(trainer):
 
 if __name__ == '__main__':
     # os.system("rm -f /workspace/repo/ultralytics/ultralytics/assets/good_all\(obb8\)/labels/*.cache")
-    # os.system("rm -f /workspace/repo/ultralytics/ultralytics/assets/good_all\(obb_full\)/labels/*.cache")
+    # os.system("rm -f /workspace/repo/ultralytics/ultralytics/assets/good_all\(obb1944\)/labels/*.cache")
 
     # model = YOLO('yolo11n-obb.yaml')
     # model = YOLO('yolo11n-qbb.yaml')
 
     # results = model.train(data='dota8.yaml', epochs=10, imgsz=640, fliplr=0.0, batch=1, workers=0)
     # results = model.train(data='ultralytics/webpm_obb8.yaml', epochs=500, imgsz=640, fliplr=0.0, batch=1, workers=0, patience=0)
-    # results = model.train(data='ultralytics/webpm_obb_full.yaml', epochs=10, imgsz=640, fliplr=0.0, batch=1, workers=0)
+    # results = model.train(data='ultralytics/webpm_obb1944.yaml', epochs=10, imgsz=640, fliplr=0.0, batch=1, workers=0)
 
     model = YOLO('yolo11n.yaml')
     model.add_callback('on_train_epoch_end', val_visualization_callback)
-    results = model.train(data='ultralytics/webpm_bb8.yaml', epochs=200, imgsz=640, fliplr=0.0, batch=1, workers=0, patience=0)
+    results = model.train(
+        data='ultralytics/webpm_bb1944.yaml',
+        epochs=300,  # 길게 학습
+        imgsz=640,
+        batch=32,  # 멀티GPU로 배치 크기 증가 가능
+        workers=8,  # 워커 수 증가
+        device='0,1',  # 두 GPU 모두 사용
+        patience=50,  # early stopping 늘림
+        amp=True,  # Mixed precision 활성화
+        cache=True  # 데이터 캐싱으로 속도 향상
+    )

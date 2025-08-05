@@ -1,4 +1,4 @@
-path: /workspace/repo/ultralytics/ultralytics/assets/good_all(obb_full)
+path: /workspace/repo/ultralytics/ultralytics/assets/good_all(bb1944)
 train: images/train
 val: images/val
 nc: 9
