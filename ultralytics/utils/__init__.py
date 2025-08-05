@@ -42,7 +42,7 @@ ASSETS = ROOT / "assets"  # default images
 ASSETS_URL = "https://github.com/ultralytics/assets/releases/download/v0.0.0"  # assets GitHub URL
 DEFAULT_CFG_PATH = ROOT / "cfg/default.yaml"
 DEFAULT_SOL_CFG_PATH = ROOT / "cfg/solutions/default.yaml"  # Ultralytics solutions yaml path
-NUM_THREADS = min(8, max(1, os.cpu_count() - 1))  # number of YOLO multiprocessing threads
+NUM_THREADS = 1 #min(8, max(1, os.cpu_count() - 1))  # number of YOLO multiprocessing threads
 AUTOINSTALL = str(os.getenv("YOLO_AUTOINSTALL", True)).lower() == "true"  # global auto-install mode
 VERBOSE = str(os.getenv("YOLO_VERBOSE", True)).lower() == "true"  # global verbose mode
 TQDM_BAR_FORMAT = "{l_bar}{bar:10}{r_bar}" if VERBOSE else None  # tqdm bar format
