@@ -40,10 +40,10 @@ if __name__ == '__main__':
         data='ultralytics/webpm_bb1944.yaml',
         epochs=300,  # 길게 학습
         imgsz=640,
-        batch=32,  # 멀티GPU로 배치 크기 증가 가능
-        workers=8,  # 워커 수 증가
+        batch=16,  # 멀티GPU로 배치 크기 증가 가능
+        workers=4,  # 워커 수 증가
         device='0,1',  # 두 GPU 모두 사용
         patience=50,  # early stopping 늘림
         amp=True,  # Mixed precision 활성화
-        cache=True  # 데이터 캐싱으로 속도 향상
+        cache=False  # 데이터 캐싱으로 속도 향상
     )
