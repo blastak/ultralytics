@@ -270,7 +270,7 @@ class YOLODataset(BaseDataset):
         normalized = label.pop("normalized")
 
         # NOTE: do NOT resample oriented boxes
-        segment_resamples = 100 if self.use_obb else 1000
+        segment_resamples = 100 if (self.use_obb or self.use_qbb) else 1000
         if len(segments) > 0:
             # make sure segments interpolate correctly if original length is greater than segment_resamples
             max_len = max(len(s) for s in segments)
@@ -303,7 +303,7 @@ class YOLODataset(BaseDataset):
                 value = torch.stack(value, 0)
             elif k == "visuals":
                 value = torch.nn.utils.rnn.pad_sequence(value, batch_first=True)
-            if k in {"masks", "keypoints", "bboxes", "cls", "segments", "obb"}:
+            if k in {"masks", "keypoints", "bboxes", "cls", "segments", "obb", "qbb"}:
                 value = torch.cat(value, 0)
             new_batch[k] = value
         new_batch["batch_idx"] = list(new_batch["batch_idx"])

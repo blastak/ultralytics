@@ -2179,13 +2179,23 @@ class Format:
                 xyxyxyxy2xywhr(torch.from_numpy(instances.segments)) if len(instances.segments) else torch.zeros((0, 5))
             )
         if self.return_qbb:
-            labels["bboxes"] = (
-                xyxyxyxy2xywhr(torch.from_numpy(instances.segments)) if len(instances.segments) else torch.zeros((0, 5))
-            )
+            # QBB는 8개 좌표값을 그대로 사용
+            if len(instances.segments):
+                # segments는 (N, 4, 2) 형태, 이를 (N, 8)로 평탄화
+                qbb_bboxes = torch.from_numpy(instances.segments).reshape(-1, 8)
+                labels["bboxes"] = qbb_bboxes
+            else:
+                labels["bboxes"] = torch.zeros((0, 8))
         # NOTE: need to normalize obb in xywhr format for width-height consistency
         if self.normalize:
-            labels["bboxes"][:, [0, 2]] /= w
-            labels["bboxes"][:, [1, 3]] /= h
+            if self.return_qbb:
+                # QBB: 8개 좌표 모두 정규화 (x1,y1,x2,y2,x3,y3,x4,y4)
+                labels["bboxes"][:, 0::2] /= w  # x 좌표들 (인덱스 0,2,4,6)
+                labels["bboxes"][:, 1::2] /= h  # y 좌표들 (인덱스 1,3,5,7)
+            else:
+                # OBB/Detection: xywhr 또는 xywh 형식
+                labels["bboxes"][:, [0, 2]] /= w  # x, width
+                labels["bboxes"][:, [1, 3]] /= h  # y, height
         # Then we can use collate_fn
         if self.batch_idx:
             labels["batch_idx"] = torch.zeros(nl)

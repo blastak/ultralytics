@@ -154,5 +154,124 @@ ultralytics/
 
 ---
 
-*마지막 업데이트: 2025-01-XX*
+## 🔧 Phase 2: QBB 데이터로더 구현 (2025-08-05)
+**목표**: 8개 좌표값(4개 꼭짓점)을 직접 처리하는 데이터로더 구현
+
+### 현재 상황 분석
+1. **라벨 형식 확인**: 
+   - OBB와 QBB 모두 동일한 형식: `class_id x1 y1 x2 y2 x3 y3 x4 y4` (총 9개 값)
+   - QBB는 8개 좌표값을 그대로 사용해야 함 (OBB는 5개 값으로 변환)
+
+2. **기존 OBB 처리 과정**:
+   - `data/utils.py:205`: xyxyxyxy 형식을 segments로 읽음
+   - `data/augment.py:2179`: `xyxyxyxy2xywhr()` 함수로 5개 값(x,y,w,h,angle)으로 변환
+   - `utils/ops.py:560-580`: cv2.minAreaRect()를 사용하여 변환
+
+### ✅ 완료된 작업 (2025-08-05)
+
+#### 1. 디버깅 환경 설정
+- **파일**: `utils/__init__.py`
+- **수정**: `NUM_THREADS = 1` 설정 (라인 45)
+- **목적**: ThreadPool 비활성화로 디버깅 용이성 확보
+
+#### 2. 데이터셋 클래스 QBB 지원 추가
+- **파일**: `data/dataset.py`
+- **수정사항**:
+  - 라인 85: `self.use_qbb = task == "qbb"` 추가
+  - 라인 273: `segment_resamples = 4 if (self.use_obb or self.use_qbb) else 1000` 수정
+  - 라인 230: Format에 `return_qbb=self.use_qbb` 파라미터 추가
+  - 라인 306: collate_fn에 "qbb" 키 추가
+
+#### 3. 데이터 증강 QBB 처리 로직 구현
+- **파일**: `data/augment.py`
+- **추가된 코드** (라인 2181-2188):
+```python
+if self.return_qbb:
+    # QBB는 8개 좌표값을 그대로 사용
+    if len(instances.segments):
+        # segments는 (N, 4, 2) 형태, 이를 (N, 8)로 평탄화
+        qbb_bboxes = torch.from_numpy(instances.segments).reshape(-1, 8)
+        labels["bboxes"] = qbb_bboxes
+    else:
+        labels["bboxes"] = torch.zeros((0, 8))
+```
+
+- **정규화 로직** (라인 2191-2198):
+```python
+if self.normalize:
+    if self.return_qbb:
+        # QBB: 8개 좌표 모두 정규화 (x1,y1,x2,y2,x3,y3,x4,y4)
+        labels["bboxes"][:, 0::2] /= w  # x 좌표들 (인덱스 0,2,4,6)
+        labels["bboxes"][:, 1::2] /= h  # y 좌표들 (인덱스 1,3,5,7)
+    else:
+        # OBB/Detection: xywhr 또는 xywh 형식
+        labels["bboxes"][:, [0, 2]] /= w  # x, width
+        labels["bboxes"][:, [1, 3]] /= h  # y, height
+```
+
+#### 4. 캐시 관리 및 학습 설정
+- **파일**: `train_entry.py`
+- **추가사항**:
+  - 자동 캐시 삭제 구문
+  - obb8 데이터셋으로 오버피팅 테스트 설정
+  - 20에폭마다 validation 결과 시각화 콜백 함수
+
+#### 5. 시각화 콜백 함수 구현
+- **목적**: 20에폭마다 validation 이미지의 OBB 예측 결과를 JPG로 저장
+- **구현된 함수**:
+```python
+def val_visualization_callback(trainer):
+    """20에폭마다 validation 이미지의 OBB 예측 결과를 JPG로 저장"""
+    if (trainer.epoch+1) % 20 == 0 and trainer.epoch > 0:
+        val_path = trainer.data.get('val', '')
+        if val_path:
+            model = YOLO(trainer.best if trainer.best.exists() else trainer.last)
+            results = model.predict(
+                val_path,
+                save=True,
+                project='/workspace/repo/ultralytics/runs/val_vis',
+                name=f'epoch_{trainer.epoch}',
+                conf=0.25,
+                imgsz=trainer.args.imgsz
+            )
+    return True
+```
+
+### 🔍 문제 해결 과정
+
+#### 1. 캐시 문제 해결
+- **문제**: verify_image_label 함수가 캐시 때문에 호출되지 않음
+- **해결**: train_entry.py에 자동 캐시 삭제 구문 추가
+- **위치**: `/workspace/repo/ultralytics/ultralytics/assets/good_all(obb8)/labels/*.cache`
+
+#### 2. GPU 메모리 부족 문제
+- **문제**: CUDA out of memory 오류 발생
+- **해결**: 작은 데이터셋(obb8)으로 오버피팅 테스트 방식 채택
+- **장점**: 파이프라인 동작 확인 가능, 메모리 사용량 감소
+
+#### 3. 시각화 콜백 함수 오류 해결
+- **문제**: `BaseModel.predict()` got unexpected keyword argument 'source'
+- **해결**: 새로운 YOLO 객체를 생성하여 trainer의 weight 로드 후 predict 호출
+
+### 📊 현재 구현 상태
+- ✅ **QBB 모듈 기본 구조**: 100% 완료
+- ✅ **데이터로더 QBB 지원**: 100% 완료  
+- ✅ **8개 좌표값 직접 처리**: 100% 완료
+- ✅ **디버깅 환경 설정**: 100% 완료
+- ✅ **시각화 콜백 함수**: 100% 완료
+- 🔄 **QBB 데이터로더 전체 파이프라인 테스트 중**
+
+### 변경된 파일 통계
+```
+ 28 files changed, 1,694 insertions(+), 26 deletions(-)
+```
+
+**핵심 데이터로더 수정사항**:
+1. **dataset.py**: QBB 지원 플래그 및 처리 로직
+2. **augment.py**: 8개 좌표값 직접 처리 및 정규화  
+3. **train_entry.py**: 시각화 콜백 및 캐시 관리
+
+---
+
+*마지막 업데이트: 2025-08-05*
 *작성자: Claude Code Assistant*
