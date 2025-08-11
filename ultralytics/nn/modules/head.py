@@ -334,6 +334,63 @@ class OBB(Detect):
         return dist2rbox(bboxes, self.angle, anchors, dim=1)
 
 
+class QBB(Detect):
+    """
+    YOLO QBB detection head for detection with quadrilateral models.
+
+    This class extends the Detect head to include quadrilateral bounding box prediction with four corner points.
+
+    Attributes:
+        ne (int): Number of extra parameters (8 for xyxyxyxy).
+        cv4 (nn.ModuleList): Convolution layers for corner points prediction.
+        corners (torch.Tensor): Predicted corner points.
+
+    Methods:
+        forward: Concatenate and return predicted bounding boxes and class probabilities.
+        decode_bboxes: Decode quadrilateral bounding boxes.
+
+    Examples:
+        Create a QBB detection head
+        >>> qbb = QBB(nc=80, ne=8, ch=(256, 512, 1024))
+        >>> x = [torch.randn(1, 256, 80, 80), torch.randn(1, 512, 40, 40), torch.randn(1, 1024, 20, 20)]
+        >>> outputs = qbb(x)
+    """
+
+    def __init__(self, nc: int = 80, ne: int = 8, ch: Tuple = ()):
+        """
+        Initialize QBB with number of classes `nc` and layer channels `ch`.
+
+        Args:
+            nc (int): Number of classes.
+            ne (int): Number of extra parameters (8 for quadrilateral).
+            ch (tuple): Tuple of channel sizes from backbone feature maps.
+        """
+        super().__init__(nc, ch)
+        self.ne = ne  # 8개의 좌표값 (x1,y1,x2,y2,x3,y3,x4,y4)
+
+        c4 = max(ch[0] // 4, self.ne)
+        self.cv4 = nn.ModuleList(nn.Sequential(Conv(x, c4, 3), Conv(c4, c4, 3), nn.Conv2d(c4, self.ne, 1)) for x in ch)
+
+    def forward(self, x: List[torch.Tensor]) -> Union[torch.Tensor, Tuple]:
+        """Concatenate and return predicted bounding boxes and class probabilities."""
+        bs = x[0].shape[0]  # batch size
+        corners = torch.cat([self.cv4[i](x[i]).view(bs, self.ne, -1) for i in range(self.nl)], 2)  # QBB corner logits
+        # NOTE: corners를 attribute로 설정하여 `decode_bboxes`에서 사용 가능하도록 함
+        corners = corners.sigmoid()  # [0, 1] 범위로 정규화
+        if not self.training:
+            self.corners = corners
+        x = Detect.forward(self, x)
+        if self.training:
+            return x, corners
+        return torch.cat([x, corners], 1) if self.export else (torch.cat([x[0], corners], 1), (x[1], corners))
+
+    def decode_bboxes(self, bboxes: torch.Tensor, anchors: torch.Tensor) -> torch.Tensor:
+        """Decode quadrilateral bounding boxes."""
+        # TODO: QBB용 디코딩 로직 구현 필요
+        # 임시로 OBB 스타일로 처리 (추후 수정 필요)
+        return dist2rbox(bboxes, self.corners[:, :1], anchors, dim=1)
+
+
 class Pose(Detect):
     """
     YOLO Pose head for keypoints models.

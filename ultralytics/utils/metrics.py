@@ -1588,3 +1588,28 @@ class OBBMetrics(DetMetrics):
         DetMetrics.__init__(self, names)
         # TODO: probably remove task as well
         self.task = "obb"
+
+
+class QBBMetrics(DetMetrics):
+    """
+    Metrics for evaluating quadrilateral bounding box (QBB) detection.
+
+    Attributes:
+        names (Dict[int, str]): Dictionary of class names.
+        box (Metric): An instance of the Metric class for storing detection results.
+        speed (Dict[str, float]): A dictionary for storing execution times of different parts of the detection process.
+        task (str): The task type, set to 'qbb'.
+        stats (Dict[str, List]): A dictionary containing lists for true positives, confidence scores, predicted classes, target classes, and target images.
+        nt_per_class: Number of targets per class.
+        nt_per_image: Number of targets per image.
+    """
+
+    def __init__(self, names: Dict[int, str] = {}) -> None:
+        """
+        Initialize a QBBMetrics instance with directory, plotting, and class names.
+
+        Args:
+            names (Dict[int, str], optional): Dictionary of class names.
+        """
+        DetMetrics.__init__(self, names)
+        self.task = "qbb"

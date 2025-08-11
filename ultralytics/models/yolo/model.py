@@ -11,6 +11,7 @@ from ultralytics.nn.tasks import (
     DetectionModel,
     OBBModel,
     PoseModel,
+    QBBModel,
     SegmentationModel,
     WorldModel,
     YOLOEModel,
@@ -29,7 +30,7 @@ class YOLO(Model):
 
     Attributes:
         model: The loaded YOLO model instance.
-        task: The task type (detect, segment, classify, pose, obb).
+        task: The task type (detect, segment, classify, pose, obb, qbb).
         overrides: Configuration overrides for the model.
 
     Methods:
@@ -56,7 +57,7 @@ class YOLO(Model):
 
         Args:
             model (str | Path): Model name or path to model file, i.e. 'yolo11n.pt', 'yolo11n.yaml'.
-            task (str, optional): YOLO task specification, i.e. 'detect', 'segment', 'classify', 'pose', 'obb'.
+            task (str, optional): YOLO task specification, i.e. 'detect', 'segment', 'classify', 'pose', 'obb', 'qbb'.
                 Defaults to auto-detection based on model.
             verbose (bool): Display model info on load.
 
@@ -117,6 +118,12 @@ class YOLO(Model):
                 "trainer": yolo.obb.OBBTrainer,
                 "validator": yolo.obb.OBBValidator,
                 "predictor": yolo.obb.OBBPredictor,
+            },
+            "qbb": {
+                "model": QBBModel,
+                "trainer": yolo.qbb.QBBTrainer,
+                "validator": yolo.qbb.QBBValidator,
+                "predictor": yolo.qbb.QBBPredictor,
             },
         }
 

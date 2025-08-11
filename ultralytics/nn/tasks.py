@@ -533,6 +533,41 @@ class OBBModel(DetectionModel):
         return v8OBBLoss(self)
 
 
+class QBBModel(DetectionModel):
+    """
+    YOLO Quadrilateral Bounding Box (QBB) model.
+
+    This class extends DetectionModel to handle quadrilateral bounding box detection tasks, providing specialized
+    loss computation for flexible four-point object detection.
+
+    Methods:
+        __init__: Initialize YOLO QBB model.
+        init_criterion: Initialize the loss criterion for QBB detection.
+
+    Examples:
+        Initialize a QBB model
+        >>> model = QBBModel("yolov8n-qbb.yaml", ch=3, nc=80)
+        >>> results = model.predict(image_tensor)
+    """
+
+    def __init__(self, cfg="yolov8n-qbb.yaml", ch=3, nc=None, verbose=True):
+        """
+        Initialize YOLO QBB model with given config and parameters.
+
+        Args:
+            cfg (str | dict): Model configuration file path or dictionary.
+            ch (int): Number of input channels.
+            nc (int, optional): Number of classes.
+            verbose (bool): Whether to display model information.
+        """
+        super().__init__(cfg=cfg, ch=ch, nc=nc, verbose=verbose)
+
+    def init_criterion(self):
+        """Initialize the loss criterion for the model."""
+        # TODO: QBBLoss 클래스 구현 필요
+        return v8OBBLoss(self)  # 임시로 OBBLoss 사용
+
+
 class SegmentationModel(DetectionModel):
     """
     YOLO segmentation model.
