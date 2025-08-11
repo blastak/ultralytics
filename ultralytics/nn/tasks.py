@@ -20,6 +20,7 @@ from ultralytics.nn.modules import (
     C3TR,
     ELAN1,
     OBB,
+    QBB,
     PSA,
     SPP,
     SPPELAN,
@@ -1832,7 +1833,7 @@ def guess_model_task(model):
         model (torch.nn.Module | dict): PyTorch model or model configuration in YAML format.
 
     Returns:
-        (str): Task of the model ('detect', 'segment', 'classify', 'pose', 'obb').
+        (str): Task of the model ('detect', 'segment', 'classify', 'pose', 'obb', 'qbb').
     """
 
     def cfg2task(cfg):
@@ -1848,6 +1849,8 @@ def guess_model_task(model):
             return "pose"
         if m == "obb":
             return "obb"
+        if m == "qbb":
+            return "qbb"
 
     # Guess from model cfg
     if isinstance(model, dict):
@@ -1870,6 +1873,8 @@ def guess_model_task(model):
                 return "pose"
             elif isinstance(m, OBB):
                 return "obb"
+            elif isinstance(m, QBB):
+                return "qbb"
             elif isinstance(m, (Detect, WorldDetect, YOLOEDetect, v10Detect)):
                 return "detect"
 
@@ -1884,6 +1889,8 @@ def guess_model_task(model):
             return "pose"
         elif "-obb" in model.stem or "obb" in model.parts:
             return "obb"
+        elif "-qbb" in model.stem or "qbb" in model.parts:
+            return "qbb"
         elif "detect" in model.parts:
             return "detect"
 
