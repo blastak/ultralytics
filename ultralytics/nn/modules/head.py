@@ -374,22 +374,21 @@ class QBB(Detect):
     def forward(self, x: List[torch.Tensor]) -> Union[torch.Tensor, Tuple]:
         """Concatenate and return predicted bounding boxes and class probabilities."""
         bs = x[0].shape[0]  # batch size
-        # 임시로 OBB와 동일한 로직 사용 (angle 대신 corners라는 이름 사용)
-        corners = torch.cat([self.cv4[i](x[i]).view(bs, self.ne, -1) for i in range(self.nl)], 2)  # QBB 매개변수
-        # OBB와 동일한 각도 처리 (임시)
-        corners = (corners.sigmoid() - 0.25) * math.pi  # [-pi/4, 3pi/4]
+        # 임시로 OBB와 완전 동일한 로직 사용
+        angle = torch.cat([self.cv4[i](x[i]).view(bs, self.ne, -1) for i in range(self.nl)], 2)  # QBB theta logits
+        # NOTE: set `angle` as an attribute so that `decode_bboxes` could use it.
+        angle = (angle.sigmoid() - 0.25) * math.pi  # [-pi/4, 3pi/4]
         if not self.training:
-            self.corners = corners  # angle 대신 corners 사용
+            self.angle = angle
         x = Detect.forward(self, x)
         if self.training:
-            return x, corners
-        return torch.cat([x, corners], 1) if self.export else (torch.cat([x[0], corners], 1), (x[1], corners))
+            return x, angle
+        return torch.cat([x, angle], 1) if self.export else (torch.cat([x[0], angle], 1), (x[1], angle))
 
     def decode_bboxes(self, bboxes: torch.Tensor, anchors: torch.Tensor) -> torch.Tensor:
         """Decode quadrilateral bounding boxes."""
-        # TODO: QBB용 디코딩 로직 구현 필요
-        # 임시로 OBB 스타일로 처리 (추후 수정 필요)
-        return dist2rbox(bboxes, self.corners[:, :1], anchors, dim=1)
+        # TODO: QBB용 디코딩 로직 구현 필요 (현재 OBB와 동일)
+        return dist2rbox(bboxes, self.angle, anchors, dim=1)
 
 
 class Pose(Detect):

@@ -228,7 +228,7 @@ def non_max_suppression(
         max_nms (int): Maximum number of boxes for torchvision.ops.nms().
         max_wh (int): Maximum box width and height in pixels.
         in_place (bool): Whether to modify the input prediction tensor in place.
-        rotated (bool): Whether to handle Oriented Bounding Boxes (OBB).
+        rotated (bool): Whether to handle Oriented Bounding Boxes (OBB) or Quadrilateral Bounding Boxes (QBB).
         end2end (bool): Whether the model is end-to-end and doesn't require NMS.
         return_idxs (bool): Whether to return the indices of kept detections.
 
@@ -561,7 +561,7 @@ def ltwh2xywh(x):
 
 def xyxyxyxy2xywhr(x):
     """
-    Convert batched Oriented Bounding Boxes (OBB) from [xy1, xy2, xy3, xy4] to [xywh, rotation] format.
+    Convert batched Oriented Bounding Boxes (OBB) or Quadrilateral Bounding Boxes (QBB) from [xy1, xy2, xy3, xy4] to [xywh, rotation] format.
 
     Args:
         x (np.ndarray | torch.Tensor): Input box corners with shape (N, 8) in [xy1, xy2, xy3, xy4] format.
@@ -584,7 +584,7 @@ def xyxyxyxy2xywhr(x):
 
 def xywhr2xyxyxyxy(x):
     """
-    Convert batched Oriented Bounding Boxes (OBB) from [xywh, rotation] to [xy1, xy2, xy3, xy4] format.
+    Convert batched Oriented Bounding Boxes (OBB) or Quadrilateral Bounding Boxes (QBB) from [xywh, rotation] to [xy1, xy2, xy3, xy4] format.
 
     Args:
         x (np.ndarray | torch.Tensor): Boxes in [cx, cy, w, h, rotation] format with shape (N, 5) or (B, N, 5).
