@@ -55,6 +55,7 @@ class YOLODataset(BaseDataset):
         use_segments (bool): Indicates if segmentation masks should be used.
         use_keypoints (bool): Indicates if keypoints should be used for pose estimation.
         use_obb (bool): Indicates if oriented bounding boxes should be used.
+        use_qbb (bool): Indicates if quadrilateral bounding boxes should be used.
         data (dict): Dataset configuration dictionary.
 
     Methods:
@@ -83,6 +84,7 @@ class YOLODataset(BaseDataset):
         self.use_segments = task == "segment"
         self.use_keypoints = task == "pose"
         self.use_obb = task == "obb"
+        self.use_qbb = task == "qbb"
         self.data = data
         assert not (self.use_segments and self.use_keypoints), "Can not use both segments and keypoints."
         super().__init__(*args, channels=self.data["channels"], **kwargs)
@@ -229,6 +231,7 @@ class YOLODataset(BaseDataset):
                 return_mask=self.use_segments,
                 return_keypoint=self.use_keypoints,
                 return_obb=self.use_obb,
+                return_qbb=self.use_qbb,
                 batch_idx=True,
                 mask_ratio=hyp.mask_ratio,
                 mask_overlap=hyp.overlap_mask,

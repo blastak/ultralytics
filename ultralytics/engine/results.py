@@ -264,6 +264,7 @@ class Results(SimpleClass, DataExportMixin):
             probs (torch.Tensor | None): A 1D tensor of probabilities of each class for classification task.
             keypoints (torch.Tensor | None): A 2D tensor of keypoint coordinates for each detection.
             obb (torch.Tensor | None): A 2D tensor of oriented bounding box coordinates for each detection.
+            qbb (torch.Tensor | None): A 2D tensor of quadrilateral bounding box coordinates for each detection.
             speed (Dict | None): A dictionary containing preprocess, inference, and postprocess speeds (ms/image).
 
         Examples:
@@ -316,7 +317,7 @@ class Results(SimpleClass, DataExportMixin):
 
         Returns:
             (int): The number of detections, determined by the length of the first non-empty
-                attribute in (masks, probs, keypoints, or obb).
+                attribute in (masks, probs, keypoints, obb, or qbb).
 
         Examples:
             >>> results = Results(orig_img, path, names, boxes=torch.rand(5, 4))
@@ -401,7 +402,7 @@ class Results(SimpleClass, DataExportMixin):
         """
         Return a copy of the Results object with all its tensors moved to CPU memory.
 
-        This method creates a new Results object with all tensor attributes (boxes, masks, probs, keypoints, obb)
+        This method creates a new Results object with all tensor attributes (boxes, masks, probs, keypoints, obb, qbb)
         transferred to CPU memory. It's useful for moving data from GPU to CPU for further processing or saving.
 
         Returns:
@@ -539,7 +540,8 @@ class Results(SimpleClass, DataExportMixin):
 
         names = self.names
         is_obb = self.obb is not None
-        pred_boxes, show_boxes = self.obb if is_obb else self.boxes, boxes
+        is_qbb = self.qbb is not None
+        pred_boxes, show_boxes = (self.obb if is_obb else self.qbb if is_qbb else self.boxes), boxes
         pred_masks, show_masks = self.masks, masks
         pred_probs, show_probs = self.probs, probs
         annotator = Annotator(
@@ -577,7 +579,7 @@ class Results(SimpleClass, DataExportMixin):
                 c, d_conf, id = int(d.cls), float(d.conf) if conf else None, int(d.id.item()) if d.is_track else None
                 name = ("" if id is None else f"id:{id} ") + names[c]
                 label = (f"{name} {d_conf:.2f}" if conf else name) if labels else None
-                box = d.xyxyxyxy.squeeze() if is_obb else d.xyxy.squeeze()
+                box = d.xyxyxyxy.squeeze() if (is_obb or is_qbb) else d.xyxy.squeeze()
                 annotator.box_label(
                     box,
                     label,
@@ -728,7 +730,8 @@ class Results(SimpleClass, DataExportMixin):
             - Existing contents of the file will not be overwritten; new results will be appended.
         """
         is_obb = self.obb is not None
-        boxes = self.obb if is_obb else self.boxes
+        is_qbb = self.qbb is not None
+        boxes = self.obb if is_obb else self.qbb if is_qbb else self.boxes
         masks = self.masks
         probs = self.probs
         kpts = self.keypoints
@@ -740,7 +743,7 @@ class Results(SimpleClass, DataExportMixin):
             # Detect/segment/pose
             for j, d in enumerate(boxes):
                 c, conf, id = int(d.cls), float(d.conf), int(d.id.item()) if d.is_track else None
-                line = (c, *(d.xyxyxyxyn.view(-1) if is_obb else d.xywhn.view(-1)))
+                line = (c, *(d.xyxyxyxyn.view(-1) if (is_obb or is_qbb) else d.xywhn.view(-1)))
                 if masks:
                     seg = masks[j].xyn[0].copy().reshape(-1)  # reversed mask.xyn, (n,2) to (n*2)
                     line = (c, *seg)
@@ -769,7 +772,7 @@ class Results(SimpleClass, DataExportMixin):
             file_name (str | Path): Base filename for the saved cropped images.
 
         Notes:
-            - This method does not support Classify or Oriented Bounding Box (OBB) tasks.
+            - This method does not support Classify, Oriented Bounding Box (OBB), or Quadrilateral Bounding Box (QBB) tasks.
             - Crops are saved as 'save_dir/class_name/file_name.jpg'.
             - The method will create necessary subdirectories if they don't exist.
             - Original image is copied before cropping to avoid modifying the original.
@@ -834,11 +837,12 @@ class Results(SimpleClass, DataExportMixin):
             return results
 
         is_obb = self.obb is not None
-        data = self.obb if is_obb else self.boxes
+        is_qbb = self.qbb is not None
+        data = self.obb if is_obb else self.qbb if is_qbb else self.boxes
         h, w = self.orig_shape if normalize else (1, 1)
         for i, row in enumerate(data):  # xyxy, track_id if tracking, conf, class_id
             class_id, conf = int(row.cls), round(row.conf.item(), decimals)
-            box = (row.xyxyxyxy if is_obb else row.xyxy).squeeze().reshape(-1, 2).tolist()
+            box = (row.xyxyxyxy if (is_obb or is_qbb) else row.xyxy).squeeze().reshape(-1, 2).tolist()
             xy = {}
             for j, b in enumerate(box):
                 xy[f"x{j + 1}"] = round(b[0] / w, decimals)
@@ -1671,64 +1675,89 @@ class QBB(BaseTensor):
     """
     A class for storing and manipulating Quadrilateral Bounding Boxes (QBB).
 
-    This class provides a convenient way to handle quadrilateral bounding boxes, including operations like
-    coordinate format conversion, normalization, denormalization, and area calculation. It supports bounding box
-    data in various formats and offers methods for easy manipulation and conversion.
-
-    Args:
-        data (torch.Tensor): The raw QBB tensor containing box coordinates and associated data.
-        orig_shape (tuple): Original image shape as (height, width).
+    This class provides functionality to handle quadrilateral bounding boxes, including conversion between
+    different formats, normalization, and access to various properties of the boxes. It supports
+    both tracking and non-tracking scenarios.
 
     Attributes:
-        data: The raw QBB tensor.
-        orig_shape: The original image shape.
-        areas: Bounding box areas.
-        conf: Confidence scores (if available).
+        data (torch.Tensor): The raw QBB tensor containing box coordinates and associated data.
+        orig_shape (tuple): Original image size as (height, width).
+        is_track (bool): Indicates whether tracking IDs are included in the box data.
+        xywhr (torch.Tensor | np.ndarray): Boxes in [x_center, y_center, width, height, rotation] format.
+        conf (torch.Tensor | np.ndarray): Confidence scores for each box.
+        cls (torch.Tensor | np.ndarray): Class labels for each box.
+        id (torch.Tensor | np.ndarray): Tracking IDs for each box, if available.
+        xyxyxyxy (torch.Tensor | np.ndarray): Boxes in 8-point [x1, y1, x2, y2, x3, y3, x4, y4] format.
+        xyxyxyxyn (torch.Tensor | np.ndarray): Normalized 8-point coordinates relative to orig_shape.
+        xyxy (torch.Tensor | np.ndarray): Axis-aligned bounding boxes in [x1, y1, x2, y2] format.
+
+    Methods:
         cpu: Return a copy of the QBB object with all tensors on CPU memory.
         numpy: Return a copy of the QBB object with all tensors as numpy arrays.
         cuda: Return a copy of the QBB object with all tensors on GPU memory.
         to: Return a copy of the QBB object with tensors on specified device and dtype.
 
     Examples:
-        >>> import torch
+        >>> boxes = torch.tensor([[100, 50, 150, 100, 30, 0.9, 0]])  # xywhr, conf, cls
         >>> qbb = QBB(boxes, orig_shape=(480, 640))
-        >>> areas = qbb.areas
-        >>> xyxyxyxy = qbb.xyxyxyxy
-        >>> conf = qbb.conf
+        >>> print(qbb.xyxyxyxy)
+        >>> print(qbb.conf)
+        >>> print(qbb.cls)
     """
 
-    def __init__(self, data: Union[torch.Tensor, np.ndarray], orig_shape: Tuple[int, int]) -> None:
+    def __init__(self, boxes: Union[torch.Tensor, np.ndarray], orig_shape: Tuple[int, int]) -> None:
         """
         Initialize an QBB (Quadrilateral Bounding Box) instance with quadrilateral bounding box data and original image shape.
 
         This class stores and manipulates Quadrilateral Bounding Boxes (QBB) for object detection tasks. It provides
         various properties and methods to access and transform the QBB data.
 
-        The input data tensor should contain bounding box coordinates in the format [x, y, w, h, rotation] along with
-        any additional information like confidence scores, class labels, etc.
-
         Args:
-            data (torch.Tensor | np.ndarray): The raw QBB tensor with shape (n, 7) or (n, 6) containing
-                n bounding boxes with their coordinates, confidence, and class information.
-            orig_shape (tuple): Original image shape as (height, width). Used for normalization and denormalization
-                of coordinates.
+            boxes (torch.Tensor | np.ndarray): A tensor or numpy array containing the detection boxes,
+                with shape (num_boxes, 7) or (num_boxes, 8). The last two columns contain confidence and class values.
+                If present, the third last column contains track IDs, and the fifth column contains rotation.
+            orig_shape (Tuple[int, int]): Original image size, in the format (height, width).
+
+        Attributes:
+            data (torch.Tensor | np.ndarray): The raw QBB tensor.
+            orig_shape (Tuple[int, int]): The original image shape.
+            is_track (bool): Whether the boxes include tracking IDs.
+
+        Raises:
+            AssertionError: If the number of values per box is not 7 or 8.
 
         Examples:
             >>> import torch
-            >>> boxes = torch.rand(5, 7)  # 5 boxes with x,y,w,h,r,conf,class
+            >>> boxes = torch.rand(3, 7)  # 3 boxes with 7 values each
+            >>> orig_shape = (640, 480)
             >>> qbb = QBB(boxes, orig_shape)
+            >>> print(qbb.xywhr)  # Access the boxes in xywhr format
         """
-        super().__init__(data, orig_shape)
+        if boxes.ndim == 1:
+            boxes = boxes[None, :]
+        n = boxes.shape[-1]
+        assert n in {7, 8}, f"expected 7 or 8 values but got {n}"  # xywh, rotation, track_id, conf, cls
+        super().__init__(boxes, orig_shape)
+        self.is_track = n == 8
+        self.orig_shape = orig_shape
 
     @property
-    def areas(self) -> Union[torch.Tensor, np.ndarray]:
+    def xywhr(self) -> Union[torch.Tensor, np.ndarray]:
         """
-        Calculate and return the areas of quadrilateral bounding boxes.
+        Return boxes in [x_center, y_center, width, height, rotation] format.
 
         Returns:
-            (torch.Tensor | np.ndarray): Tensor containing the area of each quadrilateral bounding box in the QBB object.
+            (torch.Tensor | np.ndarray): A tensor or numpy array containing the quadrilateral bounding boxes with format
+                [x_center, y_center, width, height, rotation]. The shape is (N, 5) where N is the number of boxes.
+
+        Examples:
+            >>> results = model("image.jpg")
+            >>> qbb = results[0].qbb
+            >>> xywhr = qbb.xywhr
+            >>> print(xywhr.shape)
+            torch.Size([3, 5])
         """
-        return self.data[:, 2] * self.data[:, 3]  # w * h
+        return self.data[:, :5]
 
     @property
     def conf(self) -> Union[torch.Tensor, np.ndarray]:
@@ -1736,18 +1765,56 @@ class QBB(BaseTensor):
         Return the confidence scores for Quadrilateral Bounding Boxes (QBBs).
 
         This property retrieves the confidence values associated with each QBB detection. The confidence score
-        represents the model's certainty about the presence of an object within the quadrilateral bounding box.
+        represents the model's certainty in the detection.
 
         Returns:
-            (torch.Tensor | np.ndarray): A tensor or array of confidence scores for each QBB, with shape (N,)
-                where N is the number of bounding boxes. Returns an empty tensor if no confidence scores are available.
+            (torch.Tensor | np.ndarray): A tensor or numpy array of shape (N,) containing confidence scores
+                for N detections, where each score is in the range [0, 1].
 
         Examples:
-            >>> qbb = QBB(data, orig_shape=(640, 640))
-            >>> conf_scores = qbb.conf
-            >>> high_conf = qbb[qbb.conf > 0.8]  # Filter high-confidence detections
+            >>> results = model("image.jpg")
+            >>> qbb_result = results[0].qbb
+            >>> confidence_scores = qbb_result.conf
+            >>> print(confidence_scores)
         """
-        return self.data[:, -2] if self.data.shape[-1] >= 6 else None
+        return self.data[:, -2]
+
+    @property
+    def cls(self) -> Union[torch.Tensor, np.ndarray]:
+        """
+        Return the class values of the quadrilateral bounding boxes.
+
+        Returns:
+            (torch.Tensor | np.ndarray): A tensor or numpy array containing the class values for each quadrilateral
+                bounding box. The shape is (N,), where N is the number of boxes.
+
+        Examples:
+            >>> results = model("image.jpg")
+            >>> result = results[0]
+            >>> qbb = result.qbb
+            >>> class_values = qbb.cls
+            >>> print(class_values)
+        """
+        return self.data[:, -1]
+
+    @property
+    def id(self) -> Optional[Union[torch.Tensor, np.ndarray]]:
+        """
+        Return the tracking IDs of the quadrilateral bounding boxes (if available).
+
+        Returns:
+            (torch.Tensor | np.ndarray | None): A tensor or numpy array containing the tracking IDs for each
+                quadrilateral bounding box. Returns None if tracking IDs are not available.
+
+        Examples:
+            >>> results = model("image.jpg", tracker=True)  # Run inference with tracking
+            >>> for result in results:
+            ...     if result.qbb is not None:
+            ...         track_ids = result.qbb.id
+            ...         if track_ids is not None:
+            ...             print(f"Tracking IDs: {track_ids}")
+        """
+        return self.data[:, -3] if self.is_track else None
 
     @property
     @lru_cache(maxsize=2)
@@ -1755,19 +1822,40 @@ class QBB(BaseTensor):
         """
         Convert QBB format to 8-point (xyxyxyxy) coordinate format for quadrilateral bounding boxes.
 
-        This method transforms the quadrilateral bounding box representation from the compact [x, y, w, h, rotation]
-        format to an 8-point format representing the four corners of the quadrilateral as [x1, y1, x2, y2, x3, y3, x4, y4].
-
         Returns:
-            (torch.Tensor | np.ndarray): Quadrilateral bounding boxes in 8-point format with shape (N, 8),
-                where N is the number of boxes. Each row contains [x1, y1, x2, y2, x3, y3, x4, y4] coordinates.
+            (torch.Tensor | np.ndarray): Rotated bounding boxes in xyxyxyxy format with shape (N, 4, 2), where N is
+                the number of boxes. Each box is represented by 4 points (x, y), starting from the top-left corner and
+                moving clockwise.
 
         Examples:
             >>> qbb = QBB(torch.tensor([[100, 100, 50, 30, 0.5, 0.9, 0]]), orig_shape=(640, 640))
-            >>> corners = qbb.xyxyxyxy
-            >>> print(corners.shape)  # torch.Size([1, 8])
+            >>> xyxyxyxy = qbb.xyxyxyxy
+            >>> print(xyxyxyxy.shape)
+            torch.Size([1, 4, 2])
         """
-        return ops.xywhr2xyxyxyxy(self.data[:, :5])
+        return ops.xywhr2xyxyxyxy(self.xywhr)
+
+    @property
+    @lru_cache(maxsize=2)
+    def xyxyxyxyn(self) -> Union[torch.Tensor, np.ndarray]:
+        """
+        Convert quadrilateral bounding boxes to normalized xyxyxyxy format.
+
+        Returns:
+            (torch.Tensor | np.ndarray): Normalized quadrilateral bounding boxes in xyxyxyxy format with shape (N, 4, 2),
+                where N is the number of boxes. Each box is represented by 4 points (x, y), normalized relative to
+                the original image dimensions.
+
+        Examples:
+            >>> qbb = QBB(torch.rand(10, 7), orig_shape=(640, 480))  # 10 random QBBs
+            >>> normalized_boxes = qbb.xyxyxyxyn
+            >>> print(normalized_boxes.shape)
+            torch.Size([10, 4, 2])
+        """
+        xyxyxyxyn = self.xyxyxyxy.clone() if isinstance(self.xyxyxyxy, torch.Tensor) else np.copy(self.xyxyxyxy)
+        xyxyxyxyn[..., 0] /= self.orig_shape[1]
+        xyxyxyxyn[..., 1] /= self.orig_shape[0]
+        return xyxyxyxyn
 
     @property
     @lru_cache(maxsize=2)
@@ -1775,24 +1863,36 @@ class QBB(BaseTensor):
         """
         Convert quadrilateral bounding boxes (QBB) to axis-aligned bounding boxes in xyxy format.
 
-        This method calculates the minimal axis-aligned bounding box that contains the entire quadrilateral for each
-        QBB in the collection.
+        This property calculates the minimal enclosing rectangle for each quadrilateral bounding box and returns it in
+        xyxy format (x1, y1, x2, y2). This is useful for operations that require axis-aligned bounding boxes, such
+        as IoU calculation with non-quadrilateral boxes.
 
         Returns:
-            (torch.Tensor | np.ndarray): Axis-aligned bounding boxes in xyxy format with shape (n, 4),
-                where each row represents [x_min, y_min, x_max, y_max].
+            (torch.Tensor | np.ndarray): Axis-aligned bounding boxes in xyxy format with shape (N, 4), where N
+                is the number of boxes. Each row contains [x1, y1, x2, y2] coordinates.
+
+        Examples:
+            >>> import torch
+            >>> from ultralytics import YOLO
+            >>> model = YOLO("yolo11n-qbb.pt")
+            >>> results = model("path/to/image.jpg")
+            >>> for result in results:
+            ...     qbb = result.qbb
+            ...     if qbb is not None:
+            ...         xyxy_boxes = qbb.xyxy
+            ...         print(xyxy_boxes.shape)  # (N, 4)
 
         Notes:
-            - The returned bounding boxes are the smallest axis-aligned rectangles that completely contain
-              the original quadrilateral bounding boxes.
             - This method approximates the QBB by its minimal enclosing rectangle.
             - The returned format is compatible with standard object detection metrics and visualization tools.
             - The property uses caching to improve performance for repeated access.
         """
-        x = self.xyxyxyxy[..., 0::2]  # Extract x coordinates  
-        y = self.xyxyxyxy[..., 1::2]  # Extract y coordinates
+        x = self.xyxyxyxy[..., 0]
+        y = self.xyxyxyxy[..., 1]
         return (
             torch.stack([x.amin(1), y.amin(1), x.amax(1), y.amax(1)], -1)
             if isinstance(x, torch.Tensor)
             else np.stack([x.min(1), y.min(1), x.max(1), y.max(1)], -1)
         )
+
+

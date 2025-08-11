@@ -9,20 +9,20 @@ QBB는 4개의 꼭짓점(xyxyxyxy)을 사용하여 더 유연한 사각형 경�
 ## 개발 단계
 
 ### 1단계: OBB 구조 복제 및 QBB 생성 ✅
-- [ ] OBB 관련 모든 파일 검색
-- [ ] 각 파일에서 OBB 관련 코드를 복사하여 QBB 버전 생성
-  - 폴더 구조
-  - 파일명
-  - 클래스명
-  - 함수명
-  - 변수명
-  - 설정 플래그
-  - 주석
-- [ ] 기본적인 QBB 구조 동작 확인
+- [x] OBB 관련 모든 파일 검색 및 분석
+- [x] 각 파일에서 OBB 관련 코드를 복사하여 QBB 버전 생성
+  - [x] 폴더 구조: `ultralytics/models/yolo/qbb/` 생성
+  - [x] 파일명: `train.py`, `predict.py`, `val.py`, `__init__.py`
+  - [x] 클래스명: QBBTrainer, QBBPredictor, QBBValidator, QBBMetrics
+  - [x] 함수명: probiou_quad, batch_probiou_quad
+  - [x] 변수명: is_qbb, use_qbb, return_qbb
+  - [x] 설정 플래그: TASKS, TASK2DATA, TASK2MODEL에 "qbb" 추가
+  - [x] 주석: OBB/QBB 동등 지원
+- [x] 기본적인 QBB 구조 동작 확인
 
-### 2단계: 성능 검증
-- [ ] DOTA8.yaml 데이터셋 준비
-- [ ] OBB 모델로 학습 실행
+### 2단계: 성능 검증 🔄
+- [x] DOTA8.yaml 데이터셋 준비
+- [x] OBB 모델로 학습 실행 (20 에포크 완료)
 - [ ] QBB 모델로 학습 실행 (OBB와 동일한 로직)
 - [ ] 두 모델의 성능 비교 및 유사성 확인
 

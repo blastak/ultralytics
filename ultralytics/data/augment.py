@@ -2070,6 +2070,7 @@ class Format:
         return_mask (bool): Whether to return instance masks for segmentation.
         return_keypoint (bool): Whether to return keypoints for pose estimation.
         return_obb (bool): Whether to return oriented bounding boxes.
+        return_qbb (bool): Whether to return quadrilateral bounding boxes.
         mask_ratio (int): Downsample ratio for masks.
         mask_overlap (bool): Whether to overlap masks.
         batch_idx (bool): Whether to keep batch indexes.
@@ -2095,6 +2096,7 @@ class Format:
         return_mask: bool = False,
         return_keypoint: bool = False,
         return_obb: bool = False,
+        return_qbb: bool = False,
         mask_ratio: int = 4,
         mask_overlap: bool = True,
         batch_idx: bool = True,
@@ -2112,6 +2114,7 @@ class Format:
             return_mask (bool): If True, returns instance masks for segmentation tasks.
             return_keypoint (bool): If True, returns keypoints for pose estimation tasks.
             return_obb (bool): If True, returns oriented bounding boxes.
+            return_qbb (bool): If True, returns quadrilateral bounding boxes.
             mask_ratio (int): Downsample ratio for masks.
             mask_overlap (bool): If True, allows mask overlap.
             batch_idx (bool): If True, keeps batch indexes.
@@ -2123,6 +2126,7 @@ class Format:
             return_mask (bool): Whether to return instance masks.
             return_keypoint (bool): Whether to return keypoints.
             return_obb (bool): Whether to return oriented bounding boxes.
+        return_qbb (bool): Whether to return quadrilateral bounding boxes.
             mask_ratio (int): Downsample ratio for masks.
             mask_overlap (bool): Whether masks can overlap.
             batch_idx (bool): Whether to keep batch indexes.
@@ -2138,6 +2142,7 @@ class Format:
         self.return_mask = return_mask  # set False when training detection only
         self.return_keypoint = return_keypoint
         self.return_obb = return_obb
+        self.return_qbb = return_qbb
         self.mask_ratio = mask_ratio
         self.mask_overlap = mask_overlap
         self.batch_idx = batch_idx  # keep the batch indexes
@@ -2200,6 +2205,10 @@ class Format:
                 labels["keypoints"][..., 0] /= w
                 labels["keypoints"][..., 1] /= h
         if self.return_obb:
+            labels["bboxes"] = (
+                xyxyxyxy2xywhr(torch.from_numpy(instances.segments)) if len(instances.segments) else torch.zeros((0, 5))
+            )
+        elif self.return_qbb:
             labels["bboxes"] = (
                 xyxyxyxy2xywhr(torch.from_numpy(instances.segments)) if len(instances.segments) else torch.zeros((0, 5))
             )

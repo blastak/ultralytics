@@ -124,7 +124,7 @@ class DetectionValidator(BaseValidator):
             agnostic=self.args.single_cls or self.args.agnostic_nms,
             max_det=self.args.max_det,
             end2end=self.end2end,
-            rotated=self.args.task == "obb",
+            rotated=self.args.task in {"obb", "qbb"},
         )
         return [{"bboxes": x[:, :4], "conf": x[:, 4], "cls": x[:, 5], "extra": x[:, 6:]} for x in outputs]
 

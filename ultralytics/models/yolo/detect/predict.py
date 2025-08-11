@@ -62,7 +62,7 @@ class DetectionPredictor(BasePredictor):
             max_det=self.args.max_det,
             nc=0 if self.args.task == "detect" else len(self.model.names),
             end2end=getattr(self.model, "end2end", False),
-            rotated=self.args.task == "obb",
+            rotated=self.args.task in {"obb", "qbb"},
             return_idxs=save_feats,
         )
 

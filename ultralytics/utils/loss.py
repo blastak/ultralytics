@@ -11,7 +11,7 @@ from ultralytics.utils.ops import crop_mask, xywh2xyxy, xyxy2xywh
 from ultralytics.utils.tal import RotatedTaskAlignedAssigner, TaskAlignedAssigner, dist2bbox, dist2rbox, make_anchors
 from ultralytics.utils.torch_utils import autocast
 
-from .metrics import bbox_iou, probiou
+from .metrics import bbox_iou, probiou, probiou_quad
 from .tal import bbox2dist
 
 
@@ -159,6 +159,39 @@ class RotatedBboxLoss(BboxLoss):
         """Compute IoU and DFL losses for rotated bounding boxes."""
         weight = target_scores.sum(-1)[fg_mask].unsqueeze(-1)
         iou = probiou(pred_bboxes[fg_mask], target_bboxes[fg_mask])
+        loss_iou = ((1.0 - iou) * weight).sum() / target_scores_sum
+
+        # DFL loss
+        if self.dfl_loss:
+            target_ltrb = bbox2dist(anchor_points, xywh2xyxy(target_bboxes[..., :4]), self.dfl_loss.reg_max - 1)
+            loss_dfl = self.dfl_loss(pred_dist[fg_mask].view(-1, self.dfl_loss.reg_max), target_ltrb[fg_mask]) * weight
+            loss_dfl = loss_dfl.sum() / target_scores_sum
+        else:
+            loss_dfl = torch.tensor(0.0).to(pred_dist.device)
+
+        return loss_iou, loss_dfl
+
+
+class QuadrilateralBboxLoss(BboxLoss):
+    """Criterion class for computing training losses for quadrilateral bounding boxes."""
+
+    def __init__(self, reg_max: int):
+        """Initialize the QuadrilateralBboxLoss module with regularization maximum and DFL settings."""
+        super().__init__(reg_max)
+
+    def forward(
+        self,
+        pred_dist: torch.Tensor,
+        pred_bboxes: torch.Tensor,
+        anchor_points: torch.Tensor,
+        target_bboxes: torch.Tensor,
+        target_scores: torch.Tensor,
+        target_scores_sum: torch.Tensor,
+        fg_mask: torch.Tensor,
+    ) -> Tuple[torch.Tensor, torch.Tensor]:
+        """Compute IoU and DFL losses for quadrilateral bounding boxes."""
+        weight = target_scores.sum(-1)[fg_mask].unsqueeze(-1)
+        iou = probiou_quad(pred_bboxes[fg_mask], target_bboxes[fg_mask])
         loss_iou = ((1.0 - iou) * weight).sum() / target_scores_sum
 
         # DFL loss
@@ -774,10 +807,10 @@ class v8QBBLoss(v8DetectionLoss):
     """Calculates losses for object detection, classification, and box distribution in quadrilateral YOLO models."""
 
     def __init__(self, model):
-        """Initialize v8QBBLoss with model, assigner, and rotated bbox loss; model must be de-paralleled."""
+        """Initialize v8QBBLoss with model, assigner, and quadrilateral bbox loss; model must be de-paralleled."""
         super().__init__(model)
         self.assigner = RotatedTaskAlignedAssigner(topk=10, num_classes=self.nc, alpha=0.5, beta=6.0)
-        self.bbox_loss = RotatedBboxLoss(self.reg_max).to(self.device)
+        self.bbox_loss = QuadrilateralBboxLoss(self.reg_max).to(self.device)
 
     def preprocess(self, targets: torch.Tensor, batch_size: int, scale_tensor: torch.Tensor) -> torch.Tensor:
         """Preprocess targets for quadrilateral bounding box detection."""
@@ -813,10 +846,22 @@ class v8QBBLoss(v8DetectionLoss):
         anchor_points, stride_tensor = make_anchors(feats, self.stride, 0.5)
 
         # Targets
-        targets = torch.cat((batch["batch_idx"].view(-1, 1), batch["cls"].view(-1, 1), batch["bboxes"]), 1)
-        targets = self.preprocess(targets.to(self.device), batch_size, scale_tensor=imgsz[[1, 0, 1, 0]])
-        gt_labels, gt_bboxes = targets.split((1, 5), 2)  # cls, xywhr
-        mask_gt = gt_bboxes.sum(2, keepdim=True).gt_(0.0)
+        try:
+            batch_idx = batch["batch_idx"].view(-1, 1)
+            targets = torch.cat((batch_idx, batch["cls"].view(-1, 1), batch["bboxes"].view(-1, 5)), 1)
+            rw, rh = targets[:, 4] * imgsz[0].item(), targets[:, 5] * imgsz[1].item()
+            targets = targets[(rw >= 2) & (rh >= 2)]  # filter qboxes of tiny size to stabilize training
+            targets = self.preprocess(targets.to(self.device), batch_size, scale_tensor=imgsz[[1, 0, 1, 0]])
+            gt_labels, gt_bboxes = targets.split((1, 5), 2)  # cls, xywhr
+            mask_gt = gt_bboxes.sum(2, keepdim=True).gt_(0.0)
+        except RuntimeError as e:
+            raise TypeError(
+                "ERROR ❌ QBB dataset incorrectly formatted or not a QBB dataset.\n"
+                "This error can occur when incorrectly training a 'QBB' model on a 'detect' dataset, "
+                "i.e. 'yolo train model=yolov8n-qbb.pt data=coco8.yaml'.\nVerify your dataset is a "
+                "correctly formatted 'QBB' dataset using 'data=dota8.yaml' "
+                "as an example.\nSee https://docs.ultralytics.com/datasets/qbb/ for help."
+            ) from e
 
         # Pboxes
         pred_bboxes = self.bbox_decode(anchor_points, pred_distri, pred_angle)  # xyxy, (b, h*w, 4)

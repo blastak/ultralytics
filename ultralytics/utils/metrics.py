@@ -213,16 +213,16 @@ def probiou(obb1: torch.Tensor, obb2: torch.Tensor, CIoU: bool = False, eps: flo
     Calculate probabilistic IoU between oriented bounding boxes.
 
     Args:
-        obb1 (torch.Tensor): Ground truth OBBs/QBBs, shape (N, 5), format xywhr.
-        obb2 (torch.Tensor): Predicted OBBs/QBBs, shape (N, 5), format xywhr.
+        obb1 (torch.Tensor): Ground truth OBBs, shape (N, 5), format xywhr.
+        obb2 (torch.Tensor): Predicted OBBs, shape (N, 5), format xywhr.
         CIoU (bool, optional): If True, calculate CIoU.
         eps (float, optional): Small value to avoid division by zero.
 
     Returns:
-        (torch.Tensor): OBB/QBB similarities, shape (N,).
+        (torch.Tensor): OBB similarities, shape (N,).
 
     Notes:
-        OBB/QBB format: [center_x, center_y, width, height, rotation_angle].
+        OBB format: [center_x, center_y, width, height, rotation_angle].
 
     References:
         https://arxiv.org/pdf/2106.06072v1.pdf
@@ -278,6 +278,91 @@ def batch_probiou(
     x2, y2 = (x.squeeze(-1)[None] for x in obb2[..., :2].split(1, dim=-1))
     a1, b1, c1 = _get_covariance_matrix(obb1)
     a2, b2, c2 = (x.squeeze(-1)[None] for x in _get_covariance_matrix(obb2))
+
+    t1 = (
+        ((a1 + a2) * (y1 - y2).pow(2) + (b1 + b2) * (x1 - x2).pow(2)) / ((a1 + a2) * (b1 + b2) - (c1 + c2).pow(2) + eps)
+    ) * 0.25
+    t2 = (((c1 + c2) * (x2 - x1) * (y1 - y2)) / ((a1 + a2) * (b1 + b2) - (c1 + c2).pow(2) + eps)) * 0.5
+    t3 = (
+        ((a1 + a2) * (b1 + b2) - (c1 + c2).pow(2))
+        / (4 * ((a1 * b1 - c1.pow(2)).clamp_(0) * (a2 * b2 - c2.pow(2)).clamp_(0)).sqrt() + eps)
+        + eps
+    ).log() * 0.5
+    bd = (t1 + t2 + t3).clamp(eps, 100.0)
+    hd = (1.0 - (-bd).exp() + eps).sqrt()
+    return 1 - hd
+
+
+def probiou_quad(qbb1: torch.Tensor, qbb2: torch.Tensor, CIoU: bool = False, eps: float = 1e-7) -> torch.Tensor:
+    """
+    Calculate probabilistic IoU between quadrilateral bounding boxes.
+
+    Args:
+        qbb1 (torch.Tensor): Ground truth QBBs, shape (N, 5), format xywhr.
+        qbb2 (torch.Tensor): Predicted QBBs, shape (N, 5), format xywhr.
+        CIoU (bool, optional): If True, calculate CIoU.
+        eps (float, optional): Small value to avoid division by zero.
+
+    Returns:
+        (torch.Tensor): QBB similarities, shape (N,).
+
+    Notes:
+        QBB format: [center_x, center_y, width, height, rotation_angle].
+
+    References:
+        https://arxiv.org/pdf/2106.06072v1.pdf
+    """
+    x1, y1 = qbb1[..., :2].split(1, dim=-1)
+    x2, y2 = qbb2[..., :2].split(1, dim=-1)
+    a1, b1, c1 = _get_covariance_matrix(qbb1)
+    a2, b2, c2 = _get_covariance_matrix(qbb2)
+
+    t1 = (
+        ((a1 + a2) * (y1 - y2).pow(2) + (b1 + b2) * (x1 - x2).pow(2)) / ((a1 + a2) * (b1 + b2) - (c1 + c2).pow(2) + eps)
+    ) * 0.25
+    t2 = (((c1 + c2) * (x2 - x1) * (y1 - y2)) / ((a1 + a2) * (b1 + b2) - (c1 + c2).pow(2) + eps)) * 0.5
+    t3 = (
+        ((a1 + a2) * (b1 + b2) - (c1 + c2).pow(2))
+        / (4 * ((a1 * b1 - c1.pow(2)).clamp_(0) * (a2 * b2 - c2.pow(2)).clamp_(0)).sqrt() + eps)
+        + eps
+    ).log() * 0.5
+    bd = (t1 + t2 + t3).clamp(eps, 100.0)
+    hd = (1.0 - (-bd).exp() + eps).sqrt()
+    iou = 1 - hd
+    if CIoU:  # only include the wh aspect ratio part
+        w1, h1 = qbb1[..., 2:4].split(1, dim=-1)
+        w2, h2 = qbb2[..., 2:4].split(1, dim=-1)
+        v = (4 / math.pi**2) * ((w2 / h2).atan() - (w1 / h1).atan()).pow(2)
+        with torch.no_grad():
+            alpha = v / (v - iou + (1 + eps))
+        return iou - v * alpha  # CIoU
+    return iou
+
+
+def batch_probiou_quad(
+    qbb1: Union[torch.Tensor, np.ndarray], qbb2: Union[torch.Tensor, np.ndarray], eps: float = 1e-7
+) -> torch.Tensor:
+    """
+    Calculate the probabilistic IoU between quadrilateral bounding boxes.
+
+    Args:
+        qbb1 (torch.Tensor | np.ndarray): A tensor of shape (N, 5) representing ground truth qbbs, with xywhr format.
+        qbb2 (torch.Tensor | np.ndarray): A tensor of shape (M, 5) representing predicted qbbs, with xywhr format.
+        eps (float, optional): A small value to avoid division by zero.
+
+    Returns:
+        (torch.Tensor): A tensor of shape (N, M) representing qbb similarities.
+
+    References:
+        https://arxiv.org/pdf/2106.06072v1.pdf
+    """
+    qbb1 = torch.from_numpy(qbb1) if isinstance(qbb1, np.ndarray) else qbb1
+    qbb2 = torch.from_numpy(qbb2) if isinstance(qbb2, np.ndarray) else qbb2
+
+    x1, y1 = qbb1[..., :2].split(1, dim=-1)
+    x2, y2 = (x.squeeze(-1)[None] for x in qbb2[..., :2].split(1, dim=-1))
+    a1, b1, c1 = _get_covariance_matrix(qbb1)
+    a2, b2, c2 = (x.squeeze(-1)[None] for x in _get_covariance_matrix(qbb2))
 
     t1 = (
         ((a1 + a2) * (y1 - y2).pow(2) + (b1 + b2) * (x1 - x2).pow(2)) / ((a1 + a2) * (b1 + b2) - (c1 + c2).pow(2) + eps)
@@ -399,8 +484,9 @@ class ConfusionMatrix(DataExportMixin):
             self.matches = {k: defaultdict(list) for k in {"TP", "FP", "FN", "GT"}}
             for i in range(len(gt_cls)):
                 self._append_matches("GT", batch, i)  # store GT
-        is_obb = gt_bboxes.shape[1] == 5  # check if boxes contains angle for OBB/QBB
-        conf = 0.25 if conf in {None, 0.01 if is_obb else 0.001} else conf  # apply 0.25 if default val conf is passed
+        is_obb = gt_bboxes.shape[1] == 5  # check if boxes contains angle for OBB
+        is_qbb = gt_bboxes.shape[1] == 5  # check if boxes contains angle for QBB
+        conf = 0.25 if conf in {None, 0.01 if (is_obb or is_qbb) else 0.001} else conf  # apply 0.25 if default val conf is passed
         no_pred = len(detections["cls"]) == 0
         if gt_cls.shape[0] == 0:  # Check if labels is empty
             if not no_pred:
@@ -421,7 +507,12 @@ class ConfusionMatrix(DataExportMixin):
         gt_classes = gt_cls.int().tolist()
         detection_classes = detections["cls"].int().tolist()
         bboxes = detections["bboxes"]
-        iou = batch_probiou(gt_bboxes, bboxes) if is_obb else box_iou(gt_bboxes, bboxes)
+        if is_obb:
+            iou = batch_probiou(gt_bboxes, bboxes)
+        elif is_qbb:
+            iou = batch_probiou_quad(gt_bboxes, bboxes)
+        else:
+            iou = box_iou(gt_bboxes, bboxes)
 
         x = torch.where(iou > iou_thres)
         if x[0].shape[0]:
@@ -497,7 +588,7 @@ class ConfusionMatrix(DataExportMixin):
                 labels[k] += mbatch[k]
 
         labels = {k: torch.stack(v, 0) if len(v) else v for k, v in labels.items()}
-        if not self.task == "obb" and len(labels["bboxes"]):
+        if not self.task in ("obb", "qbb") and len(labels["bboxes"]):
             labels["bboxes"] = xyxy2xywh(labels["bboxes"])
         (save_dir / "visualizations").mkdir(parents=True, exist_ok=True)
         plot_images(
@@ -1563,7 +1654,7 @@ class ClassifyMetrics(SimpleClass, DataExportMixin):
 
 class OBBMetrics(DetMetrics):
     """
-    Metrics for evaluating oriented bounding box (OBB) and quadrilateral bounding box (QBB) detection.
+    Metrics for evaluating oriented bounding box (OBB) detection.
 
     Attributes:
         names (Dict[int, str]): Dictionary of class names.
