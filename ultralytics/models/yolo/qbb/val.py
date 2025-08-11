@@ -8,7 +8,7 @@ import torch
 
 from ultralytics.models.yolo.detect import DetectionValidator
 from ultralytics.utils import LOGGER, ops
-from ultralytics.utils.metrics import QBBMetrics, batch_probiou  # TODO: QBBMetrics 클래스 구현 필요
+from ultralytics.utils.metrics import QBBMetrics, batch_probiou_quad
 
 
 class QBBValidator(DetectionValidator):
@@ -92,7 +92,7 @@ class QBBValidator(DetectionValidator):
         """
         if len(batch["cls"]) == 0 or len(preds["cls"]) == 0:
             return {"tp": np.zeros((len(preds["cls"]), self.niou), dtype=bool)}
-        iou = batch_probiou(batch["bboxes"], preds["bboxes"])
+        iou = batch_probiou_quad(batch["bboxes"], preds["bboxes"])
         return {"tp": self.match_predictions(preds["cls"], batch["cls"], iou).cpu().numpy()}
 
     def postprocess(self, preds: torch.Tensor) -> List[Dict[str, torch.Tensor]]:
@@ -218,7 +218,7 @@ class QBBValidator(DetectionValidator):
             np.zeros((shape[0], shape[1]), dtype=np.uint8),
             path=None,
             names=self.names,
-            obb=torch.cat([predn["bboxes"], predn["conf"].unsqueeze(-1), predn["cls"].unsqueeze(-1)], dim=1),
+            qbb=torch.cat([predn["bboxes"], predn["conf"].unsqueeze(-1), predn["cls"].unsqueeze(-1)], dim=1),
         ).save_txt(file, save_conf=save_conf)
 
     def eval_json(self, stats: Dict[str, Any]) -> Dict[str, Any]:

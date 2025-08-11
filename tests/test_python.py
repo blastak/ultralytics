@@ -284,7 +284,7 @@ def test_predict_callback_and_setup():
 @pytest.mark.parametrize("model", MODELS)
 def test_results(model: str):
     """Test YOLO model results processing and output in various formats."""
-    temp_s = "https://ultralytics.com/images/boats.jpg" if model == "yolo11n-obb.pt" else SOURCE
+    temp_s = "https://ultralytics.com/images/boats.jpg" if model in ("yolo11n-obb.pt", "yolo8n-qbb.pt") else SOURCE
     results = YOLO(WEIGHTS_DIR / model)([temp_s, temp_s], imgsz=160)
     for r in results:
         assert len(r), f"'{model}' results should not be empty!"
@@ -460,7 +460,7 @@ def test_utils_ops():
     torch.allclose(boxes, ltwh2xywh(xywh2ltwh(boxes)))
     torch.allclose(boxes, xyxy2ltwh(ltwh2xyxy(boxes)))
 
-    boxes = torch.rand(10, 5)  # xywhr for OBB
+    boxes = torch.rand(10, 5)  # xywhr for OBB or QBB
     boxes[:, 4] = torch.randn(10) * 30
     torch.allclose(boxes, xyxyxyxy2xywhr(xywhr2xyxyxyxy(boxes)), rtol=1e-3)
 

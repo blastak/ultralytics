@@ -171,10 +171,11 @@ class BaseSolution:
                 source=im0, persist=True, classes=self.classes, verbose=False, **self.track_add_args
             )[0]
         is_obb = self.tracks.obb is not None
-        self.track_data = self.tracks.obb if is_obb else (self.tracks.qbb if hasattr(self.tracks, 'qbb') and self.tracks.qbb is not None else self.tracks.boxes)  # Extract tracks for OBB/QBB or object detection
+        is_qbb = self.tracks.qbb is not None
+        self.track_data = self.tracks.obb if is_obb else (self.tracks.qbb if is_qbb else self.tracks.boxes)  # Extract tracks for OBB/QBB or object detection
 
         if self.track_data and self.track_data.is_track:
-            self.boxes = (self.track_data.xyxyxyxy if is_obb else self.track_data.xyxy).cpu()
+            self.boxes = (self.track_data.xyxyxyxy if (is_obb or is_qbb) else self.track_data.xyxy).cpu()
             self.clss = self.track_data.cls.cpu().tolist()
             self.track_ids = self.track_data.id.int().cpu().tolist()
             self.confs = self.track_data.conf.cpu().tolist()

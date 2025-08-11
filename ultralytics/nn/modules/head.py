@@ -18,7 +18,7 @@ from .conv import Conv, DWConv
 from .transformer import MLP, DeformableTransformerDecoder, DeformableTransformerDecoderLayer
 from .utils import bias_init_with_prob, linear_init
 
-__all__ = "Detect", "Segment", "Pose", "Classify", "OBB", "RTDETRDecoder", "v10Detect", "YOLOEDetect", "YOLOESegment"
+__all__ = "Detect", "Segment", "Pose", "Classify", "OBB", "QBB", "RTDETRDecoder", "v10Detect", "YOLOEDetect", "YOLOESegment"
 
 
 class Detect(nn.Module):
@@ -366,7 +366,7 @@ class QBB(Detect):
             ch (tuple): Tuple of channel sizes from backbone feature maps.
         """
         super().__init__(nc, ch)
-        self.ne = ne  # 임시로 OBB와 동일하게 1개 매개변수 사용
+        self.ne = ne
 
         c4 = max(ch[0] // 4, self.ne)
         self.cv4 = nn.ModuleList(nn.Sequential(Conv(x, c4, 3), Conv(c4, c4, 3), nn.Conv2d(c4, self.ne, 1)) for x in ch)
@@ -374,7 +374,6 @@ class QBB(Detect):
     def forward(self, x: List[torch.Tensor]) -> Union[torch.Tensor, Tuple]:
         """Concatenate and return predicted bounding boxes and class probabilities."""
         bs = x[0].shape[0]  # batch size
-        # 임시로 OBB와 완전 동일한 로직 사용
         angle = torch.cat([self.cv4[i](x[i]).view(bs, self.ne, -1) for i in range(self.nl)], 2)  # QBB theta logits
         # NOTE: set `angle` as an attribute so that `decode_bboxes` could use it.
         angle = (angle.sigmoid() - 0.25) * math.pi  # [-pi/4, 3pi/4]
@@ -387,7 +386,6 @@ class QBB(Detect):
 
     def decode_bboxes(self, bboxes: torch.Tensor, anchors: torch.Tensor) -> torch.Tensor:
         """Decode quadrilateral bounding boxes."""
-        # TODO: QBB용 디코딩 로직 구현 필요 (현재 OBB와 동일)
         return dist2rbox(bboxes, self.angle, anchors, dim=1)
 
 

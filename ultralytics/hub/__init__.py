@@ -148,7 +148,7 @@ def check_dataset(path: str, task: str) -> None:
 
     Args:
         path (str): Path to data.zip (with data.yaml inside data.zip).
-        task (str): Dataset task. Options are 'detect', 'segment', 'pose', 'classify', 'obb'.
+        task (str): Dataset task. Options are 'detect', 'segment', 'pose', 'classify', 'obb', 'qbb'.
 
     Examples:
         >>> from ultralytics.hub import check_dataset

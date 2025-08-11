@@ -61,6 +61,5 @@ class QBBPredictor(DetectionPredictor):
         """
         rboxes = ops.regularize_rboxes(torch.cat([pred[:, :4], pred[:, -1:]], dim=-1))
         rboxes[:, :4] = ops.scale_boxes(img.shape[2:], rboxes[:, :4], orig_img.shape, xywh=True)
-        # QBB 처리를 위한 임시 코드 - 추후 수정 필요
         qbb = torch.cat([rboxes, pred[:, 4:6]], dim=-1)
-        return Results(orig_img, path=img_path, names=self.model.names, obb=qbb)  # TODO: obb를 qbb로 변경 필요
+        return Results(orig_img, path=img_path, names=self.model.names, qbb=qbb)

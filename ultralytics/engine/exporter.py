@@ -601,7 +601,7 @@ class Exporter:
                 dynamic["output0"] = {0: "batch", 2: "anchors"}  # shape(1, 84, 8400)
             if self.args.nms:  # only batch size is dynamic with NMS
                 dynamic["output0"].pop(2)
-        if self.args.nms and self.model.task == "obb":
+        if self.args.nms and self.model.task in ("obb", "qbb"):
             self.args.opset = opset_version  # for NMSModel
 
         with arange_patch(self.args):
@@ -1501,6 +1501,7 @@ class NMSModel(torch.nn.Module):
         self.model = model
         self.args = args
         self.obb = model.task == "obb"
+        self.qbb = model.task == "qbb"
         self.is_tf = self.args.format in frozenset({"saved_model", "tflite", "tfjs"})
 
     def forward(self, x):
@@ -1542,15 +1543,15 @@ class NMSModel(torch.nn.Module):
                 mask = score.topk(min(self.args.max_det * 5, score.shape[0])).indices
             box, score, cls, extra = box[mask], score[mask], cls[mask], extra[mask]
             nmsbox = box.clone()
-            # `8` is the minimum value experimented to get correct NMS results for obb
-            multiplier = 8 if self.obb else 1
+            # `8` is the minimum value experimented to get correct NMS results for obb/qbb
+            multiplier = 8 if (self.obb or self.qbb) else 1
             # Normalize boxes for NMS since large values for class offset causes issue with int8 quantization
             if self.args.format == "tflite":  # TFLite is already normalized
                 nmsbox *= multiplier
             else:
                 nmsbox = multiplier * nmsbox / torch.tensor(x.shape[2:], **kwargs).max()
             if not self.args.agnostic_nms:  # class-specific NMS
-                end = 2 if self.obb else 4
+                end = 2 if (self.obb or self.qbb) else 4
                 # fully explicit expansion otherwise reshape error
                 # large max_wh causes issues when quantizing
                 cls_offset = cls.reshape(-1, 1).expand(nmsbox.shape[0], end)
@@ -1565,11 +1566,11 @@ class NMSModel(torch.nn.Module):
                         or (self.args.format == "openvino" and self.args.int8)  # OpenVINO int8 error with triu
                     ),
                 )
-                if self.obb
+                if (self.obb or self.qbb)
                 else nms
             )
             keep = nms_fn(
-                torch.cat([nmsbox, extra], dim=-1) if self.obb else nmsbox,
+                torch.cat([nmsbox, extra], dim=-1) if (self.obb or self.qbb) else nmsbox,
                 score,
                 self.args.iou,
             )[: self.args.max_det]
