@@ -213,16 +213,16 @@ def probiou(obb1: torch.Tensor, obb2: torch.Tensor, CIoU: bool = False, eps: flo
     Calculate probabilistic IoU between oriented bounding boxes.
 
     Args:
-        obb1 (torch.Tensor): Ground truth OBBs, shape (N, 5), format xywhr.
-        obb2 (torch.Tensor): Predicted OBBs, shape (N, 5), format xywhr.
+        obb1 (torch.Tensor): Ground truth OBBs/QBBs, shape (N, 5), format xywhr.
+        obb2 (torch.Tensor): Predicted OBBs/QBBs, shape (N, 5), format xywhr.
         CIoU (bool, optional): If True, calculate CIoU.
         eps (float, optional): Small value to avoid division by zero.
 
     Returns:
-        (torch.Tensor): OBB similarities, shape (N,).
+        (torch.Tensor): OBB/QBB similarities, shape (N,).
 
     Notes:
-        OBB format: [center_x, center_y, width, height, rotation_angle].
+        OBB/QBB format: [center_x, center_y, width, height, rotation_angle].
 
     References:
         https://arxiv.org/pdf/2106.06072v1.pdf
@@ -388,7 +388,7 @@ class ConfusionMatrix(DataExportMixin):
         Args:
             detections (Dict[str, torch.Tensor]): Dictionary containing detected bounding boxes and their associated information.
                                        Should contain 'cls', 'conf', and 'bboxes' keys, where 'bboxes' can be
-                                       Array[N, 4] for regular boxes or Array[N, 5] for OBB with angle.
+                                       Array[N, 4] for regular boxes or Array[N, 5] for OBB/QBB with angle.
             batch (Dict[str, Any]): Batch dictionary containing ground truth data with 'bboxes' (Array[M, 4]| Array[M, 5]) and
                 'cls' (Array[M]) keys, where M is the number of ground truth objects.
             conf (float, optional): Confidence threshold for detections.
@@ -399,7 +399,7 @@ class ConfusionMatrix(DataExportMixin):
             self.matches = {k: defaultdict(list) for k in {"TP", "FP", "FN", "GT"}}
             for i in range(len(gt_cls)):
                 self._append_matches("GT", batch, i)  # store GT
-        is_obb = gt_bboxes.shape[1] == 5  # check if boxes contains angle for OBB
+        is_obb = gt_bboxes.shape[1] == 5  # check if boxes contains angle for OBB/QBB
         conf = 0.25 if conf in {None, 0.01 if is_obb else 0.001} else conf  # apply 0.25 if default val conf is passed
         no_pred = len(detections["cls"]) == 0
         if gt_cls.shape[0] == 0:  # Check if labels is empty
@@ -1563,7 +1563,7 @@ class ClassifyMetrics(SimpleClass, DataExportMixin):
 
 class OBBMetrics(DetMetrics):
     """
-    Metrics for evaluating oriented bounding box (OBB) detection.
+    Metrics for evaluating oriented bounding box (OBB) and quadrilateral bounding box (QBB) detection.
 
     Attributes:
         names (Dict[int, str]): Dictionary of class names.

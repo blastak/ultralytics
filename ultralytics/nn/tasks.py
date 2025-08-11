@@ -77,6 +77,7 @@ from ultralytics.utils.loss import (
     v8ClassificationLoss,
     v8DetectionLoss,
     v8OBBLoss,
+    v8QBBLoss,
     v8PoseLoss,
     v8SegmentationLoss,
 )
@@ -566,7 +567,7 @@ class QBBModel(DetectionModel):
     def init_criterion(self):
         """Initialize the loss criterion for the model."""
         # TODO: QBBLoss 클래스 구현 필요
-        return v8OBBLoss(self)  # 임시로 OBBLoss 사용
+        return v8QBBLoss(self)  # QBB 전용 Loss 사용
 
 
 class SegmentationModel(DetectionModel):
