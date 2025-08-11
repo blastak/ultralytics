@@ -422,10 +422,10 @@ def convert_segment_masks_to_yolo_seg(masks_dir: str, output_dir: str, classes: 
 
 def convert_dota_to_yolo_obb(dota_root_path: str):
     """
-    Convert DOTA dataset annotations to YOLO OBB (Oriented Bounding Box) format.
+    Convert DOTA dataset annotations to YOLO OBB (Oriented Bounding Box) or QBB (Quadrilateral Bounding Box) format.
 
     The function processes images in the 'train' and 'val' folders of the DOTA dataset. For each image, it reads the
-    associated label from the original labels directory and writes new labels in YOLO OBB format to a new directory.
+    associated label from the original labels directory and writes new labels in YOLO OBB/QBB format to a new directory.
 
     Args:
         dota_root_path (str): The root directory path of the DOTA dataset.
@@ -477,7 +477,7 @@ def convert_dota_to_yolo_obb(dota_root_path: str):
     }
 
     def convert_label(image_name: str, image_width: int, image_height: int, orig_label_dir: Path, save_dir: Path):
-        """Convert a single image's DOTA annotation to YOLO OBB format and save it to a specified directory."""
+        """Convert a single image's DOTA annotation to YOLO OBB/QBB format and save it to a specified directory."""
         orig_label_path = orig_label_dir / f"{image_name}.txt"
         save_path = save_dir / f"{image_name}.txt"
 
@@ -584,7 +584,7 @@ def yolo_bbox2segment(
     im_dir: Union[str, Path], save_dir: Optional[Union[str, Path]] = None, sam_model: str = "sam_b.pt", device=None
 ):
     """
-    Convert existing object detection dataset (bounding boxes) to segmentation dataset or oriented bounding box (OBB) in
+    Convert existing object detection dataset (bounding boxes) to segmentation dataset or oriented bounding box (OBB/QBB) in
     YOLO format. Generate segmentation data using SAM auto-annotator as needed.
 
     Args:

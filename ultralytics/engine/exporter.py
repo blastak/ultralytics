@@ -410,7 +410,7 @@ class Exporter:
         for m in model.modules():
             if isinstance(m, Classify):
                 m.export = True
-            if isinstance(m, (Detect, RTDETRDecoder)):  # includes all Detect subclasses like Segment, Pose, OBB
+            if isinstance(m, (Detect, RTDETRDecoder)):  # includes all Detect subclasses like Segment, Pose, OBB, QBB
                 m.dynamic = self.args.dynamic
                 m.export = True
                 m.format = self.args.format
@@ -684,7 +684,7 @@ class Exporter:
             # Generate calibration data for integer quantization
             ignored_scope = None
             if isinstance(self.model.model[-1], Detect):
-                # Includes all Detect subclasses like Segment, Pose, OBB, WorldDetect, YOLOEDetect
+                # Includes all Detect subclasses like Segment, Pose, OBB, QBB, WorldDetect, YOLOEDetect
                 head_module_name = ".".join(list(self.model.named_modules())[-1][0].split(".")[:2])
                 ignored_scope = nncf.IgnoredScope(  # ignore operations
                     patterns=[
@@ -1487,7 +1487,7 @@ class IOSDetectModel(torch.nn.Module):
 
 
 class NMSModel(torch.nn.Module):
-    """Model wrapper with embedded NMS for Detect, Segment, Pose and OBB."""
+    """Model wrapper with embedded NMS for Detect, Segment, Pose, OBB and QBB."""
 
     def __init__(self, model, args):
         """
@@ -1505,7 +1505,7 @@ class NMSModel(torch.nn.Module):
 
     def forward(self, x):
         """
-        Perform inference with NMS post-processing. Supports Detect, Segment, OBB and Pose.
+        Perform inference with NMS post-processing. Supports Detect, Segment, OBB, QBB and Pose.
 
         Args:
             x (torch.Tensor): The preprocessed tensor with shape (N, 3, H, W).
@@ -1523,7 +1523,7 @@ class NMSModel(torch.nn.Module):
         kwargs = dict(device=pred.device, dtype=pred.dtype)
         bs = pred.shape[0]
         pred = pred.transpose(-1, -2)  # shape(1,84,6300) to shape(1,6300,84)
-        extra_shape = pred.shape[-1] - (4 + len(self.model.names))  # extras from Segment, OBB, Pose
+        extra_shape = pred.shape[-1] - (4 + len(self.model.names))  # extras from Segment, OBB, QBB, Pose
         if self.args.dynamic and self.args.batch > 1:  # batch size needs to always be same due to loop unroll
             pad = torch.zeros(torch.max(torch.tensor(self.args.batch - bs), torch.tensor(0)), *pred.shape[1:], **kwargs)
             pred = torch.cat((pred, pad))
