@@ -2212,7 +2212,7 @@ class Format:
             labels["bboxes"] = (
                 xyxyxyxy2xywhr(torch.from_numpy(instances.segments)) if len(instances.segments) else torch.zeros((0, 5))
             )
-        # NOTE: need to normalize obb in xywhr format for width-height consistency
+        # NOTE: need to normalize obb/qbb in xywhr format for width-height consistency
         if self.normalize:
             labels["bboxes"][:, [0, 2]] /= w
             labels["bboxes"][:, [1, 3]] /= h

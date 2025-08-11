@@ -53,7 +53,7 @@ def test_amp():
             TASKS, [True, False], [False], [False], [1, 2], [True, False], [True, False]
         )
         if not (
-            (int8 and half) or (task == "classify" and nms) or (task == "obb" and nms and (not TORCH_1_13 or IS_JETSON))
+            (int8 and half) or (task == "classify" and nms) or (task in ("obb", "qbb") and nms and (not TORCH_1_13 or IS_JETSON))
         )
     ],
 )

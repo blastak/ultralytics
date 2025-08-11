@@ -82,7 +82,8 @@ def on_predict_postprocess_end(predictor: object, persist: bool = False) -> None
         >>> predictor = YourPredictorClass()
         >>> on_predict_postprocess_end(predictor, persist=True)
     """
-    is_obb = predictor.args.task in ("obb", "qbb")
+    is_obb = predictor.args.task == "obb"
+    is_qbb = predictor.args.task == "qbb"
     is_stream = predictor.dataset.mode == "stream"
     for i, result in enumerate(predictor.results):
         tracker = predictor.trackers[i if is_stream else 0]

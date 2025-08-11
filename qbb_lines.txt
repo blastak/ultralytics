@@ -1,0 +1,38 @@
+206:        qbb (QBB | None): Quadrilateral bounding boxes.
+252:        qbb: Optional[torch.Tensor] = None,
+289:        self.qbb = QBB(qbb, self.orig_shape) if qbb is not None else None
+294:        self._keys = "boxes", "masks", "probs", "keypoints", "obb", "qbb"
+319:                attribute in (masks, probs, keypoints, obb, or qbb).
+337:        qbb: Optional[torch.Tensor] = None,
+352:            qbb (torch.Tensor | None): A tensor of shape (N, 5) containing quadrilateral bounding box coordinates.
+368:        if qbb is not None:
+369:            self.qbb = QBB(qbb, self.orig_shape)
+404:        This method creates a new Results object with all tensor attributes (boxes, masks, probs, keypoints, obb, qbb)
+542:        is_qbb = self.qbb is not None
+543:        pred_boxes, show_boxes = (self.obb if is_obb else self.qbb if is_qbb else self.boxes), boxes
+732:        is_qbb = self.qbb is not None
+733:        boxes = self.obb if is_obb else self.qbb if is_qbb else self.boxes
+790:        if self.qbb is not None:
+839:        is_qbb = self.qbb is not None
+840:        data = self.obb if is_obb else self.qbb if is_qbb else self.boxes
+1701:        >>> qbb = QBB(boxes, orig_shape=(480, 640))
+1702:        >>> print(qbb.xyxyxyxy)
+1703:        >>> print(qbb.conf)
+1704:        >>> print(qbb.cls)
+1732:            >>> qbb = QBB(boxes, orig_shape)
+1733:            >>> print(qbb.xywhr)  # Access the boxes in xywhr format
+1754:            >>> qbb = results[0].qbb
+1755:            >>> xywhr = qbb.xywhr
+1775:            >>> qbb_result = results[0].qbb
+1793:            >>> qbb = result.qbb
+1794:            >>> class_values = qbb.cls
+1811:            ...     if result.qbb is not None:
+1812:            ...         track_ids = result.qbb.id
+1830:            >>> qbb = QBB(torch.tensor([[100, 100, 50, 30, 0.5, 0.9, 0]]), orig_shape=(640, 640))
+1831:            >>> xyxyxyxy = qbb.xyxyxyxy
+1849:            >>> qbb = QBB(torch.rand(10, 7), orig_shape=(640, 480))  # 10 random QBBs
+1850:            >>> normalized_boxes = qbb.xyxyxyxyn
+1876:            >>> model = YOLO("yolo11n-qbb.pt")
+1879:            ...     qbb = result.qbb
+1880:            ...     if qbb is not None:
+1881:            ...         xyxy_boxes = qbb.xyxy

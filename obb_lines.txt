@@ -1,0 +1,39 @@
+205:        obb (OBB | None): Oriented bounding boxes.
+251:        obb: Optional[torch.Tensor] = None,
+266:            obb (torch.Tensor | None): A 2D tensor of oriented bounding box coordinates for each detection.
+288:        self.obb = OBB(obb, self.orig_shape) if obb is not None else None
+294:        self._keys = "boxes", "masks", "probs", "keypoints", "obb", "qbb"
+319:                attribute in (masks, probs, keypoints, obb, or qbb).
+336:        obb: Optional[torch.Tensor] = None,
+351:            obb (torch.Tensor | None): A tensor of shape (N, 5) containing oriented bounding box coordinates.
+366:        if obb is not None:
+367:            self.obb = OBB(obb, self.orig_shape)
+404:        This method creates a new Results object with all tensor attributes (boxes, masks, probs, keypoints, obb, qbb)
+541:        is_obb = self.obb is not None
+543:        pred_boxes, show_boxes = (self.obb if is_obb else self.qbb if is_qbb else self.boxes), boxes
+731:        is_obb = self.obb is not None
+733:        boxes = self.obb if is_obb else self.qbb if is_qbb else self.boxes
+787:        if self.obb is not None:
+838:        is_obb = self.obb is not None
+840:        data = self.obb if is_obb else self.qbb if is_qbb else self.boxes
+1476:        >>> obb = OBB(boxes, orig_shape=(480, 640))
+1477:        >>> print(obb.xyxyxyxy)
+1478:        >>> print(obb.conf)
+1479:        >>> print(obb.cls)
+1507:            >>> obb = OBB(boxes, orig_shape)
+1508:            >>> print(obb.xywhr)  # Access the boxes in xywhr format
+1529:            >>> obb = results[0].obb
+1530:            >>> xywhr = obb.xywhr
+1550:            >>> obb_result = results[0].obb
+1568:            >>> obb = result.obb
+1569:            >>> class_values = obb.cls
+1586:            ...     if result.obb is not None:
+1587:            ...         track_ids = result.obb.id
+1605:            >>> obb = OBB(torch.tensor([[100, 100, 50, 30, 0.5, 0.9, 0]]), orig_shape=(640, 640))
+1606:            >>> xyxyxyxy = obb.xyxyxyxy
+1624:            >>> obb = OBB(torch.rand(10, 7), orig_shape=(640, 480))  # 10 random OBBs
+1625:            >>> normalized_boxes = obb.xyxyxyxyn
+1651:            >>> model = YOLO("yolo11n-obb.pt")
+1654:            ...     obb = result.obb
+1655:            ...     if obb is not None:
+1656:            ...         xyxy_boxes = obb.xyxy

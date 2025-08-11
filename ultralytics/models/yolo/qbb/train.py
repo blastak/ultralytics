@@ -5,7 +5,7 @@ from pathlib import Path
 from typing import Any, List, Optional, Union
 
 from ultralytics.models import yolo
-from ultralytics.nn.tasks import QBBModel  # TODO: QBBModel 클래스 구현 필요
+from ultralytics.nn.tasks import QBBModel
 from ultralytics.utils import DEFAULT_CFG, RANK
 
 
@@ -58,7 +58,7 @@ class QBBTrainer(yolo.detect.DetectionTrainer):
 
     def get_model(
         self, cfg: Optional[Union[str, dict]] = None, weights: Optional[Union[str, Path]] = None, verbose: bool = True
-    ) -> "QBBModel":  # TODO: QBBModel 클래스 구현 필요
+    ) -> "QBBModel":
         """
         Return QBBModel initialized with specified config and weights.
 
@@ -75,7 +75,6 @@ class QBBTrainer(yolo.detect.DetectionTrainer):
             >>> trainer = QBBTrainer()
             >>> model = trainer.get_model(cfg="yolov8n-qbb.yaml", weights="yolov8n-qbb.pt")
         """
-        # TODO: QBBModel 클래스 구현 후 수정 필요
         model = QBBModel(cfg, nc=self.data["nc"], ch=self.data["channels"], verbose=verbose and RANK == -1)
         if weights:
             model.load(weights)

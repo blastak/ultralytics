@@ -59,6 +59,13 @@ SOLUTIONS = [
         {"region": REGION, "model": "yolo11n-obb.pt", "show": SHOW},
     ),
     (
+        "ObjectCounterwithQBB",
+        solutions.ObjectCounter,
+        False,
+        DEMO_VIDEO,
+        {"region": REGION, "model": "yolo8n-qbb.pt", "show": SHOW},
+    ),
+    (
         "Heatmap",
         solutions.Heatmap,
         False,

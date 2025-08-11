@@ -566,7 +566,6 @@ class QBBModel(DetectionModel):
 
     def init_criterion(self):
         """Initialize the loss criterion for the model."""
-        # TODO: QBBLoss 클래스 구현 필요
         return v8QBBLoss(self)  # QBB 전용 Loss 사용
 
 

@@ -55,7 +55,7 @@ class QBBValidator(DetectionValidator):
         """
         super().__init__(dataloader, save_dir, args, _callbacks)
         self.args.task = "qbb"
-        self.metrics = QBBMetrics()  # TODO: QBBMetrics 클래스 구현 필요
+        self.metrics = QBBMetrics()
 
     def init_metrics(self, model: torch.nn.Module) -> None:
         """
