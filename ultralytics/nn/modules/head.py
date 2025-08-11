@@ -356,17 +356,17 @@ class QBB(Detect):
         >>> outputs = qbb(x)
     """
 
-    def __init__(self, nc: int = 80, ne: int = 8, ch: Tuple = ()):
+    def __init__(self, nc: int = 80, ne: int = 1, ch: Tuple = ()):
         """
         Initialize QBB with number of classes `nc` and layer channels `ch`.
 
         Args:
             nc (int): Number of classes.
-            ne (int): Number of extra parameters (8 for quadrilateral).
+            ne (int): Number of extra parameters (임시로 1, 추후 8로 변경).
             ch (tuple): Tuple of channel sizes from backbone feature maps.
         """
         super().__init__(nc, ch)
-        self.ne = ne  # 8개의 좌표값 (x1,y1,x2,y2,x3,y3,x4,y4)
+        self.ne = ne  # 임시로 OBB와 동일하게 1개 매개변수 사용
 
         c4 = max(ch[0] // 4, self.ne)
         self.cv4 = nn.ModuleList(nn.Sequential(Conv(x, c4, 3), Conv(c4, c4, 3), nn.Conv2d(c4, self.ne, 1)) for x in ch)
@@ -374,11 +374,12 @@ class QBB(Detect):
     def forward(self, x: List[torch.Tensor]) -> Union[torch.Tensor, Tuple]:
         """Concatenate and return predicted bounding boxes and class probabilities."""
         bs = x[0].shape[0]  # batch size
-        corners = torch.cat([self.cv4[i](x[i]).view(bs, self.ne, -1) for i in range(self.nl)], 2)  # QBB corner logits
-        # NOTE: corners를 attribute로 설정하여 `decode_bboxes`에서 사용 가능하도록 함
-        corners = corners.sigmoid()  # [0, 1] 범위로 정규화
+        # 임시로 OBB와 동일한 로직 사용 (angle 대신 corners라는 이름 사용)
+        corners = torch.cat([self.cv4[i](x[i]).view(bs, self.ne, -1) for i in range(self.nl)], 2)  # QBB 매개변수
+        # OBB와 동일한 각도 처리 (임시)
+        corners = (corners.sigmoid() - 0.25) * math.pi  # [-pi/4, 3pi/4]
         if not self.training:
-            self.corners = corners
+            self.corners = corners  # angle 대신 corners 사용
         x = Detect.forward(self, x)
         if self.training:
             return x, corners
