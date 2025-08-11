@@ -114,7 +114,7 @@ def benchmark(
 
             # Checks
             if format == "pb":
-                assert model.task != "obb", "TensorFlow GraphDef not supported for OBB task"
+                assert model.task not in ("obb", "qbb"), "TensorFlow GraphDef not supported for OBB/QBB tasks"
             elif format == "edgetpu":
                 assert LINUX and not ARM64, "Edge TPU export only supported on non-aarch64 Linux"
             elif format in {"coreml", "tfjs"}:
@@ -128,7 +128,7 @@ def benchmark(
                 # assert not IS_PYTHON_MINIMUM_3_12, "TFLite exports not supported on Python>=3.12 yet"
             if format == "paddle":
                 assert not isinstance(model, YOLOWorld), "YOLOWorldv2 Paddle exports not supported yet"
-                assert model.task != "obb", "Paddle OBB bug https://github.com/PaddlePaddle/Paddle/issues/72024"
+                assert model.task not in ("obb", "qbb"), "Paddle OBB/QBB bug https://github.com/PaddlePaddle/Paddle/issues/72024"
                 assert not is_end2end, "End-to-end models not supported by PaddlePaddle yet"
                 assert (LINUX and not IS_JETSON) or MACOS, "Windows and Jetson Paddle exports not supported yet"
             if format == "mnn":

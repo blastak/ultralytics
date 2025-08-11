@@ -1014,7 +1014,7 @@ def feature_visualization(x, module_type: str, stage: int, n: int = 32, save_dir
     """
     import matplotlib.pyplot as plt  # scope for faster 'import ultralytics'
 
-    for m in {"Detect", "Segment", "Pose", "Classify", "OBB", "RTDETRDecoder"}:  # all model heads
+    for m in {"Detect", "Segment", "Pose", "Classify", "OBB", "QBB", "RTDETRDecoder"}:  # all model heads
         if m in module_type:
             return
     if isinstance(x, torch.Tensor):

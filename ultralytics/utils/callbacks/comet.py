@@ -8,7 +8,7 @@ import cv2
 import numpy as np
 
 from ultralytics.utils import LOGGER, RANK, SETTINGS, TESTS_RUNNING, ops
-from ultralytics.utils.metrics import ClassifyMetrics, DetMetrics, OBBMetrics, PoseMetrics, SegmentMetrics
+from ultralytics.utils.metrics import ClassifyMetrics, DetMetrics, OBBMetrics, QBBMetrics, PoseMetrics, SegmentMetrics
 
 try:
     assert not TESTS_RUNNING  # do not log pytest
@@ -447,7 +447,7 @@ def _log_plots(experiment, trainer) -> None:
     Log evaluation plots and label plots for the experiment.
 
     This function logs various evaluation plots and confusion matrices to the experiment tracking system. It handles
-    different types of metrics (SegmentMetrics, PoseMetrics, DetMetrics, OBBMetrics) and logs the appropriate plots
+    different types of metrics (SegmentMetrics, PoseMetrics, DetMetrics, OBBMetrics, QBBMetrics) and logs the appropriate plots
     for each type.
 
     Args:
@@ -472,7 +472,7 @@ def _log_plots(experiment, trainer) -> None:
             for plots in EVALUATION_PLOT_NAMES
             for prefix in POSE_METRICS_PLOT_PREFIX
         ]
-    elif isinstance(trainer.validator.metrics, (DetMetrics, OBBMetrics)):
+    elif isinstance(trainer.validator.metrics, (DetMetrics, OBBMetrics, QBBMetrics)):
         plot_filenames = [
             trainer.save_dir / f"{prefix}{plots}.png"
             for plots in EVALUATION_PLOT_NAMES

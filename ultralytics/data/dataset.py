@@ -49,7 +49,7 @@ class YOLODataset(BaseDataset):
     Dataset class for loading object detection and/or segmentation labels in YOLO format.
 
     This class supports loading data for object detection, segmentation, pose estimation, and oriented bounding box
-    (OBB) tasks using the YOLO format.
+    (OBB) and Quadrilateral Bounding Box (QBB) tasks using the YOLO format.
 
     Attributes:
         use_segments (bool): Indicates if segmentation masks should be used.

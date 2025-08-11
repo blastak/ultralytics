@@ -156,6 +156,7 @@ def check_dataset(path: str, task: str) -> None:
         >>> check_dataset("path/to/coco8-seg.zip", task="segment")  # segment dataset
         >>> check_dataset("path/to/coco8-pose.zip", task="pose")  # pose dataset
         >>> check_dataset("path/to/dota8.zip", task="obb")  # OBB dataset
+        >>> check_dataset("path/to/dota8.zip", task="qbb")  # QBB dataset
         >>> check_dataset("path/to/imagenet10.zip", task="classify")  # classification dataset
 
     Notes:

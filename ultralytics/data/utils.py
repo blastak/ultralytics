@@ -603,6 +603,7 @@ class HUBDatasetStats:
         >>> stats = HUBDatasetStats("path/to/coco8-seg.zip", task="segment")  # segment dataset
         >>> stats = HUBDatasetStats("path/to/coco8-pose.zip", task="pose")  # pose dataset
         >>> stats = HUBDatasetStats("path/to/dota8.zip", task="obb")  # OBB dataset
+        >>> stats = HUBDatasetStats("path/to/dota8.zip", task="qbb")  # QBB dataset
         >>> stats = HUBDatasetStats("path/to/imagenet10.zip", task="classify")  # classification dataset
         >>> stats.get_json(save=True)
         >>> stats.process_images()
@@ -657,7 +658,7 @@ class HUBDatasetStats:
             """Update labels to integer class and 4 decimal place floats."""
             if self.task == "detect":
                 coordinates = labels["bboxes"]
-            elif self.task in {"segment", "obb"}:  # Segment and OBB use segments. OBB segments are normalized xyxyxyxy
+            elif self.task in {"segment", "obb", "qbb"}:  # Segment, OBB, and QBB use segments. OBB/QBB segments are normalized xyxyxyxy
                 coordinates = [x.flatten() for x in labels["segments"]]
             elif self.task == "pose":
                 n, nk, nd = labels["keypoints"].shape

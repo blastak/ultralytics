@@ -32,7 +32,7 @@ class BaseSolution:
         LOGGER: Logger instance for solution-specific logging.
         annotator: Annotator instance for drawing on images.
         tracks: YOLO tracking results from the latest inference.
-        track_data: Extracted tracking data (boxes or OBB) from tracks.
+        track_data: Extracted tracking data (boxes, OBB, or QBB) from tracks.
         boxes (List): Bounding box coordinates from tracking results.
         clss (List[int]): Class indices from tracking results.
         track_ids (List[int]): Track IDs from tracking results.
@@ -171,7 +171,7 @@ class BaseSolution:
                 source=im0, persist=True, classes=self.classes, verbose=False, **self.track_add_args
             )[0]
         is_obb = self.tracks.obb is not None
-        self.track_data = self.tracks.obb if is_obb else self.tracks.boxes  # Extract tracks for OBB or object detection
+        self.track_data = self.tracks.obb if is_obb else (self.tracks.qbb if hasattr(self.tracks, 'qbb') and self.tracks.qbb is not None else self.tracks.boxes)  # Extract tracks for OBB/QBB or object detection
 
         if self.track_data and self.track_data.is_track:
             self.boxes = (self.track_data.xyxyxyxy if is_obb else self.track_data.xyxy).cpu()
