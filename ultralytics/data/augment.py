@@ -2210,12 +2210,16 @@ class Format:
             )
         elif self.return_qbb:
             labels["bboxes"] = (
-                xyxyxyxy2xywhr(torch.from_numpy(instances.segments)) if len(instances.segments) else torch.zeros((0, 5))
+                torch.from_numpy(instances.segments.reshape(-1, 8)) if len(instances.segments) else torch.zeros((0, 8))
             )
         # NOTE: need to normalize obb/qbb in xywhr format for width-height consistency
         if self.normalize:
-            labels["bboxes"][:, [0, 2]] /= w
-            labels["bboxes"][:, [1, 3]] /= h
+            if self.return_qbb:
+                labels["bboxes"][:, [0, 2, 4, 6]] /= w  # x1, x2, x3, x4
+                labels["bboxes"][:, [1, 3, 5, 7]] /= h  # y1, y2, y3, y4
+            else:
+                labels["bboxes"][:, [0, 2]] /= w
+                labels["bboxes"][:, [1, 3]] /= h
         # Then we can use collate_fn
         if self.batch_idx:
             labels["batch_idx"] = torch.zeros(nl)

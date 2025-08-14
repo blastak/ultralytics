@@ -11,6 +11,18 @@ This file provides guidance to Claude Code (claude.ai/code) when working with co
 3. **세션 시작**: Claude Code 세션이 시작될 때 항상 이 CLAUDE.md 파일을 먼저 읽어주세요.
 4. **Auto Compacting 후**: 메모리 정리(auto compacting) 이후에는 이전에 하던 작업을 리마인드해주세요.
 
+## 📅 일주일간 유효한 특별 조건 (2025-08-12 ~ 2025-08-18)
+
+**⚠️ 중요: 이 조건은 2025년 8월 12일부터 8월 18일까지 적용됩니다**
+
+5. **이번 주 특별 작업 모드**: 
+   - 사용자가 QBB 구현을 직접 수정하려고 합니다
+   - Claude는 **분석과 가이드만** 제공하고 **직접 코드 수정은 하지 않습니다**
+   - 파일 위치 안내, 코드 구조 설명, 수정 방향 제시에 집중
+   - 사용자가 명시적으로 요청하는 경우에만 코드 예시 제공
+   - **Read, Grep, LS 도구는 자유롭게 사용** (분석 목적)
+   - **Edit, Write, MultiEdit 도구는 사용 금지** (사용자가 직접 수정)
+
 ## 프로젝트 개요
 
 Ultralytics YOLO는 YOLO (You Only Look Once) 모델 패밀리를 구현한 최첨단 컴퓨터 비전 프레임워크입니다. 객체 감지, 인스턴스 분할, 포즈 추정, 분류, 회전된 경계 상자(OBB), 다중 객체 추적을 위한 통합 API를 제공합니다.
