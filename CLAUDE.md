@@ -10,6 +10,7 @@ This file provides guidance to Claude Code (claude.ai/code) when working with co
    - 코드 내 주석은 한글로 상세히 작성
 3. **세션 시작**: Claude Code 세션이 시작될 때 항상 이 CLAUDE.md 파일을 먼저 읽어주세요.
 4. **Auto Compacting 후**: 메모리 정리(auto compacting) 이후에는 이전에 하던 작업을 리마인드해주세요.
+5. **날짜 시간 기록**: 작업내역을 업데이트할 때는 항상 현재 날짜와 시간을 조사하여 정확히 기입합니다.
 
 ## 📅 일주일간 유효한 특별 조건 (2025-08-12 ~ 2025-08-18)
 

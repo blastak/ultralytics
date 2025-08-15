@@ -101,11 +101,18 @@ class QBBValidator(DetectionValidator):
             preds (torch.Tensor): Raw predictions from the model.
 
         Returns:
-            (List[Dict[str, torch.Tensor]]): Processed predictions with angle information concatenated to bboxes.
+            (List[Dict[str, torch.Tensor]]): Processed predictions with 8-coordinate information.
         """
+        # QBB에서 tuple 처리를 super().postprocess() 호출 전에 먼저 처리
+        if isinstance(preds, tuple):
+            preds = preds[0]  # 결합된 텐서 (dbox + cls.sigmoid())
+
         preds = super().postprocess(preds)
+
         for pred in preds:
-            pred["bboxes"] = torch.cat([pred["bboxes"], pred.pop("extra")], dim=-1)  # concatenate angle
+            # QBB는 8개 좌표이므로 'extra' 처리가 다를 수 있음
+            if "extra" in pred:
+                pred["bboxes"] = torch.cat([pred["bboxes"], pred.pop("extra")], dim=-1)
         return preds
 
     def _prepare_batch(self, si: int, batch: Dict[str, Any]) -> Dict[str, Any]:

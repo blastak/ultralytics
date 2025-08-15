@@ -376,6 +376,26 @@ class QBB(Detect):
         """QBB forward - cv4 없이 cv2에서 8개 좌표 직접 출력"""
         return Detect.forward(self, x)  # 기본 Detect forward 사용
 
+    def _inference(self, x: List[torch.Tensor]) -> torch.Tensor:
+        """QBB 전용 추론 메서드 - 8개 좌표 분할"""
+        # Inference path
+        shape = x[0].shape  # BCHW
+        x_cat = torch.cat([xi.view(shape[0], self.no, -1) for xi in x], 2)
+        if self.format != "imx" and (self.dynamic or self.shape != shape):
+            self.anchors, self.strides = (x.transpose(0, 1) for x in make_anchors(x, self.stride, 0.5))
+            self.shape = shape
+
+        if self.export and self.format in {"saved_model", "pb", "tflite", "edgetpu", "tfjs"}:
+            box = x_cat[:, : self.reg_max * 8]  # 8개 좌표
+            cls = x_cat[:, self.reg_max * 8:]
+        else:
+            box, cls = x_cat.split((self.reg_max * 8, self.nc), 1)  # 8개 좌표 분할
+
+        # 8개 좌표는 DFL 디코딩 없이 그대로 사용
+        dbox = box  # QBB는 디코딩 없음
+
+        return torch.cat((dbox, cls.sigmoid()), 1) if self.export else (dbox, cls)
+
     def decode_bboxes(self, bboxes: torch.Tensor, anchors: torch.Tensor) -> torch.Tensor:
         """QBB는 8개 좌표 그대로 반환"""
         return bboxes  # DFL 디코딩된 8개 좌표 그대로 반환

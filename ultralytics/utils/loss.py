@@ -178,6 +178,7 @@ class QuadrilateralBboxLoss(BboxLoss):
     def __init__(self, reg_max: int):
         """Initialize the QuadrilateralBboxLoss module with regularization maximum and DFL settings."""
         super().__init__(reg_max)
+        self.dfl_loss = None  # QBB는 DFL 사용하지 않음
 
     def forward(
         self,
@@ -811,8 +812,9 @@ class v8QBBLoss(v8DetectionLoss):
         super().__init__(model)
         m = model.model[-1]
         self.no = m.nc + m.reg_max * 8
-        self.assigner = TaskAlignedAssigner(topk=10, num_classes=self.nc, alpha=0.5, beta=6.0)
+        self.assigner = QuadrilateralTaskAlignedAssigner(topk=10, num_classes=self.nc, alpha=0.5, beta=6.0)
         self.bbox_loss = QuadrilateralBboxLoss(self.reg_max).to(self.device)
+        self.dfl_loss = None  # DFL 강제 비활성화
 
     def preprocess(self, targets: torch.Tensor, batch_size: int, scale_tensor: torch.Tensor) -> torch.Tensor:
         """Preprocess targets for quadrilateral bounding box detection."""
@@ -834,46 +836,37 @@ class v8QBBLoss(v8DetectionLoss):
     def __call__(self, preds: Any, batch: Dict[str, torch.Tensor]) -> Tuple[torch.Tensor, torch.Tensor]:
         """Calculate and return the loss for quadrilateral bounding box detection."""
         loss = torch.zeros(3, device=self.device)  # box, cls, dfl
-        feats = preds if isinstance(preds, list) else preds
-        batch_size = feats[0].shape[0]  # batch size
+        feats = preds[1] if isinstance(preds, tuple) else preds
         pred_distri, pred_scores = torch.cat([xi.view(feats[0].shape[0], self.no, -1) for xi in feats], 2).split(
             (self.reg_max * 8, self.nc), 1
         )
+
         pred_scores = pred_scores.permute(0, 2, 1).contiguous()
         pred_distri = pred_distri.permute(0, 2, 1).contiguous()
 
         dtype = pred_scores.dtype
+        batch_size = pred_scores.shape[0]
         imgsz = torch.tensor(feats[0].shape[2:], device=self.device, dtype=dtype) * self.stride[0]  # image size (h,w)
         anchor_points, stride_tensor = make_anchors(feats, self.stride, 0.5)
 
         # Targets
-        try:
-            batch_idx = batch["batch_idx"].view(-1, 1)
-            targets = torch.cat((batch_idx, batch["cls"].view(-1, 1), batch["bboxes"].view(-1, 8)), 1)
-            rw, rh = targets[:, 4] * imgsz[0].item(), targets[:, 5] * imgsz[1].item()
-            targets = targets[(rw >= 2) & (rh >= 2)]  # filter qboxes of tiny size to stabilize training
-            targets = self.preprocess(targets.to(self.device), batch_size, scale_tensor=imgsz[[1, 0, 1, 0]])
-            gt_labels, gt_bboxes = targets.split((1, 8), 2)  # 5 → 8로 변경
-            mask_gt = gt_bboxes.sum(2, keepdim=True).gt_(0.0)
-        except RuntimeError as e:
-            raise TypeError(
-                "ERROR ❌ QBB dataset incorrectly formatted or not a QBB dataset.\n"
-                "This error can occur when incorrectly training a 'QBB' model on a 'detect' dataset, "
-                "i.e. 'yolo train model=yolov8n-qbb.pt data=coco8.yaml'.\nVerify your dataset is a "
-                "correctly formatted 'QBB' dataset using 'data=dota8.yaml' "
-                "as an example.\nSee https://docs.ultralytics.com/datasets/qbb/ for help."
-            ) from e
+        targets = torch.cat((batch["batch_idx"].view(-1, 1), batch["cls"].view(-1, 1), batch["bboxes"]), 1)
+        #targets = torch.cat((batch_idx, batch["cls"].view(-1, 1), batch["bboxes"].view(-1, 8)), 1)
+        #rw, rh = targets[:, 4] * imgsz[0].item(), targets[:, 5] * imgsz[1].item()
+        #targets = targets[(rw >= 2) & (rh >= 2)]
+        targets = self.preprocess(targets.to(self.device), batch_size, scale_tensor=imgsz[[1, 0, 1, 0]])
+        gt_labels, gt_bboxes = targets.split((1, 8), 2)  # cls, xyxy
+        mask_gt = gt_bboxes.sum(2, keepdim=True).gt_(0.0)
 
         # Pboxes
-        pred_bboxes = self.bbox_decode(anchor_points, pred_distri)  # pred_angle 제거
+        pred_bboxes = self.bbox_decode(anchor_points, pred_distri)  # xyxy, (b, h*w, 4)
+        # dfl_conf = pred_distri.view(batch_size, -1, 4, self.reg_max).detach().softmax(-1)
+        # dfl_conf = (dfl_conf.amax(-1).mean(-1) + dfl_conf.amax(-1).amin(-1)) / 2
 
-        bboxes_for_assigner = pred_bboxes.clone().detach()
-        # Only the first four elements need to be scaled
-        bboxes_for_assigner[..., [0, 2, 4, 6]] *= stride_tensor  # x 좌표들
-        bboxes_for_assigner[..., [1, 3, 5, 7]] *= stride_tensor  # y 좌표들
         _, target_bboxes, target_scores, fg_mask, _ = self.assigner(
+            # pred_scores.detach().sigmoid() * 0.8 + dfl_conf.unsqueeze(-1) * 0.2,
             pred_scores.detach().sigmoid(),
-            bboxes_for_assigner.type(gt_bboxes.dtype),
+            (pred_bboxes.detach() * stride_tensor).type(gt_bboxes.dtype),
             anchor_points * stride_tensor,
             gt_labels,
             gt_bboxes,
@@ -888,7 +881,7 @@ class v8QBBLoss(v8DetectionLoss):
 
         # Bbox loss
         if fg_mask.sum():
-            target_bboxes[..., :4] /= stride_tensor
+            target_bboxes /= stride_tensor
             loss[0], loss[2] = self.bbox_loss(
                 pred_distri, pred_bboxes, anchor_points, target_bboxes, target_scores, target_scores_sum, fg_mask
             )

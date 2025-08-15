@@ -356,42 +356,43 @@ def quad_iou_8coords_v2(quad1: torch.Tensor, quad2: torch.Tensor, eps: float = 1
 
 
 def batch_quad_iou_8coords(
-    qbb1: Union[torch.Tensor, np.ndarray], qbb2: Union[torch.Tensor, np.ndarray], eps: float = 1e-7
+        qbb1: Union[torch.Tensor, np.ndarray],
+        qbb2: Union[torch.Tensor, np.ndarray],
+        eps: float = 1e-7
 ) -> torch.Tensor:
     """
-    Calculate the probabilistic IoU between quadrilateral bounding boxes.
+    Calculate IoU between batches of quadrilateral bounding boxes using 8 coordinates.
 
     Args:
-        qbb1 (torch.Tensor | np.ndarray): A tensor of shape (N, 5) representing ground truth qbbs, with xywhr format.
-        qbb2 (torch.Tensor | np.ndarray): A tensor of shape (M, 5) representing predicted qbbs, with xywhr format.
-        eps (float, optional): A small value to avoid division by zero.
+        qbb1 (torch.Tensor | np.ndarray): Ground truth quads of shape (N, 8), format xyxyxyxy.
+        qbb2 (torch.Tensor | np.ndarray): Predicted quads of shape (M, 8), format xyxyxyxy.
+        eps (float): Small value to avoid division by zero.
 
     Returns:
-        (torch.Tensor): A tensor of shape (N, M) representing qbb similarities.
+        (torch.Tensor): IoU matrix of shape (N, M).
 
-    References:
-        https://arxiv.org/pdf/2106.06072v1.pdf
+    Note:
+        Format: [x1, y1, x2, y2, x3, y3, x4, y4] - four corner coordinates
+        Uses quad_iou_8coords for individual IoU calculations
     """
     qbb1 = torch.from_numpy(qbb1) if isinstance(qbb1, np.ndarray) else qbb1
     qbb2 = torch.from_numpy(qbb2) if isinstance(qbb2, np.ndarray) else qbb2
 
-    x1, y1 = qbb1[..., :2].split(1, dim=-1)
-    x2, y2 = (x.squeeze(-1)[None] for x in qbb2[..., :2].split(1, dim=-1))
-    a1, b1, c1 = _get_covariance_matrix(qbb1)
-    a2, b2, c2 = (x.squeeze(-1)[None] for x in _get_covariance_matrix(qbb2))
+    # 배치 크기 확인
+    N, M = qbb1.shape[0], qbb2.shape[0]
 
-    t1 = (
-        ((a1 + a2) * (y1 - y2).pow(2) + (b1 + b2) * (x1 - x2).pow(2)) / ((a1 + a2) * (b1 + b2) - (c1 + c2).pow(2) + eps)
-    ) * 0.25
-    t2 = (((c1 + c2) * (x2 - x1) * (y1 - y2)) / ((a1 + a2) * (b1 + b2) - (c1 + c2).pow(2) + eps)) * 0.5
-    t3 = (
-        ((a1 + a2) * (b1 + b2) - (c1 + c2).pow(2))
-        / (4 * ((a1 * b1 - c1.pow(2)).clamp_(0) * (a2 * b2 - c2.pow(2)).clamp_(0)).sqrt() + eps)
-        + eps
-    ).log() * 0.5
-    bd = (t1 + t2 + t3).clamp(eps, 100.0)
-    hd = (1.0 - (-bd).exp() + eps).sqrt()
-    return 1 - hd
+    # IoU 매트릭스 초기화
+    iou_matrix = torch.zeros((N, M), dtype=qbb1.dtype, device=qbb1.device)
+
+    # 각 GT와 모든 예측값들 간의 IoU 계산
+    for i in range(N):
+        gt_quad = qbb1[i:i + 1].expand(M, -1)  # (M, 8)로 확장
+        pred_quads = qbb2  # (M, 8)
+
+        # quad_iou_8coords 사용하여 일대다 IoU 계산
+        iou_matrix[i] = quad_iou_8coords(gt_quad, pred_quads, eps)
+
+    return iou_matrix
 
 
 def smooth_bce(eps: float = 0.1) -> Tuple[float, float]:

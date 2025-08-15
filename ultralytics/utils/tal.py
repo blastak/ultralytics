@@ -5,7 +5,7 @@ import torch.nn as nn
 
 from . import LOGGER
 from .checks import check_version
-from .metrics import bbox_iou, probiou
+from .metrics import bbox_iou, probiou, quad_iou_8coords
 from .ops import xywhr2xyxyxyxy
 
 TORCH_1_10 = check_version(torch.__version__, "1.10.0")
@@ -420,22 +420,34 @@ def dist2rbox(pred_dist, pred_angle, anchor_points, dim=-1):
 
 
 class QuadrilateralTaskAlignedAssigner(TaskAlignedAssigner):
-    """4개 꼭짓점 박스용 Task Aligned Assigner"""
-
     def iou_calculation(self, gt_bboxes, pd_bboxes):
-        """8개 좌표 → AABB 변환 후 IoU 계산 (임시)"""
-        # GT 박스 AABB 계산
-        gt_x1 = gt_bboxes[..., [0, 2, 4, 6]].min(dim=-1)[0]
-        gt_y1 = gt_bboxes[..., [1, 3, 5, 7]].min(dim=-1)[0]
-        gt_x2 = gt_bboxes[..., [0, 2, 4, 6]].max(dim=-1)[0]
-        gt_y2 = gt_bboxes[..., [1, 3, 5, 7]].max(dim=-1)[0]
-        gt_aabb = torch.stack([gt_x1, gt_y1, gt_x2, gt_y2], dim=-1)
+        """8개 좌표 기반 IoU 계산"""
+        return quad_iou_8coords(gt_bboxes, pd_bboxes).squeeze(-1).clamp_(0)
 
-        # 예측 박스 AABB 계산
-        pd_x1 = pd_bboxes[..., [0, 2, 4, 6]].min(dim=-1)[0]
-        pd_y1 = pd_bboxes[..., [1, 3, 5, 7]].min(dim=-1)[0]
-        pd_x2 = pd_bboxes[..., [0, 2, 4, 6]].max(dim=-1)[0]
-        pd_y2 = pd_bboxes[..., [1, 3, 5, 7]].max(dim=-1)[0]
-        pd_aabb = torch.stack([pd_x1, pd_y1, pd_x2, pd_y2], dim=-1)
+    @staticmethod
+    def select_candidates_in_gts(xy_centers, gt_bboxes):
+        """
+        QBB용 positive anchor 선택 (8개 좌표 처리)
 
-        return bbox_iou(gt_aabb, pd_aabb, xywh=False, CIoU=True).squeeze(-1).clamp_(0)
+        Args:
+            xy_centers (torch.Tensor): anchor center points
+            gt_bboxes (torch.Tensor): ground truth boxes in xyxyxyxy format
+        """
+        # 8개 좌표를 AABB로 변환하여 candidate 선택
+        # x좌표들의 min/max, y좌표들의 min/max 구하기
+        x_coords = gt_bboxes[..., 0::2]  # x1, x2, x3, x4
+        y_coords = gt_bboxes[..., 1::2]  # y1, y2, y3, y4
+
+        x_min = x_coords.min(dim=-1, keepdim=True)[0]
+        y_min = y_coords.min(dim=-1, keepdim=True)[0]
+        x_max = x_coords.max(dim=-1, keepdim=True)[0]
+        y_max = y_coords.max(dim=-1, keepdim=True)[0]
+
+        # AABB 형태로 변환
+        aabb_bboxes = torch.cat([x_min, y_min, x_max, y_max], dim=-1)
+
+        n_anchors = xy_centers.shape[0]
+        bs, n_boxes, _ = aabb_bboxes.shape
+        lt, rb = aabb_bboxes.view(-1, 1, 4).chunk(2, 2)  # left-top, right-bottom
+        bbox_deltas = torch.cat((xy_centers[None] - lt, rb - xy_centers[None]), dim=2).view(bs, n_boxes, n_anchors, -1)
+        return bbox_deltas.amin(3).gt_(1e-9)

@@ -240,5 +240,84 @@ DFL Loss    4.727    4.727     0%
 - 🧪 **Phase 1 기본 테스트 가능** (8개 좌표 직접 출력)
 - ⚡ **stride 및 anchor 문제 모두 해결**
 
+### Phase 1 학습 성공 (2025-08-16 01:35) 🎉
+
+**🏆 핵심 성과: QBB 8좌표 직접 출력 학습 성공**
+
+#### 학습 완료 결과:
+1. **학습 환경**
+   - 모델: YOLOv8n-QBB (3,025,067 parameters)
+   - 데이터셋: WebPM OBB8 (9개 클래스)
+   - 에폭: 2 (테스트용)
+   - GPU: NVIDIA GTX 1080 Ti
+   - 배치 사이즈: 1
+
+2. **학습 성과**
+   ```
+   Epoch  box_loss  cls_loss  dfl_loss  Status
+     1/2    33.26     8.73        0     ✅
+     2/2    24.69     8.496       0     ✅
+   ```
+   - **DFL 완전 비활성화 확인** (dfl_loss=0)
+   - **box_loss 감소** (33.26 → 24.69)
+   - **모델 저장 성공**: best.pt, last.pt (각 6.3MB)
+
+3. **저장 위치**
+   - 경로: `/workspace/repo/ultralytics/runs/qbb/debug_by_user45/weights/`
+   - 파일: `best.pt`, `last.pt`
+
+#### 해결된 주요 이슈들 (2025-08-16 01:35):
+
+**1. ✅ TAL Assigner 완전 재구현 (tal.py)**
+- `QuadrilateralTaskAlignedAssigner` 클래스: 8좌표 전용 IoU 계산
+- `select_candidates_in_gts` 메서드: 8좌표→AABB 변환 후 candidate 선택
+- `iou_calculation` 메서드: `quad_iou_8coords` 직접 사용
+
+**2. ✅ Loss 함수 완전 통합 (loss.py)**
+- `v8QBBLoss`: DFL 강제 비활성화, QuadrilateralTaskAlignedAssigner 사용
+- `QuadrilateralBboxLoss`: DFL loss 제거 (`self.dfl_loss = None`)
+- `__call__` 메서드: tuple 입력 처리, 8좌표 분할 로직 수정
+
+**3. ✅ QBB Head 추론 구현 (head.py)**
+- `_inference` 메서드 추가: 8좌표 분할 및 tuple 출력
+- export 모드와 일반 모드 구분 처리
+- DFL 디코딩 없이 raw 좌표 직접 출력
+
+**4. ✅ IoU 함수 완전 재구현 (metrics.py)**
+- `batch_quad_iou_8coords`: OBB 방식→8좌표 배치 처리로 완전 변경
+- 형식: (N, 5) xywhr → (N, 8) xyxyxyxy
+- `quad_iou_8coords` 기반 N×M 매트릭스 계산
+
+**5. ✅ NMS 설정 수정 (detect/predict.py, detect/val.py)**
+- `rotated=self.args.task == "obb"`: QBB를 rotated NMS에서 제외
+- CUDA 메모리 부족 문제 해결
+
+**6. ✅ QBB Validation 처리 (qbb/val.py)**
+- `postprocess` 메서드: tuple 입력 사전 처리
+- super().postprocess() 호출 전 tuple→tensor 변환
+
+#### 현재 이슈:
+- ⚠️ **Validation tuple 오류**: 최종 검증 단계에서 발생 (학습은 완료됨)
+- 📍 오류 위치: ops.py:250에서 tuple.shape 속성 접근 실패
+- 🔍 원인: QBB Head `_inference`가 tuple 반환하지만 validation에서 처리 미완료
+
+#### Git Diff 요약:
+```
+수정된 파일: 10개
+- tal.py: QuadrilateralTaskAlignedAssigner 완전 구현
+- loss.py: v8QBBLoss, QuadrilateralBboxLoss DFL 비활성화
+- head.py: QBB._inference 메서드 추가 (8좌표 분할)
+- metrics.py: batch_quad_iou_8coords 8좌표 방식으로 재구현
+- qbb/val.py: tuple 사전 처리 로직 추가
+- detect/predict.py, detect/val.py: rotated NMS에서 QBB 제외
+- CLAUDE.md: 날짜 시간 기록 규칙 추가
+```
+
+### 다음 단계 (Phase 2)
+1. **🔧 Validation tuple 오류 수정** (QBB Head 출력 형식 통일)
+2. **🧮 실제 Polygon IoU 구현** (Sutherland-Hodgman 알고리즘)
+3. **📊 Phase 1 vs OBB 성능 비교**
+4. **⚡ 성능 최적화 및 DFL 활성화 검토**
+
 ---
-*마지막 업데이트: 2025-08-15 (Phase 1 완료, Phase 2 준비)*
+*마지막 업데이트: 2025-08-16 01:35:51 (Phase 1 학습 성공, 주요 수정사항 완료)*
