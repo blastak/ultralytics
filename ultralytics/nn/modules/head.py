@@ -394,7 +394,8 @@ class QBB(Detect):
         # 8개 좌표는 DFL 디코딩 없이 그대로 사용
         dbox = box  # QBB는 디코딩 없음
 
-        return torch.cat((dbox, cls.sigmoid()), 1) if self.export else (dbox, cls)
+        # 수정: 항상 결합된 텐서 반환
+        return torch.cat((dbox, cls.sigmoid()), 1)  # export 여부와 관계없이
 
     def decode_bboxes(self, bboxes: torch.Tensor, anchors: torch.Tensor) -> torch.Tensor:
         """QBB는 8개 좌표 그대로 반환"""
