@@ -48,10 +48,15 @@ QBB는 4개의 꼭짓점(xyxyxyxy)을 사용하여 더 유연한 사각형 경�
 - [ ] **xyxyxyxy용 IoU 구현**: 4개 꼭짓점 직접 계산 방식
 - [ ] **기존 함수 수정 vs 새 함수 추가** 결정
 
-#### 3.3 모델 아키텍처 수정
-- [ ] **Head 출력 수정**: 5개 값(xywhr) → 8개 값(xyxyxyxy)
-- [ ] **Loss 함수 수정**: 새로운 출력 형식에 맞춰 조정
-- [ ] **후처리 로직**: NMS 등 xyxyxyxy 대응
+#### 3.3 모델 아키텍처 수정 (새로운 방향)
+- [ ] **QBB Head 구현**: cv2 출력을 4*reg_max → 8*reg_max로 확장
+  - cv4 사용하지 않음 (ne=0 유지)
+  - 8개 좌표를 DFL 방식으로 예측
+- [ ] **QBB Loss 단순화**: DFL 비활성화, Box+Cls만 구현
+  - Box Loss: 8개 좌표 기반 Polygon IoU
+  - Cls Loss: BCE (기존과 동일)
+  - DFL Loss: 비활성화 (reg_max=1 또는 λ=0)
+- [ ] **Bbox 디코딩**: 8개 좌표 직접 출력 방식
 
 #### 3.4 검증 및 테스트
 - [ ] **단위 테스트**: 각 구성요소 개별 검증
@@ -178,10 +183,62 @@ DFL Loss    4.727    4.727     0%
    - `ultralytics/models/yolo/detect/train.py`: import 수정
    - `ultralytics/utils/__init__.py`: import 수정
 
-### 다음 작업
-- metrics.py: polyiou 함수 구현
-- loss.py: QBB Loss 수정 (8개 좌표 처리)
-- head.py: QBB Head 출력 8개로 수정
+### Phase 1 완료 (2025-08-15) ✅
+
+**🎯 핵심 성과: xyxyxyxy 형식 QBB 구현 완료**
+
+#### 완료된 작업들:
+1. **QBB Head 구조 수정**
+   - `head.py`: cv2 출력을 4*reg_max → 8*reg_max로 확장
+   - `self.no = nc + reg_max * 8` 올바른 설정
+   - DFL 비활성화 (`self.dfl = nn.Identity()`)
+   - cv4 제거 (angle 예측 불필요)
+
+2. **QBB Loss 함수 구현**
+   - `loss.py`: v8QBBLoss 클래스에서 8개 좌표 처리
+   - `self.no = m.nc + m.reg_max * 8` 설정
+   - stride tensor 스케일링을 8개 좌표용으로 수정
+   - preprocess 메서드 텐서 크기를 6→9로 수정
+
+3. **모델 아키텍처 호환성 수정**
+   - `tasks.py`: QBB를 stride 계산 if문에서 제외 (415번째 줄)
+   - stride 문제 해결: [8.] → [8., 16., 32.]
+   - 8400 vs 6400 anchor points 불일치 문제 해결
+
+4. **IoU 함수 준비**
+   - `metrics.py`: probiou_quad → quad_iou_8coords 함수명 변경
+   - Phase 1용 AABB IoU 임시 구현
+   - 8개 좌표를 AABB로 변환 후 IoU 계산
+
+5. **TAL 어사이너 구현**
+   - `tal.py`: QuadrilateralTaskAlignedAssigner 클래스 추가
+   - 8개 좌표를 AABB로 변환하여 IoU 계산
+
+#### 해결된 주요 문제들:
+- ✅ **텐서 크기 불일치**: self.no 계산 오류 수정
+- ✅ **stride 생성 문제**: QBB를 특별 처리 제외
+- ✅ **anchor points 차이**: 8400 vs 6400 문제 해결
+- ✅ **DFL 비활성화**: Phase 1 단순화 목표 달성
+
+### Phase 2 계획 (다음 단계)
+**🚀 다음 구현 목표: 진짜 Polygon IoU**
+
+1. **실제 Quadrilateral IoU 구현**
+   - quad_iou_8coords 함수에서 AABB → Polygon IoU 전환
+   - Sutherland-Hodgman 알고리즘 또는 Shoelace 공식 사용
+
+2. **성능 최적화**
+   - DFL 활성화 여부 결정
+   - 학습 안정성 및 수렴 속도 개선
+
+3. **검증 및 테스트**
+   - Phase 1 QBB vs OBB 성능 비교
+   - Phase 2 최적화 후 최종 성능 측정
+
+#### 현재 상태:
+- 📁 **모든 파일 수정 완료** 및 커밋 준비
+- 🧪 **Phase 1 기본 테스트 가능** (8개 좌표 직접 출력)
+- ⚡ **stride 및 anchor 문제 모두 해결**
 
 ---
-*마지막 업데이트: 2025-08-14 (3단계 진행중 - 데이터 파이프라인 수정 완료)*
+*마지막 업데이트: 2025-08-15 (Phase 1 완료, Phase 2 준비)*

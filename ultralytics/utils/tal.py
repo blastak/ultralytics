@@ -417,3 +417,25 @@ def dist2rbox(pred_dist, pred_angle, anchor_points, dim=-1):
     x, y = xf * cos - yf * sin, xf * sin + yf * cos
     xy = torch.cat([x, y], dim=dim) + anchor_points
     return torch.cat([xy, lt + rb], dim=dim)
+
+
+class QuadrilateralTaskAlignedAssigner(TaskAlignedAssigner):
+    """4개 꼭짓점 박스용 Task Aligned Assigner"""
+
+    def iou_calculation(self, gt_bboxes, pd_bboxes):
+        """8개 좌표 → AABB 변환 후 IoU 계산 (임시)"""
+        # GT 박스 AABB 계산
+        gt_x1 = gt_bboxes[..., [0, 2, 4, 6]].min(dim=-1)[0]
+        gt_y1 = gt_bboxes[..., [1, 3, 5, 7]].min(dim=-1)[0]
+        gt_x2 = gt_bboxes[..., [0, 2, 4, 6]].max(dim=-1)[0]
+        gt_y2 = gt_bboxes[..., [1, 3, 5, 7]].max(dim=-1)[0]
+        gt_aabb = torch.stack([gt_x1, gt_y1, gt_x2, gt_y2], dim=-1)
+
+        # 예측 박스 AABB 계산
+        pd_x1 = pd_bboxes[..., [0, 2, 4, 6]].min(dim=-1)[0]
+        pd_y1 = pd_bboxes[..., [1, 3, 5, 7]].min(dim=-1)[0]
+        pd_x2 = pd_bboxes[..., [0, 2, 4, 6]].max(dim=-1)[0]
+        pd_y2 = pd_bboxes[..., [1, 3, 5, 7]].max(dim=-1)[0]
+        pd_aabb = torch.stack([pd_x1, pd_y1, pd_x2, pd_y2], dim=-1)
+
+        return bbox_iou(gt_aabb, pd_aabb, xywh=False, CIoU=True).squeeze(-1).clamp_(0)

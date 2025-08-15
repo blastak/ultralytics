@@ -293,53 +293,69 @@ def batch_probiou(
     return 1 - hd
 
 
-def probiou_quad(qbb1: torch.Tensor, qbb2: torch.Tensor, CIoU: bool = False, eps: float = 1e-7) -> torch.Tensor:
+def quad_iou_8coords(quad1: torch.Tensor, quad2: torch.Tensor, eps: float = 1e-7) -> torch.Tensor:
     """
-    Calculate probabilistic IoU between quadrilateral bounding boxes.
+    Calculate IoU between quadrilaterals using 8 coordinates (xyxyxyxy format).
 
     Args:
-        qbb1 (torch.Tensor): Ground truth QBBs, shape (N, 5), format xywhr.
-        qbb2 (torch.Tensor): Predicted QBBs, shape (N, 5), format xywhr.
-        CIoU (bool, optional): If True, calculate CIoU.
-        eps (float, optional): Small value to avoid division by zero.
+        quad1 (torch.Tensor): Ground truth quads, shape (N, 8), format xyxyxyxy.
+        quad2 (torch.Tensor): Predicted quads, shape (N, 8), format xyxyxyxy.
+        eps (float): Small value to avoid division by zero.
 
     Returns:
-        (torch.Tensor): QBB similarities, shape (N,).
+        (torch.Tensor): IoU values, shape (N,).
 
-    Notes:
-        QBB format: [center_x, center_y, width, height, rotation_angle].
-
-    References:
-        https://arxiv.org/pdf/2106.06072v1.pdf
+    Note:
+        Format: [x1, y1, x2, y2, x3, y3, x4, y4] - four corner coordinates
+        Phase 1: Uses AABB IoU for simplicity
+        Phase 2: Will implement true polygon intersection IoU
     """
-    x1, y1 = qbb1[..., :2].split(1, dim=-1)
-    x2, y2 = qbb2[..., :2].split(1, dim=-1)
-    a1, b1, c1 = _get_covariance_matrix(qbb1)
-    a2, b2, c2 = _get_covariance_matrix(qbb2)
+    # Phase 1: AABB IoU (간단한 구현)
+    # 각 사각형의 AABB(Axis-Aligned Bounding Box) 계산
+    quad1_x = quad1[..., [0, 2, 4, 6]]  # x coordinates
+    quad1_y = quad1[..., [1, 3, 5, 7]]  # y coordinates
+    quad2_x = quad2[..., [0, 2, 4, 6]]
+    quad2_y = quad2[..., [1, 3, 5, 7]]
 
-    t1 = (
-        ((a1 + a2) * (y1 - y2).pow(2) + (b1 + b2) * (x1 - x2).pow(2)) / ((a1 + a2) * (b1 + b2) - (c1 + c2).pow(2) + eps)
-    ) * 0.25
-    t2 = (((c1 + c2) * (x2 - x1) * (y1 - y2)) / ((a1 + a2) * (b1 + b2) - (c1 + c2).pow(2) + eps)) * 0.5
-    t3 = (
-        ((a1 + a2) * (b1 + b2) - (c1 + c2).pow(2))
-        / (4 * ((a1 * b1 - c1.pow(2)).clamp_(0) * (a2 * b2 - c2.pow(2)).clamp_(0)).sqrt() + eps)
-        + eps
-    ).log() * 0.5
-    bd = (t1 + t2 + t3).clamp(eps, 100.0)
-    hd = (1.0 - (-bd).exp() + eps).sqrt()
-    iou = 1 - hd
-    if CIoU:  # only include the wh aspect ratio part
-        w1, h1 = qbb1[..., 2:4].split(1, dim=-1)
-        w2, h2 = qbb2[..., 2:4].split(1, dim=-1)
-        v = (4 / math.pi**2) * ((w2 / h2).atan() - (w1 / h1).atan()).pow(2)
-        with torch.no_grad():
-            alpha = v / (v - iou + (1 + eps))
-        return iou - v * alpha  # CIoU
-    return iou
+    # AABB 경계 계산
+    quad1_x1, quad1_x2 = quad1_x.min(dim=-1)[0], quad1_x.max(dim=-1)[0]
+    quad1_y1, quad1_y2 = quad1_y.min(dim=-1)[0], quad1_y.max(dim=-1)[0]
+    quad2_x1, quad2_x2 = quad2_x.min(dim=-1)[0], quad2_x.max(dim=-1)[0]
+    quad2_y1, quad2_y2 = quad2_y.min(dim=-1)[0], quad2_y.max(dim=-1)[0]
+
+    # AABB 교집합 계산
+    inter_x1 = torch.max(quad1_x1, quad2_x1)
+    inter_y1 = torch.max(quad1_y1, quad2_y1)
+    inter_x2 = torch.min(quad1_x2, quad2_x2)
+    inter_y2 = torch.min(quad1_y2, quad2_y2)
+
+    # 교집합 넓이
+    inter_w = (inter_x2 - inter_x1).clamp(0)
+    inter_h = (inter_y2 - inter_y1).clamp(0)
+    inter_area = inter_w * inter_h
+
+    # 각 사각형의 AABB 넓이
+    quad1_area = (quad1_x2 - quad1_x1) * (quad1_y2 - quad1_y1)
+    quad2_area = (quad2_x2 - quad2_x1) * (quad2_y2 - quad2_y1)
+
+    # 합집합 넓이
+    union_area = quad1_area + quad2_area - inter_area + eps
+
+    # IoU 계산
+    iou = inter_area / union_area
+
+    return iou.clamp(0, 1)
 
 
-def batch_probiou_quad(
+def quad_iou_8coords_v2(quad1: torch.Tensor, quad2: torch.Tensor, eps: float = 1e-7) -> torch.Tensor:
+    """실제 Polygon IoU (Phase 2에서 구현 예정)"""
+    # Sutherland-Hodgman 클리핑 알고리즘이나
+    # Separating Axes Theorem을 사용한 실제 다각형 교집합 계산
+    # 더 복잡하지만 정확한 IoU 계산
+    pass
+
+
+def batch_quad_iou_8coords(
     qbb1: Union[torch.Tensor, np.ndarray], qbb2: Union[torch.Tensor, np.ndarray], eps: float = 1e-7
 ) -> torch.Tensor:
     """
@@ -510,7 +526,7 @@ class ConfusionMatrix(DataExportMixin):
         if is_obb:
             iou = batch_probiou(gt_bboxes, bboxes)
         elif is_qbb:
-            iou = batch_probiou_quad(gt_bboxes, bboxes)
+            iou = batch_quad_iou_8coords(gt_bboxes, bboxes)
         else:
             iou = box_iou(gt_bboxes, bboxes)
 

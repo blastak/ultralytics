@@ -356,37 +356,29 @@ class QBB(Detect):
         >>> outputs = qbb(x)
     """
 
-    def __init__(self, nc: int = 80, ne: int = 1, ch: Tuple = ()):
-        """
-        Initialize QBB with number of classes `nc` and layer channels `ch`.
-
-        Args:
-            nc (int): Number of classes.
-            ne (int): Number of extra parameters (임시로 1, 추후 8로 변경).
-            ch (tuple): Tuple of channel sizes from backbone feature maps.
-        """
+    def __init__(self, nc: int = 80, ne: int = 0, ch: Tuple = ()):  # ne=0으로 변경
+        """Initialize QBB with number of classes `nc` and layer channels `ch`."""
         super().__init__(nc, ch)
         self.ne = ne
+        self.no = nc + self.reg_max * 8
 
-        c4 = max(ch[0] // 4, self.ne)
-        self.cv4 = nn.ModuleList(nn.Sequential(Conv(x, c4, 3), Conv(c4, c4, 3), nn.Conv2d(c4, self.ne, 1)) for x in ch)
+        # DFL 비활성화 (Phase 1)
+        self.dfl = nn.Identity()  # 또는 None으로 설정
+
+        # cv4 제거, cv2를 8*reg_max로 확장
+        c2 = max(ch[0] // 4, 4 * self.reg_max)
+        self.cv2 = nn.ModuleList(
+            nn.Sequential(Conv(x, c2, 3), Conv(c2, c2, 3), nn.Conv2d(c2, 8 * self.reg_max, 1))
+            for x in ch
+        )
 
     def forward(self, x: List[torch.Tensor]) -> Union[torch.Tensor, Tuple]:
-        """Concatenate and return predicted bounding boxes and class probabilities."""
-        bs = x[0].shape[0]  # batch size
-        angle = torch.cat([self.cv4[i](x[i]).view(bs, self.ne, -1) for i in range(self.nl)], 2)  # QBB theta logits
-        # NOTE: set `angle` as an attribute so that `decode_bboxes` could use it.
-        angle = (angle.sigmoid() - 0.25) * math.pi  # [-pi/4, 3pi/4]
-        if not self.training:
-            self.angle = angle
-        x = Detect.forward(self, x)
-        if self.training:
-            return x, angle
-        return torch.cat([x, angle], 1) if self.export else (torch.cat([x[0], angle], 1), (x[1], angle))
+        """QBB forward - cv4 없이 cv2에서 8개 좌표 직접 출력"""
+        return Detect.forward(self, x)  # 기본 Detect forward 사용
 
     def decode_bboxes(self, bboxes: torch.Tensor, anchors: torch.Tensor) -> torch.Tensor:
-        """Decode quadrilateral bounding boxes."""
-        return dist2rbox(bboxes, self.angle, anchors, dim=1)
+        """QBB는 8개 좌표 그대로 반환"""
+        return bboxes  # DFL 디코딩된 8개 좌표 그대로 반환
 
 
 class Pose(Detect):
