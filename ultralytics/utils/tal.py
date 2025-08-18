@@ -419,6 +419,31 @@ def dist2rbox(pred_dist, pred_angle, anchor_points, dim=-1):
     return torch.cat([xy, lt + rb], dim=dim)
 
 
+def dist2quad(distance, anchor_points, dim=-1):
+    """
+    Transform distance to quadrilateral coordinates (8개 좌표).
+
+    Args:
+        distance (torch.Tensor): DFL 출력된 거리 값, shape (b, h*w, 8)
+        anchor_points (torch.Tensor): 앵커 포인트, shape (h*w, 2)
+        dim (int): 분할할 차원
+
+    Returns:
+        (torch.Tensor): 8개 절대 좌표 (x1,y1,x2,y2,x3,y3,x4,y4), shape (b, h*w, 8)
+    """
+    # 4개 점의 거리로 분할
+    d1, d2, d3, d4 = distance.chunk(4, dim=dim)
+
+    # 각 점을 앵커 포인트 기준으로 변환
+    p1 = anchor_points - d1  # 점1 (x1, y1)
+    p2 = anchor_points + d2  # 점2 (x2, y2)
+    p3 = anchor_points - d3  # 점3 (x3, y3)
+    p4 = anchor_points + d4  # 점4 (x4, y4)
+
+    # 8개 좌표 결합 (x1,y1,x2,y2,x3,y3,x4,y4)
+    return torch.cat((p1, p2, p3, p4), dim=dim)
+
+
 class QuadrilateralTaskAlignedAssigner(TaskAlignedAssigner):
     def iou_calculation(self, gt_bboxes, pd_bboxes):
         """8개 좌표 기반 IoU 계산"""

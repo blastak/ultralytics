@@ -8,5 +8,7 @@ if __name__ == '__main__':
     # os.system("rm -f /workspace/repo/ultralytics/ultralytics/assets/good_all_obb8/labels/*.cache")
     model = YOLO('yolov8n-qbb.yaml')
     results = model.train(name='debug_by_user', data='webpm_obb8.yaml', epochs=2, imgsz=640, fliplr=0.0, batch=1, workers=0, plots=True)
+
+    # results = model.train(name='debug_by_user', data='webpm_bb8.yaml', epochs=2, imgsz=640, fliplr=0.0, batch=1, workers=0, plots=True)
     # model = YOLO('yolov8n.yaml')
-    # results = model.train(name='debug_by_user', data='coco8.yaml', epochs=2, imgsz=640, fliplr=0.0, batch=1, workers=0, plots=True)
+    # results = model.train(name='debug_by_user', data='webpm_bb8.yaml', epochs=20, imgsz=640, fliplr=0.0, batch=2, workers=0, plots=True)
