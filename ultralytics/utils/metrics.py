@@ -296,6 +296,7 @@ def batch_probiou(
 def quad_iou_8coords(quad1: torch.Tensor, quad2: torch.Tensor, eps: float = 1e-7) -> torch.Tensor:
     """
     Calculate IoU between quadrilaterals using 8 coordinates (xyxyxyxy format).
+    Uses Shoelace formula for area calculation and Shapely for accurate intersection.
 
     Args:
         quad1 (torch.Tensor): Ground truth quads, shape (N, 8), format xyxyxyxy.
@@ -304,55 +305,78 @@ def quad_iou_8coords(quad1: torch.Tensor, quad2: torch.Tensor, eps: float = 1e-7
 
     Returns:
         (torch.Tensor): IoU values, shape (N,).
-
-    Note:
-        Format: [x1, y1, x2, y2, x3, y3, x4, y4] - four corner coordinates
-        Phase 1: Uses AABB IoU for simplicity
-        Phase 2: Will implement true polygon intersection IoU
     """
-    # Phase 1: AABB IoU (간단한 구현)
-    # 각 사각형의 AABB(Axis-Aligned Bounding Box) 계산
-    quad1_x = quad1[..., [0, 2, 4, 6]]  # x coordinates
-    quad1_y = quad1[..., [1, 3, 5, 7]]  # y coordinates
-    quad2_x = quad2[..., [0, 2, 4, 6]]
-    quad2_y = quad2[..., [1, 3, 5, 7]]
 
-    # AABB 경계 계산
-    quad1_x1, quad1_x2 = quad1_x.min(dim=-1)[0], quad1_x.max(dim=-1)[0]
-    quad1_y1, quad1_y2 = quad1_y.min(dim=-1)[0], quad1_y.max(dim=-1)[0]
-    quad2_x1, quad2_x2 = quad2_x.min(dim=-1)[0], quad2_x.max(dim=-1)[0]
-    quad2_y1, quad2_y2 = quad2_y.min(dim=-1)[0], quad2_y.max(dim=-1)[0]
+    def polygon_area(coords):
+        """Shoelace formula로 다각형 넓이 계산"""
+        # coords: (N, 4, 2) 형태
+        x = coords[..., 0]
+        y = coords[..., 1]
 
-    # AABB 교집합 계산
-    inter_x1 = torch.max(quad1_x1, quad2_x1)
-    inter_y1 = torch.max(quad1_y1, quad2_y1)
-    inter_x2 = torch.min(quad1_x2, quad2_x2)
-    inter_y2 = torch.min(quad1_y2, quad2_y2)
+        # Shoelace formula
+        x_roll = torch.roll(x, -1, dims=-1)
+        y_roll = torch.roll(y, -1, dims=-1)
 
-    # 교집합 넓이
-    inter_w = (inter_x2 - inter_x1).clamp(0)
-    inter_h = (inter_y2 - inter_y1).clamp(0)
-    inter_area = inter_w * inter_h
+        area = 0.5 * torch.abs(
+            torch.sum(x * y_roll - x_roll * y, dim=-1)
+        )
+        return area
 
-    # 각 사각형의 AABB 넓이
-    quad1_area = (quad1_x2 - quad1_x1) * (quad1_y2 - quad1_y1)
-    quad2_area = (quad2_x2 - quad2_x1) * (quad2_y2 - quad2_y1)
+    # 8좌표를 4x2 형태로 변환
+    quad1_pts = quad1.reshape(-1, 4, 2)
+    quad2_pts = quad2.reshape(-1, 4, 2)
 
-    # 합집합 넓이
-    union_area = quad1_area + quad2_area - inter_area + eps
+    # 각 polygon의 넓이 계산 (빠른 텐서 연산)
+    area1 = polygon_area(quad1_pts)
+    area2 = polygon_area(quad2_pts)
 
-    # IoU 계산
-    iou = inter_area / union_area
+    # Shapely를 사용한 정확한 교집합 계산
+    from shapely.geometry import Polygon
+    import numpy as np
 
+    n = quad1.shape[0]
+    intersections = torch.zeros(n, device=quad1.device)
+
+    quad1_np = quad1_pts.detach().cpu().numpy()
+    quad2_np = quad2_pts.detach().cpu().numpy()
+
+    for i in range(n):
+        try:
+            poly1 = Polygon(quad1_np[i])
+            poly2 = Polygon(quad2_np[i])
+
+            # 유효하지 않은 polygon 수정
+            if not poly1.is_valid:
+                poly1 = poly1.buffer(0)
+            if not poly2.is_valid:
+                poly2 = poly2.buffer(0)
+
+            inter = poly1.intersection(poly2).area
+            intersections[i] = inter
+        except Exception:
+            # 에러 시 AABB IoU로 fallback
+            x1_coords = quad1_np[i, :, 0]
+            y1_coords = quad1_np[i, :, 1]
+            x2_coords = quad2_np[i, :, 0]
+            y2_coords = quad2_np[i, :, 1]
+
+            # AABB 교집합
+            x1 = max(x1_coords.min(), x2_coords.min())
+            y1 = max(y1_coords.min(), y2_coords.min())
+            x2 = min(x1_coords.max(), x2_coords.max())
+            y2 = min(y1_coords.max(), y2_coords.max())
+
+            inter = max(0, x2 - x1) * max(0, y2 - y1)
+            intersections[i] = inter
+
+    intersections = intersections.to(quad1.device)
+
+    # Union 계산
+    union = area1 + area2 - intersections + eps
+
+    # IoU
+    iou = intersections / union
     return iou.clamp(0, 1)
-
-
-def quad_iou_8coords_v2(quad1: torch.Tensor, quad2: torch.Tensor, eps: float = 1e-7) -> torch.Tensor:
-    """실제 Polygon IoU (Phase 2에서 구현 예정)"""
-    # Sutherland-Hodgman 클리핑 알고리즘이나
-    # Separating Axes Theorem을 사용한 실제 다각형 교집합 계산
-    # 더 복잡하지만 정확한 IoU 계산
-    pass
 
 
 def batch_quad_iou_8coords(
@@ -364,21 +388,17 @@ def batch_quad_iou_8coords(
     Calculate IoU between batches of quadrilateral bounding boxes using 8 coordinates.
 
     Args:
-        qbb1 (torch.Tensor | np.ndarray): Ground truth quads of shape (N, 8), format xyxyxyxy.
-        qbb2 (torch.Tensor | np.ndarray): Predicted quads of shape (M, 8), format xyxyxyxy.
+        qbb1 (torch.Tensor | np.ndarray): Ground truth quads of shape (N, 8).
+        qbb2 (torch.Tensor | np.ndarray): Predicted quads of shape (M, 8).
         eps (float): Small value to avoid division by zero.
 
     Returns:
         (torch.Tensor): IoU matrix of shape (N, M).
-
-    Note:
-        Format: [x1, y1, x2, y2, x3, y3, x4, y4] - four corner coordinates
-        Uses quad_iou_8coords for individual IoU calculations
     """
+    # numpy를 tensor로 변환
     qbb1 = torch.from_numpy(qbb1) if isinstance(qbb1, np.ndarray) else qbb1
     qbb2 = torch.from_numpy(qbb2) if isinstance(qbb2, np.ndarray) else qbb2
 
-    # 배치 크기 확인
     N, M = qbb1.shape[0], qbb2.shape[0]
 
     # IoU 매트릭스 초기화
@@ -386,10 +406,11 @@ def batch_quad_iou_8coords(
 
     # 각 GT와 모든 예측값들 간의 IoU 계산
     for i in range(N):
-        gt_quad = qbb1[i:i + 1].expand(M, -1)  # (M, 8)로 확장
+        # GT 하나를 M개로 확장
+        gt_quad = qbb1[i:i + 1].expand(M, -1)  # (1, 8) -> (M, 8)
         pred_quads = qbb2  # (M, 8)
 
-        # quad_iou_8coords 사용하여 일대다 IoU 계산
+        # quad_iou_8coords를 호출하여 벡터화된 연산
         iou_matrix[i] = quad_iou_8coords(gt_quad, pred_quads, eps)
 
     return iou_matrix

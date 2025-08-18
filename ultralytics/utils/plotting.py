@@ -777,14 +777,16 @@ def plot_images(
                             boxes[..., [1, 3, 5, 7]] *= h
                         elif scale < 1:  # absolute coords need scale if image scales
                             boxes *= scale
+                        boxes[..., [0, 2, 4, 6]] += x  # 모든 x 좌표
+                        boxes[..., [1, 3, 5, 7]] += y  # 모든 y 좌표
                     else:
                         if boxes[:, :4].max() <= 1.1:  # if normalized with tolerance 0.1
                             boxes[..., [0, 2]] *= w  # scale to pixels
                             boxes[..., [1, 3]] *= h
                         elif scale < 1:  # absolute coords need scale if image scales
                             boxes[..., :4] *= scale
-                boxes[..., 0] += x
-                boxes[..., 1] += y
+                        boxes[..., 0] += x
+                        boxes[..., 1] += y
                 # TODO: this transformation might be unnecessary
                 boxes = boxes.reshape(-1, 4, 2) if is_qbb else ops.xywhr2xyxyxyxy(boxes) if is_obb else ops.xywh2xyxy(boxes) # quad : (b,8) → (b,4,2)
                 for j, box in enumerate(boxes.astype(np.int64).tolist()):
