@@ -824,12 +824,12 @@ class v8QBBLoss(v8DetectionLoss):
             i = targets[:, 0]  # image index
             _, counts = i.unique(return_counts=True)
             counts = counts.to(dtype=torch.int32)
-            out = torch.zeros(batch_size, counts.max(), 9, device=self.device)
+            out = torch.zeros(batch_size, counts.max(), 9, device=self.device)  # [cls, x1, y1, x2, y2, x3, y3, x4, y4]
             for j in range(batch_size):
                 matches = i == j
                 if n := matches.sum():
                     bboxes = targets[matches, 2:]
-                    bboxes[..., :4].mul_(scale_tensor)
+                    bboxes.mul_(scale_tensor)
                     out[j, :n] = torch.cat([targets[matches, 1:2], bboxes], dim=-1)
         return out
 
@@ -854,7 +854,7 @@ class v8QBBLoss(v8DetectionLoss):
         #targets = torch.cat((batch_idx, batch["cls"].view(-1, 1), batch["bboxes"].view(-1, 8)), 1)
         #rw, rh = targets[:, 4] * imgsz[0].item(), targets[:, 5] * imgsz[1].item()
         #targets = targets[(rw >= 2) & (rh >= 2)]
-        targets = self.preprocess(targets.to(self.device), batch_size, scale_tensor=imgsz[[1, 0, 1, 0]])
+        targets = self.preprocess(targets.to(self.device), batch_size, scale_tensor=imgsz[[1, 0, 1, 0, 1, 0, 1, 0]])
         gt_labels, gt_bboxes = targets.split((1, 8), 2)  # cls, xyxy
         mask_gt = gt_bboxes.sum(2, keepdim=True).gt_(0.0)
 

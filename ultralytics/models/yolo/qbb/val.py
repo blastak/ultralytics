@@ -1,7 +1,7 @@
 # Ultralytics 🚀 AGPL-3.0 License - https://ultralytics.com/license
 
 from pathlib import Path
-from typing import Any, Dict, List, Tuple
+from typing import Any, Dict, List, Optional, Tuple
 
 import numpy as np
 import torch
@@ -9,6 +9,7 @@ import torch
 from ultralytics.models.yolo.detect import DetectionValidator
 from ultralytics.utils import LOGGER, ops
 from ultralytics.utils.metrics import QBBMetrics, batch_quad_iou_8coords
+from ultralytics.utils.plotting import plot_images
 
 
 class QBBValidator(DetectionValidator):
@@ -149,25 +150,44 @@ class QBBValidator(DetectionValidator):
             "im_file": batch["im_file"][si],
         }
 
-    def plot_predictions(self, batch: Dict[str, Any], preds: List[torch.Tensor], ni: int) -> None:
+    def plot_predictions(
+            self, batch: Dict[str, Any], preds: List[Dict[str, torch.Tensor]], ni: int, max_det: Optional[int] = None
+    ) -> None:
         """
-        Plot predicted bounding boxes on input images and save the result.
+        Plot predicted quadrilateral bounding boxes on input images and save the result.
 
         Args:
-            batch (Dict[str, Any]): Batch data containing images, file paths, and other metadata.
-            preds (List[torch.Tensor]): List of prediction tensors for each image in the batch.
-            ni (int): Batch index used for naming the output file.
+            batch (Dict[str, Any]): Batch containing images and annotations.
+            preds (List[Dict[str, torch.Tensor]]): List of predictions from the model.
+            ni (int): Batch index.
+            max_det (Optional[int]): Maximum number of detections to plot.
 
         Examples:
             >>> validator = QBBValidator()
             >>> batch = {"img": images, "im_file": paths}
-            >>> preds = [torch.rand(10, 7)]  # Example predictions for one image
+            >>> preds = [{"bboxes": torch.rand(10, 8), "conf": torch.rand(10), "cls": torch.rand(10)}]
             >>> validator.plot_predictions(batch, preds, 0)
         """
-        for p in preds:
-            # TODO: fix this duplicated `xywh2xyxy`
-            p["bboxes"][:, :4] = ops.xywh2xyxy(p["bboxes"][:, :4])  # convert to xyxy format for plotting
-        super().plot_predictions(batch, preds, ni)  # plot bboxes
+        # Detection Validator 로직과 동일하게 구현
+        for i, pred in enumerate(preds):
+            pred["batch_idx"] = torch.ones_like(pred["conf"]) * i  # add batch index to predictions
+
+        keys = preds[0].keys()
+        max_det = max_det or self.args.max_det
+        batched_preds = {k: torch.cat([x[k][:max_det] for x in preds], dim=0) for k in keys}
+
+        # QBB는 8개 좌표를 변환하지 않음 (Detection과의 핵심 차이점)
+        # Detection: xyxy → xywh 변환 수행
+        # QBB: 8개 좌표 (x1,y1,x2,y2,x3,y3,x4,y4) 그대로 유지
+
+        plot_images(
+            images=batch["img"],
+            labels=batched_preds,
+            paths=batch["im_file"],
+            fname=self.save_dir / f"val_batch{ni}_pred.jpg",
+            names=self.names,
+            on_plot=self.on_plot,
+        )  # pred
 
     def pred_to_json(self, predn: Dict[str, torch.Tensor], pbatch: Dict[str, Any]) -> None:
         """

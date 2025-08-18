@@ -362,10 +362,7 @@ class QBB(Detect):
         self.ne = ne
         self.no = nc + self.reg_max * 8
 
-        # DFL 비활성화 (Phase 1)
-        self.dfl = nn.Identity()  # 또는 None으로 설정
-
-        # cv4 제거, cv2를 8*reg_max로 확장
+        # cv2를 8*reg_max로 확장
         c2 = max(ch[0] // 4, 4 * self.reg_max)
         self.cv2 = nn.ModuleList(
             nn.Sequential(Conv(x, c2, 3), Conv(c2, c2, 3), nn.Conv2d(c2, 8 * self.reg_max, 1))
@@ -391,15 +388,37 @@ class QBB(Detect):
         else:
             box, cls = x_cat.split((self.reg_max * 8, self.nc), 1)  # 8개 좌표 분할
 
-        # 8개 좌표는 DFL 디코딩 없이 그대로 사용
-        dbox = box  # QBB는 디코딩 없음
+        # DFL을 사용한 디코딩
+        dbox = self.decode_bboxes(box, self.anchors.unsqueeze(0)) * self.strides
 
         # 수정: 항상 결합된 텐서 반환
         return torch.cat((dbox, cls.sigmoid()), 1)  # export 여부와 관계없이
 
     def decode_bboxes(self, bboxes: torch.Tensor, anchors: torch.Tensor) -> torch.Tensor:
-        """QBB는 8개 좌표 그대로 반환"""
-        return bboxes  # DFL 디코딩된 8개 좌표 그대로 반환
+        """QBB용 8개 좌표 디코딩 - 기존 DFL 두 번 사용"""
+        reg_max = self.reg_max
+
+        # 8개 좌표를 두 그룹으로 분할하여 DFL 적용
+        # 각 그룹: 4개 좌표 (x1,y1,x2,y2) 및 (x3,y3,x4,y4)
+        box1 = self.dfl(bboxes[:, :4 * reg_max])  # (b, 4, a)
+        box2 = self.dfl(bboxes[:, 4 * reg_max:])  # (b, 4, a)
+
+        # dist2quad 로직 구현 (dist2bbox의 변형)
+        # box1: 점1, 점2의 거리
+        # box2: 점3, 점4의 거리
+
+        # 앵커 포인트로부터 4개 점 계산
+        lt1, rb1 = box1.chunk(2, dim=1)  # 점1, 점2
+        lt2, rb2 = box2.chunk(2, dim=1)  # 점3, 점4
+
+        # 8개 좌표 생성
+        x1y1 = anchors - lt1
+        x2y2 = anchors + rb1
+        x3y3 = anchors - lt2
+        x4y4 = anchors + rb2
+
+        # 8개 좌표 결합 (x1,y1,x2,y2,x3,y3,x4,y4)
+        return torch.cat((x1y1, x2y2, x3y3, x4y4), dim=1)
 
 
 class Pose(Detect):
