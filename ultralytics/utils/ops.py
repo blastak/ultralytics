@@ -886,3 +886,196 @@ def empty_like(x):
     return (
         torch.empty_like(x, dtype=torch.float32) if isinstance(x, torch.Tensor) else np.empty_like(x, dtype=np.float32)
     )
+
+
+def non_max_suppression_qbb(
+        prediction,
+        conf_thres: float = 0.25,
+        iou_thres: float = 0.45,
+        classes=None,
+        agnostic: bool = False,
+        multi_label: bool = False,
+        labels=(),
+        max_det: int = 300,
+        nc: int = 0,  # number of classes (optional)
+        max_time_img: float = 0.05,
+        max_nms: int = 30000,
+        max_wh: int = 7680,
+        in_place: bool = True,
+        end2end: bool = False,
+        return_idxs: bool = False,
+):
+    """
+    Perform non-maximum suppression (NMS) on quadrilateral bounding box predictions.
+
+    Applies NMS to filter overlapping quadrilateral boxes based on confidence and IoU thresholds.
+    Uses polygon IoU calculation for quadrilateral boxes.
+
+    Args:
+        prediction (torch.Tensor): Predictions with shape (batch_size, num_classes + 8, num_boxes)
+            containing quadrilateral boxes (8 coordinates) and classes.
+        conf_thres (float): Confidence threshold for filtering detections.
+        iou_thres (float): IoU threshold for NMS filtering.
+        classes (List[int], optional): List of class indices to consider.
+        agnostic (bool): Whether to perform class-agnostic NMS.
+        multi_label (bool): Whether each box can have multiple labels.
+        labels (List): A priori labels for each image.
+        max_det (int): Maximum number of detections to keep per image.
+        nc (int): Number of classes.
+        max_time_img (float): Maximum time in seconds for processing one image.
+        max_nms (int): Maximum number of boxes for NMS.
+        max_wh (int): Maximum coordinate value.
+        in_place (bool): Whether to modify the input prediction tensor in place.
+        end2end (bool): Whether the model is end-to-end.
+        return_idxs (bool): Whether to return the indices of kept detections.
+
+    Returns:
+        output (List[torch.Tensor]): List of detections per image with shape (num_boxes, 6 + 8)
+            containing (x1, y1, x2, y2, x3, y3, x4, y4, confidence, class).
+        keepi (List[torch.Tensor]): Indices of kept detections if return_idxs=True.
+    """
+    import time
+    import torch
+    from ultralytics.utils.metrics import quad_iou_8coords
+
+    # Checks
+    assert 0 <= conf_thres <= 1, f"Invalid Confidence threshold {conf_thres}, valid values are between 0.0 and 1.0"
+    assert 0 <= iou_thres <= 1, f"Invalid IoU {iou_thres}, valid values are between 0.0 and 1.0"
+    if isinstance(prediction, (list, tuple)):  # YOLOv8 model in validation model, output = (inference_out, loss_out)
+        prediction = prediction[0]  # select only inference output
+    if classes is not None:
+        classes = torch.tensor(classes, device=prediction.device)
+
+    if prediction.shape[-1] == 10 or end2end:  # end-to-end model (BNC, i.e. 1,300,10) - 8 coords + conf + cls
+        output = [pred[pred[:, 8] > conf_thres][:max_det] for pred in prediction]
+        if classes is not None:
+            output = [pred[(pred[:, 9:10] == classes).any(1)] for pred in output]
+        return output
+
+    bs = prediction.shape[0]  # batch size (BCN, i.e. 1,84,6300)
+    nc = nc or (prediction.shape[1] - 8)  # number of classes (8 coordinates instead of 4)
+    extra = prediction.shape[1] - nc - 8  # number of extra info
+    mi = 8 + nc  # mask start index (8 coordinates instead of 4)
+    xc = prediction[:, 8:mi].amax(1) > conf_thres  # candidates (class scores start from index 8)
+    xinds = torch.stack([torch.arange(len(i), device=prediction.device) for i in xc])[..., None]  # to track idxs
+
+    # Settings
+    time_limit = 2.0 + max_time_img * bs  # seconds to quit after
+    multi_label &= nc > 1  # multiple labels per box (adds 0.5ms/img)
+
+    prediction = prediction.transpose(-1, -2)  # shape(1,84,6300) to shape(1,6300,84)
+
+    # QBB coordinates are already in absolute format (x1,y1,x2,y2,x3,y3,x4,y4)
+    # No coordinate conversion needed like xywh2xyxy
+
+    t = time.time()
+    output = [torch.zeros((0, 10 + extra), device=prediction.device)] * bs  # 8 coords + conf + cls + extra
+    keepi = [torch.zeros((0, 1), device=prediction.device)] * bs  # to store the kept idxs
+
+    for xi, (x, xk) in enumerate(zip(prediction, xinds)):  # image index, (preds, preds indices)
+        # Apply constraints
+        filt = xc[xi]  # confidence
+        x, xk = x[filt], xk[filt]
+
+        # Cat apriori labels if autolabelling (skip for QBB for now)
+        # TODO: Implement apriori labels for QBB if needed
+
+        # If none remain process next image
+        if not x.shape[0]:
+            continue
+
+        # Detections matrix nx(8+nc+extra) (xyxyxyxy, cls_scores, extra)
+        box, cls, mask = x.split((8, nc, extra), 1)  # 8 coordinates instead of 4
+
+        if multi_label:
+            i, j = torch.where(cls > conf_thres)
+            x = torch.cat((box[i], x[i, 8 + j, None], j[:, None].float(), mask[i]), 1)
+            xk = xk[i]
+        else:  # best class only
+            conf, j = cls.max(1, keepdim=True)
+            filt = conf.view(-1) > conf_thres
+            x = torch.cat((box, conf, j.float(), mask), 1)[filt]
+            xk = xk[filt]
+
+        # Filter by class
+        if classes is not None:
+            filt = (x[:, 9:10] == classes).any(1)  # class index is now at position 9
+            x, xk = x[filt], xk[filt]
+
+        # Check shape
+        n = x.shape[0]  # number of boxes
+        if not n:  # no boxes
+            continue
+        if n > max_nms:  # excess boxes
+            filt = x[:, 8].argsort(descending=True)[:max_nms]  # sort by confidence (index 8)
+            x, xk = x[filt], xk[filt]
+
+        # Batched NMS for QBB
+        c = x[:, 9:10] * (0 if agnostic else max_wh)  # classes (index 9)
+        scores = x[:, 8]  # scores (confidence at index 8)
+
+        # QBB NMS using polygon IoU
+        boxes = x[:, :8]  # quadrilateral coordinates (x1,y1,x2,y2,x3,y3,x4,y4)
+
+        # Apply class offset to first coordinate pair only (for class separation)
+        if not agnostic:
+            boxes = boxes.clone()
+            boxes[:, [0, 1]] += c.squeeze(-1).unsqueeze(-1)  # offset first coordinate pair
+
+        # Custom NMS for quadrilateral boxes
+        i = qbb_nms(boxes, scores, iou_thres)
+
+        i = i[:max_det]  # limit detections
+
+        output[xi], keepi[xi] = x[i], xk[i].reshape(-1)
+        if (time.time() - t) > time_limit:
+            LOGGER.warning(f"QBB NMS time limit {time_limit:.3f}s exceeded")
+            break  # time limit exceeded
+
+    return (output, keepi) if return_idxs else output
+
+
+def qbb_nms(boxes: torch.Tensor, scores: torch.Tensor, iou_threshold: float) -> torch.Tensor:
+    """
+    Quadrilateral Bounding Box Non-Maximum Suppression.
+
+    Args:
+        boxes (torch.Tensor): Quadrilateral boxes with shape (N, 8) in format (x1,y1,x2,y2,x3,y3,x4,y4)
+        scores (torch.Tensor): Confidence scores with shape (N,)
+        iou_threshold (float): IoU threshold for suppression
+
+    Returns:
+        torch.Tensor: Indices of boxes to keep
+    """
+    from ultralytics.utils.metrics import quad_iou_8coords
+
+    if boxes.numel() == 0:
+        return torch.empty((0,), dtype=torch.int64, device=boxes.device)
+
+    # Sort by scores (descending)
+    keep = torch.argsort(scores, descending=True)
+    keep_mask = torch.ones(len(keep), dtype=torch.bool, device=boxes.device)
+
+    for i in range(len(keep)):
+        if not keep_mask[i]:
+            continue
+
+        # Current box
+        current_idx = keep[i]
+        current_box = boxes[current_idx:current_idx + 1]  # shape (1, 8)
+
+        # Compare with remaining boxes
+        remaining_indices = keep[i + 1:]
+        remaining_boxes = boxes[remaining_indices]  # shape (M, 8)
+
+        if len(remaining_boxes) == 0:
+            break
+
+        # Calculate IoU using quadrilateral IoU function
+        ious = quad_iou_8coords(current_box.expand_as(remaining_boxes), remaining_boxes)
+
+        # Suppress boxes with IoU > threshold
+        suppress_mask = ious > iou_threshold
+        keep_mask[i + 1:][suppress_mask] = False
+
+    return keep[keep_mask]

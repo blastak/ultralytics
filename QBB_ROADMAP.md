@@ -408,4 +408,49 @@ inter = poly1.intersection(poly2).area
 - ⏳ **대기**: Phase 4 - 추가 기능 및 문서화
 
 ---
-*마지막 업데이트: 2025-08-18 18:40:12 (Phase 3 Polygon IoU 구현 및 Multi-GPU 학습 환경 구축 완료, QBB 성능 분석 진행중)*
+## Phase 5: QBB 전용 NMS 구현 (2025-08-19) ✅
+
+**🎯 핵심 성과: QBB 8좌표 전용 Non-Maximum Suppression 시스템 완성**
+
+### 5.1 문제 진단 및 해결 (2025-08-19 13:09)
+
+#### 발견된 문제점:
+1. **plotting.py:725**: `confs`가 `None`으로 발생하는 오류
+2. **근본 원인**: QBB의 NMS가 표준 4좌표 기반으로 작동
+3. **postprocess 문제**: Detection의 `non_max_suppression`이 QBB 8좌표를 처리 못함
+
+#### 구현 완료 사항:
+
+**1. QBB 전용 NMS 함수 생성 (`ops.py`)**
+- `non_max_suppression_qbb()`: 8좌표 전용 NMS 함수 (193줄 추가)
+- `qbb_nms()`: Quadrilateral IoU 기반 억제 알고리즘
+- 주요 차이점:
+  - 좌표 개수: 4 → 8
+  - 클래스 인덱스: 5 → 9 
+  - 신뢰도 인덱스: 4 → 8
+  - IoU 계산: `quad_iou_8coords` 사용
+
+**2. QBB Validator 수정 (`qbb/val.py`)**
+- `postprocess()` 오버라이드: `non_max_suppression_qbb` 호출
+- 출력 형식 변환: (x1,y1,x2,y2,x3,y3,x4,y4,conf,cls) → dict 형태
+- `conf` 키 누락 문제 완전 해결
+
+**3. QBB Predictor 수정 (`qbb/predict.py`)**
+- 부모 클래스의 `postprocess()` 완전 재구현
+- `construct_results()`, `construct_result()` 추가
+- 8좌표 스케일링 및 Results 객체 생성
+- Feature 저장 지원 (`save_feats`)
+
+**4. 통합 테스트 설정 (`train_entrypoint.py`)**
+- 디버깅용 설정: epochs=1, batch=8, workers=0
+- `backward_debug` 실행으로 NMS 시스템 검증
+
+#### 기술적 성취:
+- **완전한 8좌표 NMS 파이프라인**: Detection과 독립적인 QBB 전용 시스템
+- **Polygon IoU 통합**: 정확한 quadrilateral 겹침 계산
+- **확장성**: 기존 YOLO 구조 유지하며 QBB 특화 기능 추가
+- **안정성**: `conf` 누락 등 엣지 케이스 완벽 처리
+
+---
+
+*마지막 업데이트: 2025-08-19 13:09:12 (Phase 5 QBB 전용 NMS 구현 완료, validation과 prediction 모두 정상 작동)*

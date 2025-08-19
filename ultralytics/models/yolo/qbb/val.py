@@ -104,17 +104,41 @@ class QBBValidator(DetectionValidator):
         Returns:
             (List[Dict[str, torch.Tensor]]): Processed predictions with 8-coordinate information.
         """
-        # QBB에서 tuple 처리를 super().postprocess() 호출 전에 먼저 처리
+        # QBB에서 tuple 처리를 먼저 처리
         if isinstance(preds, tuple):
             preds = preds[0]  # 결합된 텐서 (dbox + cls.sigmoid())
 
-        preds = super().postprocess(preds)
+        # QBB 전용 NMS 사용 (기존 super().postprocess() 대신)
+        from ultralytics.utils.ops import non_max_suppression_qbb
 
-        for pred in preds:
-            # QBB는 8개 좌표이므로 'extra' 처리가 다를 수 있음
-            if "extra" in pred:
-                pred["bboxes"] = torch.cat([pred["bboxes"], pred.pop("extra")], dim=-1)
-        return preds
+        outputs = non_max_suppression_qbb(
+            preds,
+            self.args.conf,
+            self.args.iou,
+            nc=0 if self.args.task == "detect" else self.nc,
+            multi_label=True,
+            agnostic=self.args.single_cls or self.args.agnostic_nms,
+            max_det=self.args.max_det,
+            end2end=self.end2end,
+        )
+
+        # 출력 형식 변환: (x1,y1,x2,y2,x3,y3,x4,y4,conf,cls) → dict 형태
+        results = []
+        for output in outputs:
+            if len(output) == 0:
+                results.append({
+                    "bboxes": torch.zeros((0, 8), device=output.device),
+                    "conf": torch.zeros((0,), device=output.device),
+                    "cls": torch.zeros((0,), device=output.device),
+                })
+            else:
+                results.append({
+                    "bboxes": output[:, :8],  # 8개 좌표
+                    "conf": output[:, 8],  # 신뢰도
+                    "cls": output[:, 9],  # 클래스
+                })
+
+        return results
 
     def _prepare_batch(self, si: int, batch: Dict[str, Any]) -> Dict[str, Any]:
         """
