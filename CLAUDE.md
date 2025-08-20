@@ -28,59 +28,13 @@ This file provides guidance to Claude Code (claude.ai/code) when working with co
 
 Ultralytics YOLO는 YOLO (You Only Look Once) 모델 패밀리를 구현한 최첨단 컴퓨터 비전 프레임워크입니다. 객체 감지, 인스턴스 분할, 포즈 추정, 분류, 회전된 경계 상자(OBB), 다중 객체 추적을 위한 통합 API를 제공합니다.
 
-## 주요 명령어
+### ✨ 추가 개발 기능: QBB (Quadrilateral Bounding Box)
+본 저장소에는 표준 YOLO 기능 외에 **QBB (Quadrilateral Bounding Box)** 모델이 추가로 개발되었습니다:
 
-### 설치
-```bash
-pip install -e .  # 개발용 설치
-pip install ultralytics  # 표준 설치
-```
-
-### 테스트
-```bash
-# 모든 테스트 실행
-pytest tests/
-
-# 커버리지와 함께 테스트 실행
-pytest --cov=ultralytics/ --cov-report xml tests/
-
-# 느린 테스트 실행 (종합적)
-pytest --slow tests/
-
-# 특정 테스트 모듈 실행
-pytest tests/test_cli.py -v -s
-pytest tests/test_python.py
-pytest tests/test_engine.py
-pytest tests/test_integrations.py
-pytest tests/test_exports.py
-```
-
-### 코드 품질
-```bash
-# 프로젝트는 Python 포맷팅에 Ruff를 사용 (CI에서 처리)
-# GitHub Actions가 PR을 자동 포맷하므로 수동 포맷팅은 일반적으로 필요 없음
-
-# YOLO 설치 및 환경 확인
-yolo checks
-```
-
-### 일반적인 개발 작업
-```bash
-# 모델 학습
-yolo train model=yolo11n.pt data=coco8.yaml epochs=100
-
-# 모델 검증
-yolo val model=yolo11n.pt data=coco8.yaml
-
-# 추론/예측 실행
-yolo predict model=yolo11n.pt source=path/to/image.jpg
-
-# 다른 형식으로 모델 내보내기
-yolo export model=yolo11n.pt format=onnx
-
-# 모델 성능 벤치마크
-yolo benchmark model=yolo11n.pt imgsz=640
-```
+- **8좌표 시스템**: `xyxyxyxy` 형식으로 자유로운 사각형 표현
+- **OBB 확장**: 회전된 사각형을 넘어 비틀린 사각형까지 감지
+- **응용 분야**: 항공/위성 이미지, 문서 OCR, 왜곡된 객체 감지
+- **개발 상태**: Phase 5+ 완료, 성능 최적화 진행 중
 
 ## 아키텍처 개요
 
@@ -92,7 +46,7 @@ yolo benchmark model=yolo11n.pt imgsz=640
    - **RT-DETR**: 실시간 Detection Transformer
    - **YOLO-World**: 개방형 어휘 탐지 모델
    - **NAS**: Neural Architecture Search 모델
-   - 각 모델은 작업별 모듈 보유: detect, segment, classify, pose, obb
+   - 각 모델은 작업별 모듈 보유: detect, segment, classify, pose, obb, **qbb**
 
 2. **엔진** (`ultralytics/engine/`)
    - **Model**: 모든 작업을 위한 통합 API를 제공하는 기본 클래스
@@ -105,20 +59,27 @@ yolo benchmark model=yolo11n.pt imgsz=640
 3. **신경망 구성 요소** (`ultralytics/nn/`)
    - **tasks.py**: 모델 아키텍처 정의 및 로딩
    - **modules/**: 빌딩 블록 (conv, blocks, heads, transformers)
+     - **head.py**: Detection, OBB, **QBB** Head 클래스들
    - **autobackend.py**: 여러 프레임워크를 위한 통합 추론 백엔드
 
 4. **데이터 파이프라인** (`ultralytics/data/`)
-   - **dataset.py**: 모든 작업을 위한 핵심 데이터셋 클래스
-   - **augment.py**: 데이터 증강 파이프라인
+   - **dataset.py**: 모든 작업을 위한 핵심 데이터셋 클래스 (QBB 8좌표 처리 포함)
+   - **augment.py**: 데이터 증강 파이프라인 (QBB 전용 처리 추가)
    - **loaders.py**: 다양한 데이터 소스 로더 (이미지, 비디오, 스트림)
    - **build.py**: 데이터셋 빌더 및 데이터로더 생성
 
-5. **구성** (`ultralytics/cfg/`)
+5. **유틸리티** (`ultralytics/utils/`)
+   - **ops.py**: NMS, 좌표 변환 등 (QBB 통합 NMS 포함)
+   - **metrics.py**: IoU 계산, 평가 메트릭 (QBB AABB IoU 최적화)
+   - **tal.py**: Task Aligned Learning (QBB 벡터 기반 Assigner 포함)
+   - **loss.py**: Loss 함수들 (QBB Loss 시스템 추가)
+
+6. **구성** (`ultralytics/cfg/`)
    - 모델 및 데이터셋을 위한 YAML 구성
    - 기본 학습/추론 매개변수
-   - 작업별 구성
+   - 작업별 구성 (QBB 포함)
 
-6. **솔루션** (`ultralytics/solutions/`)
+7. **솔루션** (`ultralytics/solutions/`)
    - 고수준 애플리케이션: 객체 카운팅, 추적 영역, 히트맵
    - 컴퓨터 비전 유틸리티: 거리 계산, 속도 추정
    - 일반적인 사용 사례를 위한 즉시 사용 가능한 워크플로우
@@ -131,13 +92,14 @@ yolo benchmark model=yolo11n.pt imgsz=640
 - **Classify**: 이미지 분류
 - **Pose**: 키포인트 탐지 및 포즈 추정
 - **OBB**: 회전된 객체를 위한 방향이 있는 경계 상자
+- **QBB**: 자유로운 형태의 사각형 경계 상자 ⭐ (추가 개발)
 - **Track**: 비디오 프레임 전체의 다중 객체 추적
 
 ### 주요 설계 패턴
 
 1. **통합 모델 API**: 모든 모델은 일관된 train/val/predict/export 인터페이스를 제공하는 기본 `Model` 클래스에서 상속
 
-2. **작업 다형성**: 작업별 구현(detect/segment 등)은 모델 구성에 따라 동적으로 로드
+2. **작업 다형성**: 작업별 구현(detect/segment/qbb 등)은 모델 구성에 따라 동적으로 로드
 
 3. **AutoBackend**: 다양한 형식(PyTorch, ONNX, TensorRT 등)의 모델 자동 감지 및 로딩
 
@@ -152,3 +114,28 @@ yolo benchmark model=yolo11n.pt imgsz=640
 - 테스트는 다양한 종속성 필요; `pip install -e ".[export]"`로 설치
 - GPU 테스트는 특수 러너에서 별도로 실행
 - 문서는 MkDocs로 빌드되어 docs.ultralytics.com에 배포
+
+### QBB 추가 개발 현황
+
+- **Phase 5+ 완료**: NMS 최적화 및 통합 시스템 구현
+- **주요 성취**: 100-1000배 NMS 성능 향상, 벡터 기반 TAL Assigner
+- **현재 상태**: 기본 기능 완성, 성능 Gap 해결 진행 중
+- **개발 문서**: `QBB_ROADMAP.md` 참조
+
+### 학습 진입점
+
+- **학습 스크립트**: 모든 학습은 `train_entrypoint.py` 파일을 통해 실행
+- **통합 진입점**: 새로운 진입점을 만들지 않고 기존 파일 활용
+- **설정 관리**: `train_entrypoint.py` 내에서 모든 학습 파라미터 조정
+- **예시**:
+  ```python
+  # QBB 학습 실행
+  model = YOLO('yolov8n-qbb.yaml')
+  results = model.train(
+      name='qbb_experiment',
+      data='webpm_obb8.yaml',
+      epochs=100,
+      batch=16,
+      device="0,1"
+  )
+  ```
