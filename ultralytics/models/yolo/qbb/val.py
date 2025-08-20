@@ -98,20 +98,16 @@ class QBBValidator(DetectionValidator):
 
     def postprocess(self, preds: torch.Tensor) -> List[Dict[str, torch.Tensor]]:
         """
+        Apply Non-maximum suppression to prediction outputs for QBB.
+
         Args:
             preds (torch.Tensor): Raw predictions from the model.
 
         Returns:
             (List[Dict[str, torch.Tensor]]): Processed predictions with 8-coordinate information.
         """
-        # QBB에서 tuple 처리를 먼저 처리
-        if isinstance(preds, tuple):
-            preds = preds[0]  # 결합된 텐서 (dbox + cls.sigmoid())
-
-        # QBB 전용 NMS 사용 (기존 super().postprocess() 대신)
-        from ultralytics.utils.ops import non_max_suppression_qbb
-
-        outputs = non_max_suppression_qbb(
+        # DetectionValidator의 postprocess와 동일하지만 quad=True 추가
+        outputs = ops.non_max_suppression(
             preds,
             self.args.conf,
             self.args.iou,
@@ -120,25 +116,15 @@ class QBBValidator(DetectionValidator):
             agnostic=self.args.single_cls or self.args.agnostic_nms,
             max_det=self.args.max_det,
             end2end=self.end2end,
+            quad=True,  # QBB 전용 플래그
         )
 
-        # 출력 형식 변환: (x1,y1,x2,y2,x3,y3,x4,y4,conf,cls) → dict 형태
-        results = []
-        for output in outputs:
-            if len(output) == 0:
-                results.append({
-                    "bboxes": torch.zeros((0, 8), device=output.device),
-                    "conf": torch.zeros((0,), device=output.device),
-                    "cls": torch.zeros((0,), device=output.device),
-                })
-            else:
-                results.append({
-                    "bboxes": output[:, :8],  # 8개 좌표
-                    "conf": output[:, 8],  # 신뢰도
-                    "cls": output[:, 9],  # 클래스
-                })
+        # OBBValidator와 유사한 패턴으로 extra 좌표 결합
+        preds = [{"bboxes": x[:, :4], "conf": x[:, 4], "cls": x[:, 5], "extra": x[:, 6:]} for x in outputs]
+        for pred in preds:
+            pred["bboxes"] = torch.cat([pred["bboxes"], pred.pop("extra")], dim=-1)  # 8개 좌표로 결합
 
-        return results
+        return preds
 
     def _prepare_batch(self, si: int, batch: Dict[str, Any]) -> Dict[str, Any]:
         """
