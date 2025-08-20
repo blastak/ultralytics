@@ -147,7 +147,8 @@ if __name__ == '__main__':
     # os.system("rm -f /workspace/repo/ultralytics/ultralytics/assets/good_all_obb8/labels/*.cache")
     model = YOLO('yolov8n-qbb.yaml')
     # model.add_callback("on_val_batch_end", save_val_images)
-    results = model.train(name='backward_debug', data='webpm_obb1944.yaml', epochs=1, imgsz=640, fliplr=0.0, batch=8, workers=0, plots=True)
+    results = model.train(name='backward_debug', data='webpm_obb8.yaml', epochs=20, imgsz=640, fliplr=0.0, batch=8, workers=0,
+                          plots=True, deterministic=True, seed=42)
     # results = model.train(
     #     name='backward_debug',
     #     data='webpm_obb1944.yaml',

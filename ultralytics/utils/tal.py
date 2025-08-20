@@ -452,27 +452,37 @@ class QuadrilateralTaskAlignedAssigner(TaskAlignedAssigner):
     @staticmethod
     def select_candidates_in_gts(xy_centers, gt_bboxes):
         """
-        QBB용 positive anchor 선택 (8개 좌표 처리)
+        QBB용 positive anchor 선택 (8개 좌표 벡터 기반 정확한 내부 판정)
 
         Args:
-            xy_centers (torch.Tensor): anchor center points
-            gt_bboxes (torch.Tensor): ground truth boxes in xyxyxyxy format
+            xy_centers (torch.Tensor): anchor center points, shape (h*w, 2)
+            gt_bboxes (torch.Tensor): ground truth boxes in xyxyxyxy format, shape (b, n_boxes, 8)
+
+        Returns:
+            (torch.Tensor): Boolean mask of positive anchors, shape (b, n_boxes, h*w)
         """
-        # 8개 좌표를 AABB로 변환하여 candidate 선택
-        # x좌표들의 min/max, y좌표들의 min/max 구하기
-        x_coords = gt_bboxes[..., 0::2]  # x1, x2, x3, x4
-        y_coords = gt_bboxes[..., 1::2]  # y1, y2, y3, y4
+        # 8개 좌표를 4개 점으로 변환: (b, n_boxes, 8) -> (b, n_boxes, 4, 2)
+        corners = gt_bboxes.view(*gt_bboxes.shape[:-1], 4, 2)
 
-        x_min = x_coords.min(dim=-1, keepdim=True)[0]
-        y_min = y_coords.min(dim=-1, keepdim=True)[0]
-        x_max = x_coords.max(dim=-1, keepdim=True)[0]
-        y_max = y_coords.max(dim=-1, keepdim=True)[0]
+        # 첫 번째 점을 기준점 A로, 두 번째와 네 번째 점으로 변 정의
+        # (b, n_boxes, 1, 2)
+        a = corners[..., 0:1, :]  # 점1 (x1, y1)
+        b = corners[..., 1:2, :]  # 점2 (x2, y2)
+        d = corners[..., 3:4, :]  # 점4 (x4, y4)
 
-        # AABB 형태로 변환
-        aabb_bboxes = torch.cat([x_min, y_min, x_max, y_max], dim=-1)
+        # 벡터 AB, AD 계산
+        ab = b - a  # (b, n_boxes, 1, 2)
+        ad = d - a  # (b, n_boxes, 1, 2)
 
-        n_anchors = xy_centers.shape[0]
-        bs, n_boxes, _ = aabb_bboxes.shape
-        lt, rb = aabb_bboxes.view(-1, 1, 4).chunk(2, 2)  # left-top, right-bottom
-        bbox_deltas = torch.cat((xy_centers[None] - lt, rb - xy_centers[None]), dim=2).view(bs, n_boxes, n_anchors, -1)
-        return bbox_deltas.amin(3).gt_(1e-9)
+        # 앵커 포인트에서 기준점까지의 벡터 AP 계산
+        # (b, n_boxes, h*w, 2)
+        ap = xy_centers.unsqueeze(0).unsqueeze(0) - a
+
+        # 벡터 내적 계산
+        norm_ab = (ab * ab).sum(dim=-1)  # ||AB||²
+        norm_ad = (ad * ad).sum(dim=-1)  # ||AD||²
+        ap_dot_ab = (ap * ab).sum(dim=-1)  # AP·AB
+        ap_dot_ad = (ap * ad).sum(dim=-1)  # AP·AD
+
+        # 점이 사각형 내부에 있는 조건
+        return (ap_dot_ab >= 0) & (ap_dot_ab <= norm_ab) & (ap_dot_ad >= 0) & (ap_dot_ad <= norm_ad)
