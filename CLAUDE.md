@@ -23,6 +23,7 @@ This file provides guidance to Claude Code (claude.ai/code) when working with co
    - 사용자가 명시적으로 요청하는 경우에만 코드 예시 제공
    - **Read, Grep, LS 도구는 자유롭게 사용** (분석 목적)
    - **Edit, Write, MultiEdit 도구는 사용 금지** (사용자가 직접 수정)
+   - **예외: Git 관련 명령어 (commit, push, pull 등)는 허용**
 
 ## 프로젝트 개요
 
