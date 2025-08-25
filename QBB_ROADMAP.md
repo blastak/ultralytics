@@ -641,4 +641,72 @@ def dist2quad(distance, anchor_points, dim=-1):
 
 ---
 
-*마지막 업데이트: 2025-08-25 21:33 KST (Phase 6: dist2quad 함수 개선 완료)*
+## Phase 6+ 디버깅 및 이슈 해결 (2025-08-26 00:21 KST) 🔧
+
+### 6.6 mAP=0 문제 진단 및 해결 (2025-08-26)
+
+#### 발견된 핵심 이슈들:
+1. **QBB postprocess 메서드 문제**: DetectionValidator의 로직을 우회하여 mAP 계산 실패
+2. **하드코딩된 좌표 인덱스**: 8, 9, 10 등의 숫자가 QBB 8좌표 처리에 부적합
+3. **Mosaic augmentation 차단**: `Bboxes.convert()` 메서드가 QBB 8좌표 형식 미지원
+4. **dist2quad 차원 문제**: (2,16,7056) 출력을 (2,8,7056)으로 수정 필요
+
+#### 문제별 상세 분석:
+
+**1. QBB val.py postprocess 문제 (`ultralytics/models/yolo/qbb/val.py:109`)**
+```python
+# 문제: DetectionValidator 로직 우회
+outputs = ops.non_max_suppression(quad=True)
+preds = [{"bboxes": x[:, :8], "conf": x[:, 8], "cls": x[:, 9]}]
+return preds
+
+# 해결 필요: DetectionValidator의 postprocess 호출하여 표준 파이프라인 유지
+```
+
+**2. 하드코딩된 좌표 인덱스 문제들**
+- `val.py:124`: `{"bboxes": x[:, :8], "conf": x[:, 8], "cls": x[:, 9]}`
+- `predict.py:124`: `pred[:, :8] = ops.scale_boxes()` (4좌표용 함수 사용)
+- `val.py:152`: `bbox.mul_(torch.tensor()[[1,0,1,0,1,0,1,0]])` (8좌표용 확장 필요)
+
+**3. Mosaic augmentation 차단 원인**
+```python
+# ultralytics/data/augment.py:542
+labels["instances"].convert_bbox(format="xyxy")  # QBB 8좌표 미지원
+
+# ultralytics/utils/instance.py:210
+assert format in {"xyxy", "xywh", "ltwh"}  # QBB 형식 없음
+```
+
+**4. 학습 파라미터 차이 분석 (debug0825_24 vs debug0825_25)**
+| 파라미터 | debug0825_24 | debug0825_25 | 영향 |
+|----------|--------------|--------------|------|
+| data | webpm_obb8.yaml | webpm_obb1944.yaml | 데이터셋 크기 증가 |
+| epochs | 2 | 10 | 학습 길이 |
+| batch | 2 | 16 | 배치 크기 8배 증가 |
+| mosaic | 1.0 | 1.0 | 동일 (차단은 코드 레벨) |
+
+**결론**: 데이터셋과 배치 크기 증가로 Mosaic 호출 빈도가 높아져 8좌표 변환 에러가 빈번해짐
+
+### 6.7 수정된 파일 및 해결 방안 제시
+
+**수정이 필요한 파일들:**
+1. `ultralytics/models/yolo/qbb/val.py`: postprocess 메서드 DetectionValidator 호출 방식으로 수정
+2. `ultralytics/models/yolo/qbb/predict.py`: 8좌표 스케일링 함수 사용
+3. `ultralytics/data/augment.py`: QBB 8좌표 변환 예외 처리
+4. `ultralytics/utils/instance.py`: Bboxes.convert()에 QBB 지원 추가
+
+**train_entrypoint.py 현재 설정:**
+- 모델: yolov8n-qbb.yaml
+- 데이터: webpm_obb1944.yaml  
+- epochs: 100, batch: 32, device: "0,1"
+- deterministic, seed 설정 제거됨
+
+### 6.8 다음 단계 계획
+- [ ] QBB postprocess 메서드 수정
+- [ ] 하드코딩 인덱스 동적 처리로 변경  
+- [ ] Mosaic augmentation QBB 지원 구현
+- [ ] mAP=0 문제 해결 확인
+
+---
+
+*마지막 업데이트: 2025-08-26 00:21 KST (Phase 6+: mAP=0 디버깅 및 Mosaic 차단 원인 분석 완료)*

@@ -676,7 +676,7 @@ def save_one_box(
     return crop
 
 
-# @threaded
+@threaded
 def plot_images(
     labels: Dict[str, Any],
     images: Union[torch.Tensor, np.ndarray] = np.zeros((0, 3, 640, 640), dtype=np.float32),

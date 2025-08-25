@@ -5,11 +5,11 @@ import torch
 from PIL import Image
 
 if __name__ == '__main__':
-    # os.system("rm -f /workspace/repo/ultralytics/ultralytics/assets/good_all_obb8/labels/*.cache")
+    # os.system("rm -f /workspace/repo/ultralytics/ultralytics/assets/good_all_obb1944/labels/*.cache")
     model = YOLO('yolov8n-qbb.yaml')
     # model.add_callback("on_val_batch_end", save_val_images)
-    results = model.train(name='debug0825_', data='webpm_obb8.yaml', epochs=2, imgsz=640, fliplr=0.0, batch=2, workers=0,
-                          plots=True, deterministic=True, seed=42, device="0")
+    results = model.train(name='debug0826_', data='webpm_obb1944.yaml', epochs=100, imgsz=640, fliplr=0.5, batch=32, workers=4,
+                          plots=True, device="0,1")  # deterministic=True, seed=42,
     # results = model.train(
     #     name='backward_debug',
     #     data='webpm_obb1944.yaml',

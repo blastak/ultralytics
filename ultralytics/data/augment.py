@@ -2126,7 +2126,7 @@ class Format:
             return_mask (bool): Whether to return instance masks.
             return_keypoint (bool): Whether to return keypoints.
             return_obb (bool): Whether to return oriented bounding boxes.
-        return_qbb (bool): Whether to return quadrilateral bounding boxes.
+            return_qbb (bool): Whether to return quadrilateral bounding boxes.
             mask_ratio (int): Downsample ratio for masks.
             mask_overlap (bool): Whether masks can overlap.
             batch_idx (bool): Whether to keep batch indexes.
