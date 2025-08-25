@@ -448,31 +448,29 @@ def quad2dist(anchor_points, quad_bboxes, reg_max):
 
 
 def dist2quad(distance, anchor_points, dim=-1):
-    """
-    Transform distance to quadrilateral coordinates (8개 좌표).
-    수정: 좌상단부터 시계방향 순서로 생성
+    """8개 거리를 8개 좌표로 변환 (dist2rbox 스타일)"""
+    # 4개 점의 x,y 거리로 분할
+    d1, d2, d3, d4 = distance.split(2, dim=dim)  # 각각 (bs, h*w, 2)
 
-    Args:
-        distance (torch.Tensor): DFL 출력된 거리 값, shape (b, h*w, 8)
-        anchor_points (torch.Tensor): 앵커 포인트, shape (h*w, 2)
-        dim (int): 분할할 차원
+    # 각 점의 x,y 분리
+    d1x, d1y = d1.split(1, dim=dim)
+    d2x, d2y = d2.split(1, dim=dim)
+    d3x, d3y = d3.split(1, dim=dim)
+    d4x, d4y = d4.split(1, dim=dim)
 
-    Returns:
-        (torch.Tensor): 8개 절대 좌표 (x1,y1,x2,y2,x3,y3,x4,y4), shape (b, h*w, 8)
-                       좌상단부터 시계방향 순서
-    """
-    # 8개 거리를 2개씩 분할 (x,y offset)
-    d1_x, d1_y, d2_x, d2_y, d3_x, d3_y, d4_x, d4_y = distance.chunk(8, dim=dim)
+    # 4개 점 계산 (브로드캐스팅으로 anchor_points 자동 처리)
+    p1 = anchor_points + torch.cat([-d1x, -d1y], dim=dim)  # 좌상
+    p2 = anchor_points + torch.cat([d2x, -d2y], dim=dim)  # 우상
+    p3 = anchor_points + torch.cat([d3x, d3y], dim=dim)  # 우하
+    p4 = anchor_points + torch.cat([-d4x, d4y], dim=dim)  # 좌하
 
-    # 앵커 포인트에서 각 점까지의 오프셋 적용
-    # 좌상단부터 시계방향: 좌상단 -> 우상단 -> 우하단 -> 좌하단
-    p1 = torch.cat([anchor_points[..., 0:1] - d1_x, anchor_points[..., 1:2] - d1_y], dim=dim)  # 좌상단
-    p2 = torch.cat([anchor_points[..., 0:1] + d2_x, anchor_points[..., 1:2] - d2_y], dim=dim)  # 우상단
-    p3 = torch.cat([anchor_points[..., 0:1] + d3_x, anchor_points[..., 1:2] + d3_y], dim=dim)  # 우하단
-    p4 = torch.cat([anchor_points[..., 0:1] - d4_x, anchor_points[..., 1:2] + d4_y], dim=dim)  # 좌하단
+    # 8개 좌표로 재구성
+    p1x, p1y = p1.split(1, dim=dim)
+    p2x, p2y = p2.split(1, dim=dim)
+    p3x, p3y = p3.split(1, dim=dim)
+    p4x, p4y = p4.split(1, dim=dim)
 
-    # 8개 좌표 결합 (x1,y1,x2,y2,x3,y3,x4,y4)
-    return torch.cat((p1, p2, p3, p4), dim=dim)
+    return torch.cat([p1x, p1y, p2x, p2y, p3x, p3y, p4x, p4y], dim=dim)
 
 
 class QuadrilateralTaskAlignedAssigner(TaskAlignedAssigner):

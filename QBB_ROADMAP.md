@@ -549,11 +549,9 @@ return (ap_dot_ab >= 0) & (ap_dot_ab <= norm_ab) & (ap_dot_ad >= 0) & (ap_dot_ad
 
 ---
 
-## Phase 6: QBB 수렴 개선 및 IoU 최적화 (2025-08-25 19:19 KST) 🔧
+## Phase 6: QBB 수렴 개선 및 IoU 최적화 🔧
 
-**🎯 핵심 성과: QBB 수렴 문제 근본 원인 분석 및 해결**
-
-### 6.1 문제 진단 및 해결 방안 도출
+### 6.1 초기 문제 진단 (2025-08-25 19:19 KST)
 
 #### 발견된 핵심 문제점들:
 1. **Polygon IoU 수렴 불안정**: 복잡한 교집합 계산으로 인한 학습 불안정
@@ -561,7 +559,7 @@ return (ap_dot_ab >= 0) & (ap_dot_ab <= norm_ab) & (ap_dot_ad >= 0) & (ap_dot_ad
 3. **NMS 하드코딩 버그**: 8좌표 처리를 위한 동적 로직 부재
 4. **DFL 시스템 미완성**: 4좌표용 DFL을 8좌표에 부적절하게 적용
 
-### 6.2 완성된 주요 구현사항
+### 6.2 초기 구현사항 (2025-08-25)
 
 **1. 완전한 8좌표 DFL 시스템**
 - **DFL_QBB 클래스** (`ultralytics/nn/modules/block.py`): 8좌표 전용 DFL
@@ -577,28 +575,70 @@ return (ap_dot_ab >= 0) & (ap_dot_ab <= norm_ab) & (ap_dot_ad >= 0) & (ap_dot_ad
 - **8개 하드코딩 지점 수정**: 좌표수, 마스크인덱스, 클래스영역, 출력크기 등
 - **conf 값 정상화**: 200+ 이상값 → 0-1 범위로 수정
 
-**4. CIoU 기반 Loss 전환 검토**
-- **YOLOv8-detect 방식 분석**: 안정적인 CIoU 활용 방안
-- **AABB 근사 vs Polygon 정확도**: 트레이드오프 검토
+### 6.3 dist2quad 함수 개선 (2025-08-25 21:33 KST) ✅
 
-### 6.3 수정 파일 목록 (9개 파일, +279/-421 라인)
+**🎯 핵심 성과: dist2rbox 스타일로 dist2quad 완전 재구현**
 
-**핵심 시스템:**
-- `ultralytics/utils/ops.py`: NMS QBB 완전 지원 (+30/-30)
-- `ultralytics/utils/tal.py`: 좌표 정정 및 quad2dist (+73 변경)
-- `ultralytics/nn/modules/block.py`: DFL_QBB 클래스 (+26)
-- `ultralytics/nn/modules/head.py`: QBB Head 간소화 (+35/--)
+#### 문제점 발견:
+1. **anchor_points shape 불일치**: 
+   - 일부 경우: `(1,2,7056)` 
+   - loss.py에서: `(8400,2)`
+2. **출력 차원 문제**: `(2,16,7056)` → `(2,8,7056)`로 수정 필요
+3. **if문 남발**: 조건 분기로 인한 복잡도 증가
 
-**Loss 및 검증:**
-- `ultralytics/utils/loss.py`: Loss 시스템 정리 (+30/--)
-- `ultralytics/utils/metrics.py`: IoU 최적화 (+323/--)
-- `ultralytics/models/yolo/qbb/val.py`: postprocess 8좌표 구조 (+7/-)
+#### 해결 방안 구현:
+```python
+def dist2quad(distance, anchor_points, dim=-1):
+    """8개 거리를 8개 좌표로 변환 (dist2rbox 스타일)"""
+    # 4개 점의 x,y 거리로 분할
+    d1, d2, d3, d4 = distance.split(2, dim=dim)  # 각각 (bs, h*w, 2)
+    
+    # 각 점의 x,y 분리
+    d1x, d1y = d1.split(1, dim=dim)
+    d2x, d2y = d2.split(1, dim=dim)
+    d3x, d3y = d3.split(1, dim=dim)
+    d4x, d4y = d4.split(1, dim=dim)
+    
+    # 4개 점 계산 (브로드캐스팅으로 anchor_points 자동 처리)
+    p1 = anchor_points + torch.cat([-d1x, -d1y], dim=dim)  # 좌상
+    p2 = anchor_points + torch.cat([d2x, -d2y], dim=dim)   # 우상
+    p3 = anchor_points + torch.cat([d3x, d3y], dim=dim)     # 우하
+    p4 = anchor_points + torch.cat([-d4x, d4y], dim=dim)    # 좌하
+    
+    # 8개 좌표로 재구성
+    p1x, p1y = p1.split(1, dim=dim)
+    p2x, p2y = p2.split(1, dim=dim)
+    p3x, p3y = p3.split(1, dim=dim)
+    p4x, p4y = p4.split(1, dim=dim)
+    
+    return torch.cat([p1x, p1y, p2x, p2y, p3x, p3y, p4x, p4y], dim=dim)
+```
 
-### 6.4 향후 검증 계획
-- QBB 수렴성 테스트 실행
-- conf 값 정상화 확인
-- 8좌표 DFL 학습 안정성 검증
+#### 기술적 성취:
+- **dist2rbox 패턴 적용**: split → 계산 → cat의 일관된 구조
+- **브로드캐스팅 활용**: anchor_points shape에 관계없이 자동 처리
+- **if문 제거**: 순수 텐서 연산만으로 구현
+- **차원 일관성**: 정확한 `(bs, h*w, 8)` 출력 보장
+
+### 6.4 수정 파일 목록
+
+**Phase 6 초기 (2025-08-25 19:19):**
+- `ultralytics/utils/ops.py`: NMS QBB 완전 지원
+- `ultralytics/nn/modules/block.py`: DFL_QBB 클래스
+- `ultralytics/nn/modules/head.py`: QBB Head 간소화
+- `ultralytics/utils/loss.py`: Loss 시스템 정리
+- `ultralytics/utils/metrics.py`: IoU 최적화
+- `ultralytics/models/yolo/qbb/val.py`: postprocess 8좌표 구조
+
+**dist2quad 개선 (2025-08-25 21:33):**
+- `ultralytics/utils/tal.py`: dist2quad 함수 완전 재구현 (450-473줄)
+
+### 6.5 향후 검증 계획
+- [x] dist2quad 차원 문제 해결
+- [ ] QBB 수렴성 테스트 실행
+- [ ] conf 값 정상화 확인
+- [ ] 8좌표 DFL 학습 안정성 검증
 
 ---
 
-*마지막 업데이트: 2025-08-25 19:19 KST (Phase 6: QBB 핵심 문제 해결 완료)*
+*마지막 업데이트: 2025-08-25 21:33 KST (Phase 6: dist2quad 함수 개선 완료)*
