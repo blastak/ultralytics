@@ -119,10 +119,9 @@ class QBBValidator(DetectionValidator):
             quad=True,  # QBB 전용 플래그
         )
 
-        # OBBValidator와 유사한 패턴으로 extra 좌표 결합
-        preds = [{"bboxes": x[:, :4], "conf": x[:, 4], "cls": x[:, 5], "extra": x[:, 6:]} for x in outputs]
-        for pred in preds:
-            pred["bboxes"] = torch.cat([pred["bboxes"], pred.pop("extra")], dim=-1)  # 8개 좌표로 결합
+        # QBB는 8개 좌표 + conf + cls = 10개 값
+        # x[:, :8] = 8개 좌표, x[:, 8] = conf, x[:, 9] = cls
+        preds = [{"bboxes": x[:, :8], "conf": x[:, 8], "cls": x[:, 9]} for x in outputs]
 
         return preds
 

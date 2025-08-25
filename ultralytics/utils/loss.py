@@ -12,7 +12,7 @@ from ultralytics.utils.tal import RotatedTaskAlignedAssigner, TaskAlignedAssigne
 from ultralytics.utils.torch_utils import autocast
 
 from .metrics import bbox_iou, probiou, quad_iou_8coords
-from .tal import bbox2dist
+from .tal import bbox2dist, quad2dist
 
 
 class VarifocalLoss(nn.Module):
@@ -196,30 +196,11 @@ class QuadrilateralBboxLoss(BboxLoss):
         iou = quad_iou_8coords(pred_bboxes[fg_mask], target_bboxes[fg_mask])
         loss_iou = ((1.0 - iou) * weight).sum() / target_scores_sum
 
-        # DFL loss - 8개 좌표 처리
+        # DFL loss - 8개 좌표 직접 처리
         if self.dfl_loss:
-            # 8개 좌표를 4개씩 두 그룹으로 나누어 처리
-            # 첫 번째 그룹: x1,y1,x2,y2 (좌표 0,1,2,3)
-            # 두 번째 그룹: x3,y3,x4,y4 (좌표 4,5,6,7)
-
-            target_quad1 = target_bboxes[..., :4]  # 첫 4개 좌표
-            target_quad2 = target_bboxes[..., 4:8]  # 나머지 4개 좌표
-
-            # bbox2dist를 사용해서 거리로 변환
-            target_dist1 = bbox2dist(anchor_points, target_quad1, self.dfl_loss.reg_max - 1)
-            target_dist2 = bbox2dist(anchor_points, target_quad2, self.dfl_loss.reg_max - 1)
-
-            # 예측된 분포를 두 그룹으로 분할
-            reg_max = self.dfl_loss.reg_max
-            pred_dist1 = pred_dist[fg_mask][..., :4 * reg_max].reshape(-1, reg_max)
-            pred_dist2 = pred_dist[fg_mask][..., 4 * reg_max:].reshape(-1, reg_max)
-
-            # 각 그룹에 대해 DFL loss 계산
-            loss_dfl1 = self.dfl_loss(pred_dist1, target_dist1[fg_mask]) * weight
-            loss_dfl2 = self.dfl_loss(pred_dist2, target_dist2[fg_mask]) * weight
-
-            # 두 그룹의 DFL loss 합산
-            loss_dfl = (loss_dfl1.sum() + loss_dfl2.sum()) / target_scores_sum
+            target_ltrb = quad2dist(anchor_points, target_bboxes, self.dfl_loss.reg_max - 1)
+            loss_dfl = self.dfl_loss(pred_dist[fg_mask].view(-1, self.dfl_loss.reg_max), target_ltrb[fg_mask]) * weight
+            loss_dfl = loss_dfl.sum() / target_scores_sum
         else:
             loss_dfl = torch.tensor(0.0).to(pred_dist.device)
 
@@ -834,7 +815,6 @@ class v8QBBLoss(v8DetectionLoss):
         self.no = m.nc + m.reg_max * 8
         self.assigner = QuadrilateralTaskAlignedAssigner(topk=10, num_classes=self.nc, alpha=0.5, beta=6.0)
         self.bbox_loss = QuadrilateralBboxLoss(self.reg_max).to(self.device)
-        self.dfl_loss = None  # DFL 강제 비활성화
 
     def preprocess(self, targets: torch.Tensor, batch_size: int, scale_tensor: torch.Tensor) -> torch.Tensor:
         """Preprocess targets for quadrilateral bounding box detection."""

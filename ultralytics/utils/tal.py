@@ -419,9 +419,38 @@ def dist2rbox(pred_dist, pred_angle, anchor_points, dim=-1):
     return torch.cat([xy, lt + rb], dim=dim)
 
 
+def quad2dist(anchor_points, quad_bboxes, reg_max):
+    """
+    Transform quad bbox(xyxyxyxy) to dist(8개 거리).
+
+    Args:
+        anchor_points: (h*w, 2) - 앵커 포인트
+        quad_bboxes: (N, 8) - xyxyxyxy 형식 (좌상단부터 시계방향)
+                     [x1,y1,x2,y2,x3,y3,x4,y4]
+        reg_max: DFL maximum range
+
+    Returns:
+        (N, 8) - 8개 거리 값 [d1x,d1y,d2x,d2y,d3x,d3y,d4x,d4y]
+                 각 점까지의 x,y 방향 거리
+    """
+    # 8개 좌표를 4개 점으로 분할
+    p1, p2, p3, p4 = quad_bboxes.chunk(4, -1)  # 각각 (N, 2)
+
+    # 각 점에서 앵커까지의 거리 계산
+    # bbox2dist처럼: anchor_points - 점 또는 점 - anchor_points
+    d1 = anchor_points - p1  # 좌상단까지 거리 (음수 가능)
+    d2 = p2 - anchor_points  # 우상단까지 거리
+    d3 = p3 - anchor_points  # 우하단까지 거리
+    d4 = anchor_points - p4  # 좌하단까지 거리 (음수 가능)
+
+    # 8개 거리로 결합
+    return torch.cat((d1, d2, d3, d4), -1).clamp_(0, reg_max - 0.01)
+
+
 def dist2quad(distance, anchor_points, dim=-1):
     """
     Transform distance to quadrilateral coordinates (8개 좌표).
+    수정: 좌상단부터 시계방향 순서로 생성
 
     Args:
         distance (torch.Tensor): DFL 출력된 거리 값, shape (b, h*w, 8)
@@ -430,15 +459,17 @@ def dist2quad(distance, anchor_points, dim=-1):
 
     Returns:
         (torch.Tensor): 8개 절대 좌표 (x1,y1,x2,y2,x3,y3,x4,y4), shape (b, h*w, 8)
+                       좌상단부터 시계방향 순서
     """
-    # 4개 점의 거리로 분할
-    d1, d2, d3, d4 = distance.chunk(4, dim=dim)
+    # 8개 거리를 2개씩 분할 (x,y offset)
+    d1_x, d1_y, d2_x, d2_y, d3_x, d3_y, d4_x, d4_y = distance.chunk(8, dim=dim)
 
-    # 각 점을 앵커 포인트 기준으로 변환
-    p1 = anchor_points - d1  # 점1 (x1, y1)
-    p2 = anchor_points + d2  # 점2 (x2, y2)
-    p3 = anchor_points - d3  # 점3 (x3, y3)
-    p4 = anchor_points + d4  # 점4 (x4, y4)
+    # 앵커 포인트에서 각 점까지의 오프셋 적용
+    # 좌상단부터 시계방향: 좌상단 -> 우상단 -> 우하단 -> 좌하단
+    p1 = torch.cat([anchor_points[..., 0:1] - d1_x, anchor_points[..., 1:2] - d1_y], dim=dim)  # 좌상단
+    p2 = torch.cat([anchor_points[..., 0:1] + d2_x, anchor_points[..., 1:2] - d2_y], dim=dim)  # 우상단
+    p3 = torch.cat([anchor_points[..., 0:1] + d3_x, anchor_points[..., 1:2] + d3_y], dim=dim)  # 우하단
+    p4 = torch.cat([anchor_points[..., 0:1] - d4_x, anchor_points[..., 1:2] + d4_y], dim=dim)  # 좌하단
 
     # 8개 좌표 결합 (x1,y1,x2,y2,x3,y3,x4,y4)
     return torch.cat((p1, p2, p3, p4), dim=dim)
@@ -464,25 +495,15 @@ class QuadrilateralTaskAlignedAssigner(TaskAlignedAssigner):
         # 8개 좌표를 4개 점으로 변환: (b, n_boxes, 8) -> (b, n_boxes, 4, 2)
         corners = gt_bboxes.view(*gt_bboxes.shape[:-1], 4, 2)
 
-        # 첫 번째 점을 기준점 A로, 두 번째와 네 번째 점으로 변 정의
         # (b, n_boxes, 1, 2)
-        a = corners[..., 0:1, :]  # 점1 (x1, y1)
-        b = corners[..., 1:2, :]  # 점2 (x2, y2)
-        d = corners[..., 3:4, :]  # 점4 (x4, y4)
+        a, b, _, d = corners.split(1, dim=-2)
+        ab = b - a
+        ad = d - a
 
-        # 벡터 AB, AD 계산
-        ab = b - a  # (b, n_boxes, 1, 2)
-        ad = d - a  # (b, n_boxes, 1, 2)
-
-        # 앵커 포인트에서 기준점까지의 벡터 AP 계산
         # (b, n_boxes, h*w, 2)
-        ap = xy_centers.unsqueeze(0).unsqueeze(0) - a
-
-        # 벡터 내적 계산
-        norm_ab = (ab * ab).sum(dim=-1)  # ||AB||²
-        norm_ad = (ad * ad).sum(dim=-1)  # ||AD||²
-        ap_dot_ab = (ap * ab).sum(dim=-1)  # AP·AB
-        ap_dot_ad = (ap * ad).sum(dim=-1)  # AP·AD
-
-        # 점이 사각형 내부에 있는 조건
-        return (ap_dot_ab >= 0) & (ap_dot_ab <= norm_ab) & (ap_dot_ad >= 0) & (ap_dot_ad <= norm_ad)
+        ap = xy_centers - a
+        norm_ab = (ab * ab).sum(dim=-1)
+        norm_ad = (ad * ad).sum(dim=-1)
+        ap_dot_ab = (ap * ab).sum(dim=-1)
+        ap_dot_ad = (ap * ad).sum(dim=-1)
+        return (ap_dot_ab >= 0) & (ap_dot_ab <= norm_ab) & (ap_dot_ad >= 0) & (ap_dot_ad <= norm_ad)  # is_in_box

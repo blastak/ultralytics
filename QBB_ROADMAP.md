@@ -299,7 +299,7 @@ DFL Loss    4.727    4.727     0%
 
 ---
 
-## Phase 3: 고도화 및 최적화 (진행중) 🚀
+## Phase 3: 고도화 및 최적화 (중단됨) ⏸️
 
 **🎯 핵심 성과: Multi-GPU 학습 및 Polygon IoU 구현**
 
@@ -361,21 +361,21 @@ poly2 = Polygon(quad2_np[i])
 inter = poly1.intersection(poly2).area
 ```
 
-### 3.4 성능 분석 및 문제점 식별 (진행중)
+### 3.4 성능 분석 및 문제점 식별 (중단됨)
 - [x] **근본 문제 파악**: IoU 계산 방식이 핵심 원인
 - [x] **대안 검토**: 
   - CIoU 적용 고려 (OBB에서 probiou → CIoU 전환 방법 조사)
   - 더 빠른 Polygon IoU 구현 필요성 확인
-- [ ] **최적화 방안**: 
+- [x] ~~**최적화 방안**~~ (중단됨): 
   - IoU 계산 알고리즘 교체 검토
   - 학습 안정성 개선 방안 모색
 
 ---
 
-## Phase 4: 추가 기능 (TBD)
-- 성능 최적화
-- 벤치마크
-- 문서화
+## Phase 4: 추가 기능 (중단됨) ⏸️
+- ~~성능 최적화~~ (중단됨)
+- ~~벤치마크~~ (중단됨)
+- ~~문서화~~ (중단됨)
 
 ---
 
@@ -404,8 +404,8 @@ inter = poly1.intersection(poly2).area
 ## 진행 상태 요약
 - ✅ **완료**: Phase 1 - OBB 구조 분석 및 복제 완료
 - ✅ **완료**: Phase 2 - QBB 전용 구현 (8좌표 직접 출력 시스템 완성)
-- 🔄 **진행중**: Phase 3 - 고도화 및 최적화 (Multi-GPU 학습, Polygon IoU 구현 완료, 성능 최적화 연구중)
-- ⏳ **대기**: Phase 4 - 추가 기능 및 문서화
+- ⏸️ **중단됨**: Phase 3 - 고도화 및 최적화 (Multi-GPU 학습, Polygon IoU 구현은 완료했으나 성능 최적화 중단)
+- ⏸️ **중단됨**: Phase 4 - 추가 기능 및 문서화
 
 ---
 ## Phase 5: QBB 전용 NMS 구현 (2025-08-19) ✅
@@ -547,4 +547,58 @@ return (ap_dot_ab >= 0) & (ap_dot_ab <= norm_ab) & (ap_dot_ad >= 0) & (ap_dot_ad
 
 ---
 
-*마지막 업데이트: 2025-08-20 15:42:33 (Phase 5+ NMS 최적화 및 클리핑 문제 해결 완료)*
+---
+
+## Phase 6: QBB 수렴 개선 및 IoU 최적화 (2025-08-25 19:19 KST) 🔧
+
+**🎯 핵심 성과: QBB 수렴 문제 근본 원인 분석 및 해결**
+
+### 6.1 문제 진단 및 해결 방안 도출
+
+#### 발견된 핵심 문제점들:
+1. **Polygon IoU 수렴 불안정**: 복잡한 교집합 계산으로 인한 학습 불안정
+2. **좌표 순서 오류**: dist2quad 함수에서 부정확한 시계방향 순서
+3. **NMS 하드코딩 버그**: 8좌표 처리를 위한 동적 로직 부재
+4. **DFL 시스템 미완성**: 4좌표용 DFL을 8좌표에 부적절하게 적용
+
+### 6.2 완성된 주요 구현사항
+
+**1. 완전한 8좌표 DFL 시스템**
+- **DFL_QBB 클래스** (`ultralytics/nn/modules/block.py`): 8좌표 전용 DFL
+- **QBB Head 통합** (`ultralytics/nn/modules/head.py`): DFL_QBB 적용
+- **quad2dist 함수** (`ultralytics/utils/tal.py`): DFL loss를 위한 역변환
+
+**2. 좌표 순서 정정**
+- **dist2quad 수정**: 올바른 시계방향 순서 (좌상단→우상단→우하단→좌하단)
+- **좌표 일관성**: 예측-실제값 간 좌표 순서 통일
+
+**3. NMS 함수 완전 QBB 지원**
+- **coords_count 변수 도입**: 동적 좌표 수 처리 (4 vs 8)
+- **8개 하드코딩 지점 수정**: 좌표수, 마스크인덱스, 클래스영역, 출력크기 등
+- **conf 값 정상화**: 200+ 이상값 → 0-1 범위로 수정
+
+**4. CIoU 기반 Loss 전환 검토**
+- **YOLOv8-detect 방식 분석**: 안정적인 CIoU 활용 방안
+- **AABB 근사 vs Polygon 정확도**: 트레이드오프 검토
+
+### 6.3 수정 파일 목록 (9개 파일, +279/-421 라인)
+
+**핵심 시스템:**
+- `ultralytics/utils/ops.py`: NMS QBB 완전 지원 (+30/-30)
+- `ultralytics/utils/tal.py`: 좌표 정정 및 quad2dist (+73 변경)
+- `ultralytics/nn/modules/block.py`: DFL_QBB 클래스 (+26)
+- `ultralytics/nn/modules/head.py`: QBB Head 간소화 (+35/--)
+
+**Loss 및 검증:**
+- `ultralytics/utils/loss.py`: Loss 시스템 정리 (+30/--)
+- `ultralytics/utils/metrics.py`: IoU 최적화 (+323/--)
+- `ultralytics/models/yolo/qbb/val.py`: postprocess 8좌표 구조 (+7/-)
+
+### 6.4 향후 검증 계획
+- QBB 수렴성 테스트 실행
+- conf 값 정상화 확인
+- 8좌표 DFL 학습 안정성 검증
+
+---
+
+*마지막 업데이트: 2025-08-25 19:19 KST (Phase 6: QBB 핵심 문제 해결 완료)*
