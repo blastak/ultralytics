@@ -709,4 +709,77 @@ assert format in {"xyxy", "xywh", "ltwh"}  # QBB 형식 없음
 
 ---
 
-*마지막 업데이트: 2025-08-26 00:21 KST (Phase 6+: mAP=0 디버깅 및 Mosaic 차단 원인 분석 완료)*
+## Phase 7: QBB 학습 성능 분석 및 최적화 방향 설정 (2025-08-26 14:17 KST) 📊
+
+### 7.1 현재 QBB 학습 상태 평가 (2025-08-26)
+
+#### 확인된 학습 현황:
+1. **학습 진행 확인**: QBB 모델이 실제로 학습되고 있음을 확인
+2. **성능 특성 분석**:
+   - ✅ **학습 자체는 동작**: 에러 없이 학습 진행
+   - ⚠️ **수렴 속도 문제**: 매우 느린 수렴 속도
+   - ⚠️ **불균형한 성능**: Recall은 상승하지만 Precision은 정체
+   - ❓ **학습 유효성**: 진짜 학습인지 의심스러운 패턴
+
+#### 기술적 이슈 현황:
+1. **Augmentation 클리핑 문제**: 좌표 변환 시 경계 처리 오류 지속
+2. **AABB IoU 단순화**: 복잡한 Polygon IoU 대신 단순한 AABB 사용 중
+3. **Resample + 클리핑 결합**: 향후 계획으로 남겨둠
+
+### 7.2 근본 원인 분석 방향
+
+**핵심 질문**: AABB IoU로 단순화했는데도 성능이 나쁘다 = IoU가 문제가 아님
+
+#### 우선 점검 영역:
+1. **TAL Assigner 검증**: 
+   - Positive/negative sample 할당이 올바른가?
+   - QuadrilateralTaskAlignedAssigner의 point-in-polygon 판정이 정확한가?
+
+2. **Loss 함수 분석**: 
+   - DFL loss, box loss, cls loss 각각의 수치 범위가 정상인가?
+   - QBB의 8좌표 처리에서 loss 계산이 올바른가?
+
+3. **좌표 변환 정확성**: 
+   - dist2quad → 실제 좌표 변환이 수학적으로 올바른가?
+   - 예측된 8좌표가 의미 있는 사각형을 형성하는가?
+
+4. **NMS 필터링**: 
+   - 학습된 예측들이 제대로 필터링되고 있는가?
+   - AABB 근사 NMS가 QBB에 적절한가?
+
+### 7.3 학습 설정 현황
+
+**train_entrypoint.py 최신 설정**:
+- 모델: yolov8n-qbb.yaml  
+- 데이터: webpm_obb1944.yaml (큰 데이터셋)
+- epochs: 200 (충분한 학습 시간)
+- batch: 32, device: "0,1" (Multi-GPU)
+- fliplr: 0.5 (augmentation)
+- workers: 4 (병렬 처리)
+
+### 7.4 향후 최적화 계획
+
+#### 단계별 접근 방안:
+1. **Phase 7a**: 현재 학습 결과 상세 분석
+   - Loss 함수별 수치 범위 확인
+   - TAL Assigner 할당 통계 분석
+   - 예측 좌표 유효성 검증
+
+2. **Phase 7b**: 클리핑 문제 해결
+   - Resample 증가 + 클리핑 결합 구현
+   - Augmentation 파이프라인 QBB 최적화
+
+3. **Phase 7c**: 성능 근본 해결
+   - 식별된 bottleneck 해결
+   - Polygon IoU 재도입 검토
+
+### 7.5 다음 단계
+- [ ] 현재 학습 진행 상황 모니터링
+- [ ] Loss 함수별 수치 범위 분석
+- [ ] TAL Assigner positive sample 할당률 확인
+- [ ] 예측 좌표의 기하학적 유효성 검증
+- [ ] Precision/Recall 불균형 원인 규명
+
+---
+
+*마지막 업데이트: 2025-08-26 14:17 KST (Phase 7: QBB 학습 상태 평가 및 최적화 방향 설정)*
