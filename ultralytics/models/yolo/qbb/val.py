@@ -106,8 +106,7 @@ class QBBValidator(DetectionValidator):
         Returns:
             (List[Dict[str, torch.Tensor]]): Processed predictions with 8-coordinate information.
         """
-        # DetectionValidator의 postprocess와 동일하지만 quad=True 추가
-        outputs = ops.non_max_suppression(
+        outputs = ops.non_max_suppression_qbb(
             preds,
             self.args.conf,
             self.args.iou,
@@ -116,7 +115,6 @@ class QBBValidator(DetectionValidator):
             agnostic=self.args.single_cls or self.args.agnostic_nms,
             max_det=self.args.max_det,
             end2end=self.end2end,
-            quad=True,  # QBB 전용 플래그
         )
 
         # QBB는 8개 좌표 + conf + cls = 10개 값

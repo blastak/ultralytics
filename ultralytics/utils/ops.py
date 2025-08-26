@@ -204,7 +204,6 @@ def non_max_suppression(
     max_wh: int = 7680,
     in_place: bool = True,
     rotated: bool = False,
-    quad: bool = False,
     end2end: bool = False,
     return_idxs: bool = False,
 ):
@@ -229,15 +228,13 @@ def non_max_suppression(
         max_nms (int): Maximum number of boxes for torchvision.ops.nms().
         max_wh (int): Maximum box width and height in pixels.
         in_place (bool): Whether to modify the input prediction tensor in place.
-        rotated (bool): Whether to handle Oriented Bounding Boxes (OBB) in xywhr format.
-        quad (bool): Whether to handle Quadrilateral Bounding Boxes (QBB) in xyxyxyxy format.
+        rotated (bool): Whether to handle Oriented Bounding Boxes (OBB).
         end2end (bool): Whether the model is end-to-end and doesn't require NMS.
         return_idxs (bool): Whether to return the indices of kept detections.
 
     Returns:
         output (List[torch.Tensor]): List of detections per image with shape (num_boxes, 6 + num_masks)
-              containing (x1, y1, x2, y2, confidence, class, mask1, mask2, ...) for standard/quad boxes,
-              or (x, y, w, h, r, confidence, class, mask1, mask2, ...) for rotated boxes.
+            containing (x1, y1, x2, y2, confidence, class, mask1, mask2, ...).
         keepi (List[torch.Tensor]): Indices of kept detections if return_idxs=True.
     """
     import torchvision  # scope for faster 'import ultralytics'
@@ -257,11 +254,10 @@ def non_max_suppression(
         return output
 
     bs = prediction.shape[0]  # batch size (BCN, i.e. 1,84,6300)
-    coords_count = 8 if quad else 4
-    nc = nc or (prediction.shape[1] - coords_count)  # number of classes
-    extra = prediction.shape[1] - nc - coords_count  # number of extra info
-    mi = coords_count + nc  # mask start index
-    xc = prediction[:, coords_count:mi].amax(1) > conf_thres  # candidates
+    nc = nc or (prediction.shape[1] - 4)  # number of classes
+    extra = prediction.shape[1] - nc - 4  # number of extra info
+    mi = 4 + nc  # mask start index
+    xc = prediction[:, 4:mi].amax(1) > conf_thres  # candidates
     xinds = torch.stack([torch.arange(len(i), device=prediction.device) for i in xc])[..., None]  # to track idxs
 
     # Settings
@@ -270,15 +266,14 @@ def non_max_suppression(
     multi_label &= nc > 1  # multiple labels per box (adds 0.5ms/img)
 
     prediction = prediction.transpose(-1, -2)  # shape(1,84,6300) to shape(1,6300,84)
-    if not rotated and not quad:
+    if not rotated:
         if in_place:
             prediction[..., :4] = xywh2xyxy(prediction[..., :4])  # xywh to xyxy
         else:
             prediction = torch.cat((xywh2xyxy(prediction[..., :4]), prediction[..., 4:]), dim=-1)  # xywh to xyxy
 
     t = time.time()
-    output_size = (10 + extra) if quad else (6 + extra)
-    output = [torch.zeros((0, output_size), device=prediction.device)] * bs
+    output = [torch.zeros((0, 6 + extra), device=prediction.device)] * bs
     keepi = [torch.zeros((0, 1), device=prediction.device)] * bs  # to store the kept idxs
     for xi, (x, xk) in enumerate(zip(prediction, xinds)):  # image index, (preds, preds indices)
         # Apply constraints
@@ -289,12 +284,9 @@ def non_max_suppression(
         # Cat apriori labels if autolabelling
         if labels and len(labels[xi]) and not rotated:
             lb = labels[xi]
-            v = torch.zeros((len(lb), nc + extra + coords_count), device=x.device)
-            if quad:
-                v[:, :8] = lb[:, 1:9]  # 8개 좌표
-            else:
-                v[:, :4] = xywh2xyxy(lb[:, 1:5])  # box
-            v[range(len(lb)), lb[:, 0].long() + coords_count] = 1.0  # cls
+            v = torch.zeros((len(lb), nc + extra + 4), device=x.device)
+            v[:, :4] = xywh2xyxy(lb[:, 1:5])  # box
+            v[range(len(lb)), lb[:, 0].long() + 4] = 1.0  # cls
             x = torch.cat((x, v), 0)
 
         # If none remain process next image
@@ -302,14 +294,11 @@ def non_max_suppression(
             continue
 
         # Detections matrix nx6 (xyxy, conf, cls)
-        if quad:
-            box, cls, mask = x.split((8, nc, extra), 1)
-        else:
-            box, cls, mask = x.split((4, nc, extra), 1)
+        box, cls, mask = x.split((4, nc, extra), 1)
 
         if multi_label:
             i, j = torch.where(cls > conf_thres)
-            x = torch.cat((box[i], x[i, coords_count + j, None], j[:, None].float(), mask[i]), 1)
+            x = torch.cat((box[i], x[i, 4 + j, None], j[:, None].float(), mask[i]), 1)
             xk = xk[i]
         else:  # best class only
             conf, j = cls.max(1, keepdim=True)
@@ -336,15 +325,6 @@ def non_max_suppression(
         if rotated:
             boxes = torch.cat((x[:, :2] + c, x[:, 2:4], x[:, -1:]), dim=-1)  # xywhr
             i = nms_rotated(boxes, scores, iou_thres)
-        elif quad:
-            # QBB: 8개 좌표를 AABB로 변환해서 기존 NMS 사용
-            quad_boxes = x[:, :8]  # 8개 좌표
-            # 8좌표를 4x2로 변환 후 AABB 구하기
-            quad_reshaped = quad_boxes.reshape(-1, 4, 2)
-            min_coords = quad_reshaped.min(dim=-2)[0]  # (N, 2)
-            max_coords = quad_reshaped.max(dim=-2)[0]  # (N, 2)
-            boxes = torch.cat([min_coords, max_coords], dim=-1) + c  # xyxy + class offset
-            i = torchvision.ops.nms(boxes, scores, iou_thres)  # 기존 NMS 사용
         else:
             boxes = x[:, :4] + c  # boxes (offset by class)
             i = torchvision.ops.nms(boxes, scores, iou_thres)  # NMS
@@ -353,6 +333,151 @@ def non_max_suppression(
         output[xi], keepi[xi] = x[i], xk[i].reshape(-1)
         if (time.time() - t) > time_limit:
             LOGGER.warning(f"NMS time limit {time_limit:.3f}s exceeded")
+            break  # time limit exceeded
+
+    return (output, keepi) if return_idxs else output
+
+
+def non_max_suppression_qbb(
+    prediction,
+    conf_thres: float = 0.25,
+    iou_thres: float = 0.45,
+    classes=None,
+    agnostic: bool = False,
+    multi_label: bool = False,
+    labels=(),
+    max_det: int = 300,
+    nc: int = 0,  # number of classes (optional)
+    max_time_img: float = 0.05,
+    max_nms: int = 30000,
+    max_wh: int = 7680,
+    in_place: bool = True,
+    end2end: bool = False,
+    return_idxs: bool = False,
+):
+    """
+    QBB 전용 Non-Maximum Suppression (NMS) 함수
+    8좌표 quadrilateral bounding box에 특화된 NMS 처리
+
+    Args:
+        prediction (torch.Tensor): Predictions with shape (batch_size, num_classes + 8 + num_masks, num_boxes)
+            containing 8-coordinate QBB boxes, classes, and optional masks.
+        conf_thres (float): Confidence threshold for filtering detections.
+        iou_thres (float): IoU threshold for NMS filtering.
+        classes (List[int], optional): List of class indices to consider.
+        agnostic (bool): Whether to perform class-agnostic NMS.
+        multi_label (bool): Whether each box can have multiple labels.
+        labels (List[List[Union[int, float, torch.Tensor]]]): A priori labels for each image.
+        max_det (int): Maximum number of detections to keep per image.
+        nc (int): Number of classes.
+        max_time_img (float): Maximum time in seconds for processing one image.
+        max_nms (int): Maximum number of boxes for NMS.
+        max_wh (int): Maximum box width and height in pixels.
+        in_place (bool): Whether to modify the input prediction tensor in place.
+        end2end (bool): Whether the model is end-to-end and doesn't require NMS.
+        return_idxs (bool): Whether to return the indices of kept detections.
+
+    Returns:
+        output (List[torch.Tensor]): List of detections per image with shape (num_boxes, 10)
+            containing (x1, y1, x2, y2, x3, y3, x4, y4, confidence, class).
+        keepi (List[torch.Tensor]): Indices of kept detections if return_idxs=True.
+    """
+    import torchvision  # scope for faster 'import ultralytics'
+
+    # Checks
+    assert 0 <= conf_thres <= 1, f"Invalid Confidence threshold {conf_thres}, valid values are between 0.0 and 1.0"
+    assert 0 <= iou_thres <= 1, f"Invalid IoU {iou_thres}, valid values are between 0.0 and 1.0"
+    if isinstance(prediction, (list, tuple)):  # YOLOv8 model in validation model, output = (inference_out, loss_out)
+        prediction = prediction[0]  # select only inference output
+    if classes is not None:
+        classes = torch.tensor(classes, device=prediction.device)
+
+    # End-to-end model handling (QBB의 경우 10개 값: 8좌표 + conf + cls)
+    if prediction.shape[-1] == 10 or end2end:  # end-to-end model (BNC, i.e. 1,300,10)
+        output = [pred[pred[:, 8] > conf_thres][:max_det] for pred in prediction]  # conf는 8번 인덱스
+        if classes is not None:
+            output = [pred[(pred[:, 9:10] == classes).any(1)] for pred in output]  # class는 9번 인덱스
+        return output
+
+    bs = prediction.shape[0]  # batch size (BCN, i.e. 1,92,6300)
+    nc = nc or (prediction.shape[1] - 8)  # number of classes (QBB는 8좌표)
+    extra = prediction.shape[1] - nc - 8  # number of extra info
+    mi = 8 + nc  # mask start index
+    xc = prediction[:, 8:mi].amax(1) > conf_thres  # candidates (conf > threshold)
+    xinds = torch.stack([torch.arange(len(i), device=prediction.device) for i in xc])[..., None]  # to track idxs
+
+    # Settings
+    time_limit = 2.0 + max_time_img * bs  # seconds to quit after
+    multi_label &= nc > 1  # multiple labels per box (adds 0.5ms/img)
+
+    prediction = prediction.transpose(-1, -2)  # shape(1,92,6300) to shape(1,6300,92)
+    # QBB는 좌표 변환 불필요 (이미 8개 절대 좌표)
+
+    t = time.time()
+    output = [torch.zeros((0, 10 + extra), device=prediction.device)] * bs  # QBB는 10개 값
+    keepi = [torch.zeros((0, 1), device=prediction.device)] * bs  # to store the kept idxs
+
+    for xi, (x, xk) in enumerate(zip(prediction, xinds)):  # image index, (preds, preds indices)
+        # Apply constraints
+        filt = xc[xi]  # confidence
+        x, xk = x[filt], xk[filt]
+
+        # Cat apriori labels if autolabelling (QBB 전용 처리)
+        if labels and len(labels[xi]):
+            lb = labels[xi]
+            v = torch.zeros((len(lb), nc + extra + 8), device=x.device)
+            v[:, :8] = lb[:, 1:9]  # QBB 8좌표
+            v[range(len(lb)), lb[:, 0].long() + 8] = 1.0  # cls
+            x = torch.cat((x, v), 0)
+
+        # If none remain process next image
+        if not x.shape[0]:
+            continue
+
+        # Detections matrix nx(8+nc+extra) (8coords, conf, cls, extra)
+        box, cls, mask = x.split((8, nc, extra), 1)
+
+        if multi_label:
+            i, j = torch.where(cls > conf_thres)
+            x = torch.cat((box[i], x[i, 8 + j, None], j[:, None].float(), mask[i]), 1)
+            xk = xk[i]
+        else:  # best class only
+            conf, j = cls.max(1, keepdim=True)
+            filt = conf.view(-1) > conf_thres
+            x = torch.cat((box, conf, j.float(), mask), 1)[filt]
+            xk = xk[filt]
+
+        # Filter by class
+        if classes is not None:
+            filt = (x[:, 9:10] == classes).any(1)  # class는 9번 인덱스
+            x, xk = x[filt], xk[filt]
+
+        # Check shape
+        n = x.shape[0]  # number of boxes
+        if not n:  # no boxes
+            continue
+        if n > max_nms:  # excess boxes
+            filt = x[:, 8].argsort(descending=True)[:max_nms]  # sort by confidence (8번 인덱스)
+            x, xk = x[filt], xk[filt]
+
+        # Batched NMS for QBB
+        c = x[:, 9:10] * (0 if agnostic else max_wh)  # classes (9번 인덱스)
+        scores = x[:, 8]  # scores (8번 인덱스)
+
+        # QBB: 8좌표를 AABB로 변환해서 기존 NMS 사용
+        quad_boxes = x[:, :8]  # 8개 좌표
+        quad_reshaped = quad_boxes.reshape(-1, 4, 2)  # (N, 4, 2)
+        min_coords = quad_reshaped.min(dim=1)[0]  # (N, 2)
+        max_coords = quad_reshaped.max(dim=1)[0]  # (N, 2)
+        boxes = torch.cat([min_coords, max_coords], dim=-1) + c.expand(-1, 4)  # xyxy + class offset
+
+        # 표준 torchvision NMS 사용
+        i = torchvision.ops.nms(boxes, scores, iou_thres)
+        i = i[:max_det]  # limit detections
+
+        output[xi], keepi[xi] = x[i], xk[i].reshape(-1)
+        if (time.time() - t) > time_limit:
+            LOGGER.warning(f"QBB NMS time limit {time_limit:.3f}s exceeded")
             break  # time limit exceeded
 
     return (output, keepi) if return_idxs else output

@@ -782,4 +782,89 @@ assert format in {"xyxy", "xywh", "ltwh"}  # QBB 형식 없음
 
 ---
 
-*마지막 업데이트: 2025-08-26 14:17 KST (Phase 7: QBB 학습 상태 평가 및 최적화 방향 설정)*
+## Phase 7+: AABB 한계 극복 및 Polygon IoU 구현 (2025-08-26 23:19 KST) 🎯
+
+### 7.6 QBB NMS 개선 완료 (2025-08-26 저녁)
+
+#### 핵심 성과:
+1. **QBB NMS 시스템 완성**: `non_max_suppression_qbb()` 함수 구현
+2. **QBBValidator 통합**: `postprocess()` 메서드에서 QBB 전용 NMS 호출
+3. **겹침 문제 해결**: 색상 랜덤화로 다중 박스 겹침 현상 확인
+
+#### 발견된 한계점:
+- **AABB 근사의 부정확성**: 사변형이 원하는 위치에 정확히 표시되지 않음
+- **정확도 vs 속도 트레이드오프**: AABB는 빠르지만 QBB의 정확한 형태를 반영하지 못함
+
+### 7.7 AABB 사용 지점 분석 및 대체 계획
+
+#### 현재 AABB 근사를 사용하는 주요 지점들:
+
+1. **NMS 시스템** (`ultralytics/utils/ops.py:467-472`)
+   ```python
+   # QBB: 8좌표를 AABB로 변환해서 기존 NMS 사용
+   quad_boxes = x[:, :8]
+   quad_reshaped = quad_boxes.reshape(-1, 4, 2)
+   min_coords = quad_reshaped.min(dim=1)[0]
+   max_coords = quad_reshaped.max(dim=1)[0]
+   ```
+
+2. **IoU 계산** (`ultralytics/utils/metrics.py`)
+   - `quad_iou_8coords()`: AABB 기반 IoU 계산
+   - `batch_quad_iou_8coords()`: 배치 처리용 AABB IoU
+
+3. **TAL Assigner** (`ultralytics/utils/tal.py`)
+   - QuadrilateralTaskAlignedAssigner에서 IoU 계산 시 AABB 사용
+
+### 7.8 두 단계 개선 계획
+
+#### 🎯 **1단계: Shapely 기반 정확한 Polygon IoU**
+- **목표**: 느리지만 정확한 IoU로 성능 한계 테스트
+- **장점**: 수학적으로 완벽한 정확도
+- **단점**: Python loop으로 인한 속도 저하
+
+#### 🎯 **2단계: 픽셀 래스터화 Polygon IoU** 
+- **목표**: GPU 최적화된 근사 Polygon IoU
+- **방법**: 64x64 그리드 래스터화 → 픽셀 기반 IoU
+- **장점**: GPU 병렬화, 조절 가능한 정확도
+- **예상 성능**: AABB보다 정확하고 Shapely보다 빠름
+
+### 7.9 수정이 필요한 파일 목록
+
+#### **Core IoU Functions**:
+1. `ultralytics/utils/metrics.py`
+   - `quad_iou_8coords()`: Shapely → 래스터화 IoU
+   - `batch_quad_iou_8coords()`: 배치 처리 최적화
+
+#### **NMS System**:
+2. `ultralytics/utils/ops.py`
+   - `non_max_suppression_qbb()`: AABB → Polygon IoU 적용
+
+#### **TAL Assigner**:
+3. `ultralytics/utils/tal.py`
+   - `QuadrilateralTaskAlignedAssigner`: IoU 계산 방식 변경
+
+#### **Loss Functions**:
+4. `ultralytics/utils/loss.py`
+   - Loss 계산에서 IoU 함수 호출 부분 확인
+
+### 7.10 구현 우선순위
+
+1. **1단계 우선**: Shapely 기반 완전 정확한 IoU 구현
+   - 성능 baseline 확립
+   - 정확도 상한선 측정
+   - 학습 결과 비교
+
+2. **2단계 최적화**: 래스터화 기반 GPU IoU
+   - 64x64 해상도로 시작
+   - 성능 vs 속도 최적점 탐색
+   - 최종 production 버전 확정
+
+### 7.11 예상 결과
+
+- **Shapely IoU**: 정확한 QBB 형태 인식, 느린 속도
+- **래스터화 IoU**: 높은 정확도 + 빠른 속도, 실용적 선택
+- **성능 개선**: AABB 한계를 넘어선 진정한 QBB 성능 달성
+
+---
+
+*마지막 업데이트: 2025-08-26 23:19 KST (Phase 7+: AABB 한계 극복 및 Polygon IoU 구현 계획 수립)*

@@ -676,7 +676,7 @@ def save_one_box(
     return crop
 
 
-@threaded
+# @threaded
 def plot_images(
     labels: Dict[str, Any],
     images: Union[torch.Tensor, np.ndarray] = np.zeros((0, 3, 640, 640), dtype=np.float32),
@@ -752,7 +752,7 @@ def plot_images(
         mosaic = cv2.resize(mosaic, tuple(int(x * ns) for x in (w, h)))
 
     # Annotate
-    fs = int((h + w) * ns * 0.01)  # font size
+    fs = int((h + w) * ns * 0.005)  # font size
     fs = max(fs, 18)  # ensure that the font size is large enough to be easily readable.
     annotator = Annotator(mosaic, line_width=round(fs / 10), font_size=fs, pil=True, example=str(names))
     for i in range(bs):
@@ -791,10 +791,10 @@ def plot_images(
                 boxes = boxes.reshape(-1, 4, 2) if is_qbb else ops.xywhr2xyxyxyxy(boxes) if is_obb else ops.xywh2xyxy(boxes) # quad : (b,8) → (b,4,2)
                 for j, box in enumerate(boxes.astype(np.int64).tolist()):
                     c = classes[j]
-                    color = colors(c)
+                    color = colors(j)
                     c = names.get(c, c) if names else c
                     if labels or conf[j] > conf_thres:
-                        label = f"{c}" if labels else f"{c} {conf[j]:.1f}"
+                        label = f"{c}" if labels else f"{c} {conf[j]:.2f}"
                         annotator.box_label(box, label, color=color)
 
             elif len(classes):

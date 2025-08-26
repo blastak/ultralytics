@@ -60,7 +60,7 @@ class QBBPredictor(DetectionPredictor):
         save_feats = getattr(self, "_feats", None) is not None
 
         # QBB 전용 NMS 사용
-        preds = ops.non_max_suppression(
+        preds = ops.non_max_suppression_qbb(
             preds,
             self.args.conf,
             self.args.iou,
@@ -70,7 +70,6 @@ class QBBPredictor(DetectionPredictor):
             nc=0 if self.args.task == "detect" else len(self.model.names),
             end2end=getattr(self.model, "end2end", False),
             return_idxs=save_feats,
-            quad=True
         )
 
         if not isinstance(orig_imgs, list):  # input images are a torch.Tensor, not a list
