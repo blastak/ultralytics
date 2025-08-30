@@ -8,8 +8,7 @@ from PIL import Image
 if __name__ == '__main__':
     # os.system("rm -f /workspace/repo/ultralytics/ultralytics/assets/good_all_obb1944/labels/*.cache")
     model = YOLO('yolov8n-qbb.yaml')
-    # model.add_callback("on_val_batch_end", save_val_images)
-    results = model.train(name='debug0826_', data='webpm_obb1944.yaml', epochs=200, fliplr=0.0, batch=32, workers=8,
+    results = model.train(name='debug0827_', data='webpm_obb1944.yaml', epochs=300, fliplr=0.0, batch=16, workers=8,
                           imgsz=640, plots=True, device="0,1")  # deterministic=True, seed=42,
     # results = model.train(
     #     name='backward_debug',

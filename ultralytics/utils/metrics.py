@@ -293,169 +293,105 @@ def batch_probiou(
     return 1 - hd
 
 
-# def quad_iou_8coords(quad1: torch.Tensor, quad2: torch.Tensor, eps: float = 1e-7) -> torch.Tensor:
-#     """
-#     완전 벡터화된 QBB IoU 계산 (매우 빠름)
-#
-#     Args:
-#         quad1 (torch.Tensor): GT quads, shape (N, 8), format xyxyxyxy
-#         quad2 (torch.Tensor): Pred quads, shape (N, 8), format xyxyxyxy
-#         eps (float): Small value for numerical stability
-#
-#     Returns:
-#         (torch.Tensor): IoU values, shape (N,)
-#     """
-#
-#     def polygon_area_vectorized(coords):
-#         """완전 벡터화된 Shoelace formula"""
-#         # coords: (N, 4, 2)
-#         x, y = coords[..., 0], coords[..., 1]
-#         x_shifted = torch.roll(x, -1, dims=-1)
-#         y_shifted = torch.roll(y, -1, dims=-1)
-#         return 0.5 * torch.abs(torch.sum(x * y_shifted - x_shifted * y, dim=-1))
-#
-#     def line_intersect_vectorized(p1, p2, p3, p4):
-#         """완전 벡터화된 선분 교점 계산"""
-#         # 모든 입력: (N, 2)
-#         x1, y1 = p1[..., 0], p1[..., 1]
-#         x2, y2 = p2[..., 0], p2[..., 1]
-#         x3, y3 = p3[..., 0], p3[..., 1]
-#         x4, y4 = p4[..., 0], p4[..., 1]
-#
-#         denom = (x1 - x2) * (y3 - y4) - (y1 - y2) * (x3 - x4)
-#
-#         # 평행선 처리
-#         parallel = denom.abs() < eps
-#         denom = torch.where(parallel, torch.ones_like(denom), denom)
-#
-#         t = ((x1 - x3) * (y3 - y4) - (y1 - y3) * (x3 - x4)) / denom
-#         u = -((x1 - x2) * (y1 - y3) - (y1 - y2) * (x1 - x3)) / denom
-#
-#         # 교점이 선분 내부에 있는지 확인
-#         valid = ~parallel & (t >= 0) & (t <= 1) & (u >= 0) & (u <= 1)
-#
-#         # 교점 좌표
-#         ix = x1 + t * (x2 - x1)
-#         iy = y1 + t * (y2 - y1)
-#
-#         return torch.stack([ix, iy], dim=-1), valid
-#
-#     def aabb_intersection_area(quad1_pts, quad2_pts):
-#         """빠른 AABB 교집합 근사 (완전 벡터화)"""
-#         # 각 사각형의 AABB 구하기
-#         min1 = quad1_pts.min(dim=-2)[0]  # (N, 2)
-#         max1 = quad1_pts.max(dim=-2)[0]  # (N, 2)
-#         min2 = quad2_pts.min(dim=-2)[0]  # (N, 2)
-#         max2 = quad2_pts.max(dim=-2)[0]  # (N, 2)
-#
-#         # 교집합 AABB
-#         inter_min = torch.max(min1, min2)
-#         inter_max = torch.min(max1, max2)
-#
-#         # 유효한 교집합인지 확인
-#         valid = torch.all(inter_max > inter_min, dim=-1)
-#
-#         # 교집합 넓이
-#         inter_area = torch.where(
-#             valid,
-#             (inter_max - inter_min).prod(dim=-1),
-#             torch.zeros_like(valid, dtype=quad1.dtype)
-#         )
-#
-#         return inter_area
-#
-#     def separating_axis_intersection(quad1_pts, quad2_pts):
-#         """SAT (Separating Axis Theorem) 기반 빠른 교집합 계산"""
-#         N = quad1_pts.shape[0]
-#
-#         # 각 사각형의 변 벡터들 구하기
-#         edges1 = torch.roll(quad1_pts, -1, dims=-2) - quad1_pts  # (N, 4, 2)
-#         edges2 = torch.roll(quad2_pts, -1, dims=-2) - quad2_pts  # (N, 4, 2)
-#
-#         # 법선 벡터 (edge에 수직)
-#         normals1 = torch.stack([-edges1[..., 1], edges1[..., 0]], dim=-1)  # (N, 4, 2)
-#         normals2 = torch.stack([-edges2[..., 1], edges2[..., 0]], dim=-1)  # (N, 4, 2)
-#
-#         all_normals = torch.cat([normals1, normals2], dim=-2)  # (N, 8, 2)
-#
-#         # 각 법선에 대해 투영 겹침 확인
-#         for i in range(8):
-#             normal = all_normals[:, i]  # (N, 2)
-#
-#             # 두 사각형을 이 법선에 투영
-#             proj1 = torch.sum(quad1_pts * normal.unsqueeze(-2), dim=-1)  # (N, 4)
-#             proj2 = torch.sum(quad2_pts * normal.unsqueeze(-2), dim=-1)  # (N, 4)
-#
-#             min1, max1 = proj1.min(dim=-1)[0], proj1.max(dim=-1)[0]
-#             min2, max2 = proj2.min(dim=-1)[0], proj2.max(dim=-1)[0]
-#
-#             # 분리축 발견 시 겹치지 않음
-#             separated = (max1 < min2) | (max2 < min1)
-#             if separated.any():
-#                 return torch.zeros(N, device=quad1.device)
-#
-#         # 모든 축에서 겹침 → 대략적인 교집합 넓이 계산
-#         # 간단한 휴리스틱: 두 AABB 교집합의 80% 정도로 추정
-#         aabb_inter = aabb_intersection_area(quad1_pts, quad2_pts)
-#         return aabb_inter * 0.8  # 조정 계수
-#
-#     # 8좌표를 4x2 형태로 변환
-#     quad1_pts = quad1.reshape(-1, 4, 2)  # (N, 4, 2)
-#     quad2_pts = quad2.reshape(-1, 4, 2)  # (N, 4, 2)
-#
-#     # 각 polygon의 넓이 계산 (벡터화)
-#     area1 = polygon_area_vectorized(quad1_pts)  # (N,)
-#     area2 = polygon_area_vectorized(quad2_pts)  # (N,)
-#
-#     # 빠른 교집합 계산 (AABB 기반)
-#     inter_area = aabb_intersection_area(quad1_pts, quad2_pts)
-#
-#     # Union 계산
-#     union_area = area1 + area2 - inter_area
-#
-#     # IoU 계산
-#     iou = inter_area / (union_area + eps)
-#
-#     return iou.clamp(0, 1)
-
-def quad_iou_8coords(quad1: torch.Tensor, quad2: torch.Tensor, eps: float = 1e-7) -> torch.Tensor:
+def _quad_iou_aabb_fallback(quad1: torch.Tensor, quad2: torch.Tensor, eps: float = 1e-7) -> torch.Tensor:
     """
-    QBB IoU 계산 - AABB CIoU 방식
+    QBB AABB 기반 fallback IoU 계산 (gradient 호환)
     """
-    # 8좌표를 AABB로 변환
-    quad1_reshaped = quad1.reshape(-1, 4, 2)
-    quad2_reshaped = quad2.reshape(-1, 4, 2)
+    # 8좌표를 4x2 형태로 변환
+    quad1_pts = quad1.reshape(-1, 4, 2)  # (N, 4, 2)
+    quad2_pts = quad2.reshape(-1, 4, 2)  # (N, 4, 2)
 
-    # 최소/최대 좌표로 AABB 생성
-    box1 = torch.cat([
-        quad1_reshaped.min(dim=1)[0],  # min x,y
-        quad1_reshaped.max(dim=1)[0]  # max x,y
-    ], dim=-1)
+    # 각 사각형의 AABB 구하기
+    min1 = quad1_pts.min(dim=-2)[0]  # (N, 2)
+    max1 = quad1_pts.max(dim=-2)[0]  # (N, 2)
+    min2 = quad2_pts.min(dim=-2)[0]  # (N, 2)
+    max2 = quad2_pts.max(dim=-2)[0]  # (N, 2)
 
-    box2 = torch.cat([
-        quad2_reshaped.min(dim=1)[0],  # min x,y
-        quad2_reshaped.max(dim=1)[0]  # max x,y
-    ], dim=-1)
+    # AABB 교집합
+    inter_min = torch.max(min1, min2)
+    inter_max = torch.min(max1, max2)
 
-    # CIoU 계산 (bbox_iou 함수 직접 호출)
-    return bbox_iou(box1, box2, xywh=False, CIoU=True, eps=eps)
+    # 유효한 교집합인지 확인
+    valid = torch.all(inter_max > inter_min, dim=-1)
+
+    # 교집합 넓이
+    inter_area = torch.where(
+        valid,
+        (inter_max - inter_min).prod(dim=-1),
+        torch.zeros_like(valid, dtype=quad1.dtype)
+    )
+
+    # 각 AABB 넓이
+    area1 = (max1 - min1).prod(dim=-1)
+    area2 = (max2 - min2).prod(dim=-1)
+
+    # Union 계산
+    union_area = area1 + area2 - inter_area
+
+    # IoU 계산
+    iou = inter_area / (union_area + eps)
+
+    return iou.clamp(0, 1).unsqueeze(-1)  # 차원 맞추기
 
 
-def batch_quad_iou_8coords(
-        qbb1: Union[torch.Tensor, np.ndarray],
-        qbb2: Union[torch.Tensor, np.ndarray],
-        eps: float = 1e-7
-) -> torch.Tensor:
+def quad_iou_8coords(quad1: torch.Tensor, quad2: torch.Tensor, eps: float = 1e-7, use_shapely: bool = False) -> torch.Tensor:
     """
-    QBB IoU 매트릭스 계산 (quad_iou_8coords 기반)
+    QBB IoU 계산 - gradient 호환성을 고려한 선택적 구현
 
     Args:
-        qbb1 (torch.Tensor | np.ndarray): Ground truth quads of shape (N, 8).
-        qbb2 (torch.Tensor | np.ndarray): Predicted quads of shape (M, 8).
-        eps (float): Small value to avoid division by zero.
+        use_shapely: True이면 Shapely 사용 (정확하지만 gradient 없음)
+                    False이면 AABB 사용 (부정확하지만 gradient 유지)
+    """
+    if use_shapely and not quad1.requires_grad and not quad2.requires_grad:
+        from shapely.geometry import Polygon
+        from shapely import errors
 
-    Returns:
-        (torch.Tensor): IoU matrix of shape (N, M).
+        # 텐서를 numpy로 변환
+        quad1_np = quad1.detach().cpu().numpy()
+        quad2_np = quad2.detach().cpu().numpy()
+
+        batch_size = quad1_np.shape[0]
+        ious = []
+
+        for i in range(batch_size):
+            try:
+                # 8좌표를 4개 점으로 변환: (x1,y1,x2,y2,x3,y3,x4,y4) → [(x1,y1), (x2,y2), (x3,y3), (x4,y4)]
+                points1 = quad1_np[i].reshape(4, 2)
+                points2 = quad2_np[i].reshape(4, 2)
+
+                # Shapely Polygon 생성
+                poly1 = Polygon(points1)
+                poly2 = Polygon(points2)
+
+                # 유효하지 않은 polygon은 AABB fallback
+                if not poly1.is_valid:
+                    poly1 = poly1.buffer(0)
+                if not poly2.is_valid:
+                    poly2 = poly2.buffer(0)
+
+                # 교집합과 합집합 계산
+                intersection = poly1.intersection(poly2).area
+                union = poly1.area + poly2.area - intersection
+
+                # IoU 계산
+                if union > eps:
+                    iou = intersection / union
+                else:
+                    iou = 0.0
+
+                ious.append(iou)
+            except:
+                return _quad_iou_aabb_fallback(quad1, quad2, eps)
+        return torch.tensor(ious, device=quad1.device, dtype=quad1.dtype).unsqueeze(-1)
+    else:
+        # AABB 기반 구현으로 fallback
+        # Loss 함수에서 사용 (gradient 필요한 경우)
+        return _quad_iou_aabb_fallback(quad1, quad2, eps)
+
+
+def batch_quad_iou_8coords(qbb1: Union[torch.Tensor, np.ndarray], qbb2: Union[torch.Tensor, np.ndarray], eps: float = 1e-7, use_shapely: bool = False) -> torch.Tensor:
+    """
+    배치 QBB IoU 계산 - gradient 호환성 고려
     """
     # numpy를 tensor로 변환
     qbb1 = torch.from_numpy(qbb1) if isinstance(qbb1, np.ndarray) else qbb1
@@ -469,7 +405,8 @@ def batch_quad_iou_8coords(
     # N×M 반복으로 각 IoU 계산
     for i in range(N):
         for j in range(M):
-            iou_matrix[i, j] = quad_iou_8coords(qbb1[i:i + 1], qbb2[j:j + 1], eps=eps)
+            # use_shapely 파라미터 전달
+            iou_matrix[i, j] = quad_iou_8coords(qbb1[i:i + 1], qbb2[j:j + 1], eps=eps, use_shapely=use_shapely)
 
     return iou_matrix.clamp(0, 1)
 
@@ -606,7 +543,7 @@ class ConfusionMatrix(DataExportMixin):
         if is_obb:
             iou = batch_probiou(gt_bboxes, bboxes)
         elif is_qbb:
-            iou = batch_quad_iou_8coords(gt_bboxes, bboxes)
+            iou = batch_quad_iou_8coords(gt_bboxes, bboxes, use_shapely=True)
         else:
             iou = box_iou(gt_bboxes, bboxes)
 

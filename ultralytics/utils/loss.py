@@ -193,7 +193,7 @@ class QuadrilateralBboxLoss(BboxLoss):
     ) -> Tuple[torch.Tensor, torch.Tensor]:
         """Compute IoU and DFL losses for quadrilateral bounding boxes."""
         weight = target_scores.sum(-1)[fg_mask].unsqueeze(-1)
-        iou = quad_iou_8coords(pred_bboxes[fg_mask], target_bboxes[fg_mask])
+        iou = quad_iou_8coords(pred_bboxes[fg_mask], target_bboxes[fg_mask], use_shapely=False)
         loss_iou = ((1.0 - iou) * weight).sum() / target_scores_sum
 
         # DFL loss - 8개 좌표 직접 처리

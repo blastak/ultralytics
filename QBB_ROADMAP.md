@@ -865,6 +865,45 @@ assert format in {"xyxy", "xywh", "ltwh"}  # QBB 형식 없음
 - **래스터화 IoU**: 높은 정확도 + 빠른 속도, 실용적 선택
 - **성능 개선**: AABB 한계를 넘어선 진정한 QBB 성능 달성
 
+### 7.12 Phase 7+ 구현 완료 (2025-08-30)
+
+#### **구현된 주요 기능들**:
+
+1. **Gradient 호환 이중 IoU 시스템** (`ultralytics/utils/metrics.py`)
+   - `_quad_iou_aabb_fallback()`: Gradient 호환 AABB IoU 함수 추가
+   - `quad_iou_8coords()`: `use_shapely` 파라미터로 선택적 구현
+     - `use_shapely=True`: Shapely 기반 정확한 Polygon IoU (TAL, NMS용)
+     - `use_shapely=False`: AABB fallback (Loss 함수용, gradient 유지)
+   - `batch_quad_iou_8coords()`: 배치 처리에 `use_shapely` 파라미터 전달
+
+2. **NMS 시스템 개선** (`ultralytics/utils/ops.py`)
+   - `non_max_suppression_qbb()`: `use_accurate_nms` 파라미터 추가
+   - Shapely 기반 정확한 NMS와 AABB 기반 빠른 NMS 선택 가능
+   - `quad_boxes` 변수 정의 추가로 undefined 에러 해결
+
+3. **TAL Assigner 최적화** (`ultralytics/utils/tal.py`)
+   - `QuadrilateralTaskAlignedAssigner.iou_calculation()`: `use_shapely=True` 적용
+   - Gradient 불필요한 TAL에서 정확한 Polygon IoU 사용
+
+4. **Loss 함수 호환성** (`ultralytics/utils/loss.py`)
+   - `QuadrilateralBboxLoss`: Gradient 필요 시 AABB fallback 사용
+   - Backpropagation 호환성 유지
+
+5. **Validator 정확도 향상** (`ultralytics/models/yolo/qbb/val.py`)
+   - `batch_quad_iou_8coords()` 호출 시 `use_shapely=True` 적용
+   - 평가 시 정확한 Polygon IoU 사용
+
+#### **해결된 문제들**:
+- ✅ Gradient 호환성 문제: Loss 함수에서 gradient flow 유지
+- ✅ NMS 성능 문제: 선택적 AABB/Shapely 사용으로 속도/정확도 균형
+- ✅ Undefined 변수 에러: `quad_boxes`, `use_accurate_nms` 정의 추가
+- ✅ 함수 호출 파라미터: 모든 호출 지점에 `use_shapely` 파라미터 추가
+
+#### **현재 상태**:
+- 300 epoch 학습 완료했으나 꼭지점 추론 정확도 아직 부족
+- 기능적으로는 완전 구현되었으나 성능 최적화 필요
+- AABB와 Polygon IoU 선택적 사용 가능한 유연한 시스템 구축
+
 ---
 
-*마지막 업데이트: 2025-08-26 23:19 KST (Phase 7+: AABB 한계 극복 및 Polygon IoU 구현 계획 수립)*
+*마지막 업데이트: 2025-08-30 10:27 KST (Phase 7+: Gradient 호환 이중 IoU 시스템 구현 완료)*

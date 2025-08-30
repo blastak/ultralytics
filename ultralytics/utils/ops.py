@@ -12,7 +12,7 @@ import torch
 import torch.nn.functional as F
 
 from ultralytics.utils import LOGGER
-from ultralytics.utils.metrics import batch_probiou
+from ultralytics.utils.metrics import batch_probiou, batch_quad_iou_8coords
 
 
 class Profile(contextlib.ContextDecorator):
@@ -354,6 +354,7 @@ def non_max_suppression_qbb(
     in_place: bool = True,
     end2end: bool = False,
     return_idxs: bool = False,
+    use_accurate_nms: bool = False,
 ):
     """
     QBB 전용 Non-Maximum Suppression (NMS) 함수
@@ -464,16 +465,42 @@ def non_max_suppression_qbb(
         c = x[:, 9:10] * (0 if agnostic else max_wh)  # classes (9번 인덱스)
         scores = x[:, 8]  # scores (8번 인덱스)
 
-        # QBB: 8좌표를 AABB로 변환해서 기존 NMS 사용
-        quad_boxes = x[:, :8]  # 8개 좌표
-        quad_reshaped = quad_boxes.reshape(-1, 4, 2)  # (N, 4, 2)
-        min_coords = quad_reshaped.min(dim=1)[0]  # (N, 2)
-        max_coords = quad_reshaped.max(dim=1)[0]  # (N, 2)
-        boxes = torch.cat([min_coords, max_coords], dim=-1) + c.expand(-1, 4)  # xyxy + class offset
+        quad_boxes = x[:, :8]
+        if use_accurate_nms:
+            # Shapely 기반 정확한 NMS
+            # 모든 박스 간 IoU 행렬 계산 (gradient 필요 없음)
+            iou_matrix = batch_quad_iou_8coords(quad_boxes, quad_boxes, use_shapely=True)
 
-        # 표준 torchvision NMS 사용
-        i = torchvision.ops.nms(boxes, scores, iou_thres)
-        i = i[:max_det]  # limit detections
+            # IoU threshold 적용하여 중복 박스 제거
+            keep = []
+            processed = set()
+
+            # confidence 순으로 정렬된 인덱스
+            sorted_indices = scores.argsort(descending=True)
+
+            for idx in sorted_indices:
+                if idx.item() in processed:
+                    continue
+
+                keep.append(idx)
+
+                # 현재 박스와 IoU가 threshold 이상인 박스들 제거 대상으로 마킹
+                overlaps = iou_matrix[idx] > iou_thres
+                for overlap_idx in overlaps.nonzero().squeeze():
+                    if overlap_idx != idx:
+                        processed.add(overlap_idx.item())
+
+            i = torch.tensor(keep, device=x.device)[:max_det]
+        else:
+            # QBB: 8좌표를 AABB로 변환해서 기존 NMS 사용
+            quad_reshaped = quad_boxes.reshape(-1, 4, 2)  # (N, 4, 2)
+            min_coords = quad_reshaped.min(dim=1)[0]  # (N, 2)
+            max_coords = quad_reshaped.max(dim=1)[0]  # (N, 2)
+            boxes = torch.cat([min_coords, max_coords], dim=-1) + c.expand(-1, 4)  # xyxy + class offset
+
+            # 표준 torchvision NMS 사용
+            i = torchvision.ops.nms(boxes, scores, iou_thres)
+            i = i[:max_det]  # limit detections
 
         output[xi], keepi[xi] = x[i], xk[i].reshape(-1)
         if (time.time() - t) > time_limit:

@@ -475,8 +475,9 @@ def dist2quad(distance, anchor_points, dim=-1):
 
 class QuadrilateralTaskAlignedAssigner(TaskAlignedAssigner):
     def iou_calculation(self, gt_bboxes, pd_bboxes):
-        """8개 좌표 기반 IoU 계산"""
-        return quad_iou_8coords(gt_bboxes, pd_bboxes).squeeze(-1).clamp_(0)
+        """8개 좌표 기반 IoU 계산 - Shapely 사용으로 정확도 향상"""
+        # TAL Assigner는 gradient가 필요 없으므로 Shapely 사용 가능
+        return quad_iou_8coords(gt_bboxes, pd_bboxes, use_shapely=True).squeeze(-1).clamp_(0)
 
     @staticmethod
     def select_candidates_in_gts(xy_centers, gt_bboxes):

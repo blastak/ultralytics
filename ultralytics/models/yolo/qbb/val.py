@@ -93,7 +93,7 @@ class QBBValidator(DetectionValidator):
         """
         if len(batch["cls"]) == 0 or len(preds["cls"]) == 0:
             return {"tp": np.zeros((len(preds["cls"]), self.niou), dtype=bool)}
-        iou = batch_quad_iou_8coords(batch["bboxes"], preds["bboxes"])
+        iou = batch_quad_iou_8coords(batch["bboxes"], preds["bboxes"], use_shapely=True)
         return {"tp": self.match_predictions(preds["cls"], batch["cls"], iou).cpu().numpy()}
 
     def postprocess(self, preds: torch.Tensor) -> List[Dict[str, torch.Tensor]]:
