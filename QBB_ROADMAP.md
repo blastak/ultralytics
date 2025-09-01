@@ -906,4 +906,107 @@ assert format in {"xyxy", "xywh", "ltwh"}  # QBB 형식 없음
 
 ---
 
-*마지막 업데이트: 2025-08-30 10:27 KST (Phase 7+: Gradient 호환 이중 IoU 시스템 구현 완료)*
+## Phase 8: 성능 개선 및 클리핑 문제 해결 (2025-09-01) 🛠️
+
+**🎯 핵심 목표: DFL 비활성화 학습 및 클리핑 없는 전체 형태 추정 방식 구현**
+
+### 8.1 DFL Loss 비활성화 실험 (2025-09-01 20:02)
+
+#### 실험 목적:
+1. **문제 단순화**: DFL loss를 제거하여 box regression만 학습
+2. **디버깅 용이성**: 8좌표 직접 예측이 제대로 되는지 확인
+3. **성능 baseline**: DFL 없이도 기본적인 학습이 가능한지 검증
+
+#### 구현 완료 사항:
+
+**1. 좌표 Loss 함수 추가 (`ultralytics/utils/loss.py`)**
+- `calculate_box_areas()`: Shoelace formula로 사각형 넓이 계산
+- `QuadrilateralBboxLoss.forward()`: Smooth L1 좌표 loss 구현
+- IoU loss와 좌표 loss 결합 시스템
+
+```python
+# 추가된 좌표 loss
+coord_loss = F.smooth_l1_loss(pred_bboxes[fg_mask], target_bboxes[fg_mask], reduction='none')
+box_areas = calculate_box_areas(target_bboxes[fg_mask])
+coord_loss = coord_loss / (box_areas.sqrt().unsqueeze(-1) + 1e-9)
+coord_loss = (coord_loss * weight).sum() / target_scores_sum
+```
+
+**2. 학습 설정 최적화 (`train_entrypoint.py`)**
+- DFL loss 완전 비활성화: `dfl=0.0` (선택적 사용)
+- 학습 환경: webpm_obb1944.yaml, epochs=200, batch=16
+- Multi-GPU 활용: device="0,1"
+
+#### 예상 효과:
+- Box loss 수치 범위 정상화 (현재 100배 높은 문제 해결)
+- 좌표 예측 정확도 향상
+- 학습 안정성 증대
+
+### 8.2 클리핑 문제 해결 방안 수립 (2025-09-01 20:02)
+
+#### 문제 현황:
+1. **현재 실험적 해결책의 한계**:
+   - `augment.py:1250`: `if len(segments[0]) == 4: return bboxes, segments`
+   - `instance.py:406`: QBB는 클리핑 우회
+   - 근본적 해결보다는 임시방편
+
+2. **클리핑 딜레마**:
+   - 클리핑 안함: 좌표가 화면 밖으로 나가서 학습 불안정
+   - 클리핑 함: 사각형 → 다각형 변환으로 QBB 처리 불가능
+
+#### **방법 2: 클리핑 없는 전체 형태 추정** 🎯
+
+**핵심 아이디어**: 화면 밖 좌표도 그대로 학습하되, 시각화와 평가는 보이는 영역만 처리
+
+**구현 계획**:
+
+1. **좌표 범위 확장**:
+   ```python
+   # 정규화 범위를 [0,1] → [-0.5, 1.5]로 확장
+   if is_qbb:
+       segments[:, 0] = segments[:, 0] / w  # 클리핑 없이 정규화
+       segments[:, 1] = segments[:, 1] / h
+   ```
+
+2. **수정 대상 파일**:
+   - `ultralytics/data/augment.py`: QBB 클리핑 완전 비활성화
+   - `ultralytics/utils/instance.py`: segments 클리핑 제거  
+   - `ultralytics/data/dataset.py`: 정규화 로직 수정
+   - `ultralytics/utils/plotting.py`: 시각화용 클리핑만 유지
+
+3. **예상 문제점과 해결책**:
+   - **DFL 범위 초과**: `dist2quad`에서 거리 clamp 추가
+   - **IoU 계산 오류**: visible 영역만으로 교집합 계산
+   - **Visualization 오류**: 그리기 전에만 클리핑 적용
+   - **학습 불안정**: 극단값 필터링 (화면 크기의 2배 이상 제외)
+
+### 8.3 향후 단계별 실험 계획
+
+#### **Phase 8a: DFL 비활성화 검증** (진행 중)
+- [x] Smooth L1 좌표 loss 구현
+- [x] DFL=0.0 학습 설정
+- [ ] 학습 결과 분석 (box_loss 수치 정상화 확인)
+- [ ] 좌표 예측 정확도 측정
+
+#### **Phase 8b: 클리핑 비활성화 구현** (계획)
+- [ ] augment.py, instance.py 클리핑 로직 수정
+- [ ] 정규화 범위 확장 구현
+- [ ] 극단값 필터링 로직 추가
+- [ ] 시각화 시스템 보완
+
+#### **Phase 8c: 성능 비교 및 최적화** (계획)  
+- [ ] DFL 활성화/비활성화 성능 비교
+- [ ] 클리핑 유무에 따른 학습 결과 비교
+- [ ] 최적 하이퍼파라미터 탐색
+- [ ] 최종 성능 검증
+
+### 8.4 기술적 성취 목표
+
+1. **좌표 Loss 통합**: IoU + 좌표 직접 비교 loss 결합
+2. **클리핑 문제 근본 해결**: 임시방편 → 구조적 해결책
+3. **성능 Gap 해소**: OBB 대비 100배 높은 box_loss 정상화
+4. **학습 안정성**: 화면 밖 좌표에도 robust한 학습 시스템
+
+---
+
+*마지막 업데이트: 2025-09-01 20:02 KST (Phase 8: DFL 비활성화 및 클리핑 문제 해결 계획 수립)*

@@ -172,6 +172,24 @@ class RotatedBboxLoss(BboxLoss):
         return loss_iou, loss_dfl
 
 
+def calculate_box_areas(bboxes):
+    """Calculate areas of quadrilateral bounding boxes from 8 coordinates."""
+    # bboxes shape: (N, 8) - xyxyxyxy format
+    coords = bboxes.reshape(-1, 4, 2)  # (N, 4, 2)
+
+    # Shoelace formula for polygon area
+    x = coords[:, :, 0]  # (N, 4)
+    y = coords[:, :, 1]  # (N, 4)
+
+    # Roll coordinates for cross multiplication
+    x_roll = torch.roll(x, -1, dims=-1)
+    y_roll = torch.roll(y, -1, dims=-1)
+
+    # Calculate area using shoelace formula
+    areas = 0.5 * torch.abs(torch.sum(x * y_roll - x_roll * y, dim=-1))
+    return areas
+
+
 class QuadrilateralBboxLoss(BboxLoss):
     """Criterion class for computing training losses for quadrilateral bounding boxes."""
 
@@ -197,14 +215,28 @@ class QuadrilateralBboxLoss(BboxLoss):
         loss_iou = ((1.0 - iou) * weight).sum() / target_scores_sum
 
         # DFL loss - 8개 좌표 직접 처리
-        if self.dfl_loss:
-            target_ltrb = quad2dist(anchor_points, target_bboxes, self.dfl_loss.reg_max - 1)
-            loss_dfl = self.dfl_loss(pred_dist[fg_mask].view(-1, self.dfl_loss.reg_max), target_ltrb[fg_mask]) * weight
-            loss_dfl = loss_dfl.sum() / target_scores_sum
+        if False:
+            if self.dfl_loss:
+                target_ltrb = quad2dist(anchor_points, target_bboxes, self.dfl_loss.reg_max - 1)
+                loss_dfl = self.dfl_loss(pred_dist[fg_mask].view(-1, self.dfl_loss.reg_max), target_ltrb[fg_mask]) * weight
+                loss_dfl = loss_dfl.sum() / target_scores_sum
+            else:
+                loss_dfl = torch.tensor(0.0).to(pred_dist.device)
         else:
-            loss_dfl = torch.tensor(0.0).to(pred_dist.device)
+            # 추가: Smooth L1 좌표 loss
+            coord_loss = F.smooth_l1_loss(
+                pred_bboxes[fg_mask],
+                target_bboxes[fg_mask],
+                reduction='none'
+            )
+            # Scale 정규화 (박스 크기로 나누기)
+            box_areas = calculate_box_areas(target_bboxes[fg_mask])
+            coord_loss = coord_loss / (box_areas.sqrt().unsqueeze(-1) + 1e-9)
+            # 가중치 적용
+            coord_loss = (coord_loss * weight).sum() / target_scores_sum
 
-        return loss_iou, loss_dfl
+        #return loss_iou, loss_dfl
+        return loss_iou, coord_loss
 
 
 class KeypointLoss(nn.Module):
