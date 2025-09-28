@@ -102,6 +102,36 @@ def segment2box(segment, width: int = 640, height: int = 640):
     )  # xyxy
 
 
+def segment2box_no_clip(segment, width: int = 640, height: int = 640):
+    """
+      Convert segment coordinates to bounding box coordinates without clipping.
+
+      Converts a single segment label to a box label by finding the minimum and maximum x and y coordinates.
+      Unlike segment2box, this function does NOT clip coordinates to image boundaries, allowing boxes
+      to extend beyond image limits for QBB (Quadrilateral Bounding Box) operations.
+
+      Args:
+          segment (torch.Tensor): Segment coordinates in format (N, 2) where N is number of points.
+          width (int): Width of the image in pixels (used only for validation check).
+          height (int): Height of the image in pixels (used only for validation check).
+
+      Returns:
+          (np.ndarray): Bounding box coordinates in xyxy format [x1, y1, x2, y2].
+                       Returns zeros if no valid points exist within image bounds.
+
+      Note:
+          This function preserves coordinates outside image boundaries, which is essential
+          for QBB training where objects may partially extend beyond the visible area.
+      """
+    x, y = segment.T  # segment xy
+    inside = (x >= 0) & (y >= 0) & (x <= width) & (y <= height)
+    return (
+        np.array([x.min(), y.min(), x.max(), y.max()], dtype=segment.dtype)
+        if any(inside)
+        else np.zeros(4, dtype=segment.dtype)
+    )  # xyxy
+
+
 def scale_boxes(img1_shape, boxes, img0_shape, ratio_pad=None, padding: bool = True, xywh: bool = False):
     """
     Rescale bounding boxes from one image shape to another.

@@ -16,7 +16,7 @@ from ultralytics.utils import LOGGER, IterableSimpleNamespace, colorstr
 from ultralytics.utils.checks import check_version
 from ultralytics.utils.instance import Instances
 from ultralytics.utils.metrics import bbox_ioa
-from ultralytics.utils.ops import segment2box, xywh2xyxy, xyxyxyxy2xywhr
+from ultralytics.utils.ops import segment2box, segment2box_no_clip, xywh2xyxy, xyxyxyxy2xywhr
 from ultralytics.utils.torch_utils import TORCHVISION_0_10, TORCHVISION_0_11, TORCHVISION_0_13
 
 DEFAULT_MEAN = (0.0, 0.0, 0.0)
@@ -1246,9 +1246,12 @@ class RandomPerspective:
         xy = xy @ M.T  # transform
         xy = xy[:, :2] / xy[:, 2:3]
         segments = xy.reshape(n, -1, 2)
-        bboxes = np.stack([segment2box(xy, self.size[0], self.size[1]) for xy in segments], 0)
-        segments[..., 0] = segments[..., 0].clip(bboxes[:, 0:1], bboxes[:, 2:3])
-        segments[..., 1] = segments[..., 1].clip(bboxes[:, 1:2], bboxes[:, 3:4])
+        if n == 4:  # quad with no clipping
+            bboxes = np.stack([segment2box_no_clip(xy, self.size[0], self.size[1]) for xy in segments], 0)
+        else:
+            bboxes = np.stack([segment2box(xy, self.size[0], self.size[1]) for xy in segments], 0)
+            segments[..., 0] = segments[..., 0].clip(bboxes[:, 0:1], bboxes[:, 2:3])
+            segments[..., 1] = segments[..., 1].clip(bboxes[:, 1:2], bboxes[:, 3:4])
         return bboxes, segments
 
     def apply_keypoints(self, keypoints: np.ndarray, M: np.ndarray) -> np.ndarray:

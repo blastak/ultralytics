@@ -676,7 +676,7 @@ def save_one_box(
     return crop
 
 
-@threaded
+# @threaded
 def plot_images(
     labels: Dict[str, Any],
     images: Union[torch.Tensor, np.ndarray] = np.zeros((0, 3, 640, 640), dtype=np.float32),
@@ -772,7 +772,7 @@ def plot_images(
                 is_qbb = boxes.shape[-1] == 8  # xyxyxyxy
                 if len(boxes):
                     if is_qbb:
-                        if boxes.max() <= 1.1:  # if normalized with tolerance 0.1
+                        if boxes.max() <= 5:  # if normalized with tolerance 5 (이걸로 de-normalized 여부 판단, 520x110 이므로 넉넉히 5로 설정)
                             boxes[..., [0, 2, 4, 6]] *= w  # scale to pixels
                             boxes[..., [1, 3, 5, 7]] *= h
                         elif scale < 1:  # absolute coords need scale if image scales
@@ -791,7 +791,8 @@ def plot_images(
                 boxes = boxes.reshape(-1, 4, 2) if is_qbb else ops.xywhr2xyxyxyxy(boxes) if is_obb else ops.xywh2xyxy(boxes) # quad : (b,8) → (b,4,2)
                 for j, box in enumerate(boxes.astype(np.int64).tolist()):
                     c = classes[j]
-                    color = colors(j)
+                    # color = colors(c)
+                    color = colors(i)
                     c = names.get(c, c) if names else c
                     if labels or conf[j] > conf_thres:
                         label = f"{c}" if labels else f"{c} {conf[j]:.2f}"
