@@ -1714,8 +1714,7 @@ class QBB(BaseTensor):
 
         Args:
             boxes (torch.Tensor | np.ndarray): A tensor or numpy array containing the detection boxes,
-                with shape (num_boxes, 7) or (num_boxes, 8). The last two columns contain confidence and class values.
-                If present, the third last column contains track IDs, and the fifth column contains rotation.
+                with shape (num_boxes, 10) or (num_boxes, 11). Format: xyxyxyxy + conf + cls (+ track_id)
             orig_shape (Tuple[int, int]): Original image size, in the format (height, width).
 
         Attributes:
@@ -1724,27 +1723,29 @@ class QBB(BaseTensor):
             is_track (bool): Whether the boxes include tracking IDs.
 
         Raises:
-            AssertionError: If the number of values per box is not 7 or 8.
+            AssertionError: If the number of values per box is not 10 or 11.
 
         Examples:
             >>> import torch
-            >>> boxes = torch.rand(3, 7)  # 3 boxes with 7 values each
+            >>> boxes = torch.rand(3, 10)  # 3 boxes with 10 values each
             >>> orig_shape = (640, 480)
             >>> qbb = QBB(boxes, orig_shape)
-            >>> print(qbb.xywhr)  # Access the boxes in xywhr format
+            >>> print(qbb.xyxyxyxy)  # Access the boxes in xyxyxyxy format
         """
         if boxes.ndim == 1:
             boxes = boxes[None, :]
         n = boxes.shape[-1]
-        assert n in {7, 8}, f"expected 7 or 8 values but got {n}"  # xywh, rotation, track_id, conf, cls
+        # QBB는 10개 값(xyxyxyxy + conf + cls) 또는 11개 값(xyxyxyxy + conf + cls + track_id) 지원
+        assert n in {10, 11}, f"expected 10 or 11 values but got {n}"
         super().__init__(boxes, orig_shape)
-        self.is_track = n == 8
+        self.is_track = n == 11
         self.orig_shape = orig_shape
 
     @property
     def xywhr(self) -> Union[torch.Tensor, np.ndarray]:
         """
         Return boxes in [x_center, y_center, width, height, rotation] format.
+        QBB는 xyxyxyxy 형식으로 저장되므로, 이를 xywhr로 변환합니다.
 
         Returns:
             (torch.Tensor | np.ndarray): A tensor or numpy array containing the quadrilateral bounding boxes with format
@@ -1757,7 +1758,8 @@ class QBB(BaseTensor):
             >>> print(xywhr.shape)
             torch.Size([3, 5])
         """
-        return self.data[:, :5]
+        # xyxyxyxy에서 xywhr로 변환
+        return ops.xyxyxyxy2xywhr(self.data[:, :8])
 
     @property
     def conf(self) -> Union[torch.Tensor, np.ndarray]:
@@ -1777,7 +1779,8 @@ class QBB(BaseTensor):
             >>> confidence_scores = qbb_result.conf
             >>> print(confidence_scores)
         """
-        return self.data[:, -2]
+        # QBB 형식: xyxyxyxy(8) + conf(1) + cls(1) [+ track_id(1)]
+        return self.data[:, 8]
 
     @property
     def cls(self) -> Union[torch.Tensor, np.ndarray]:
@@ -1795,7 +1798,8 @@ class QBB(BaseTensor):
             >>> class_values = qbb.cls
             >>> print(class_values)
         """
-        return self.data[:, -1]
+        # QBB 형식: xyxyxyxy(8) + conf(1) + cls(1) [+ track_id(1)]
+        return self.data[:, 9]
 
     @property
     def id(self) -> Optional[Union[torch.Tensor, np.ndarray]]:
@@ -1814,26 +1818,28 @@ class QBB(BaseTensor):
             ...         if track_ids is not None:
             ...             print(f"Tracking IDs: {track_ids}")
         """
-        return self.data[:, -3] if self.is_track else None
+        # QBB 형식: xyxyxyxy(8) + conf(1) + cls(1) + track_id(1)
+        return self.data[:, 10] if self.is_track else None
 
     @property
     @lru_cache(maxsize=2)
     def xyxyxyxy(self) -> Union[torch.Tensor, np.ndarray]:
         """
-        Convert QBB format to 8-point (xyxyxyxy) coordinate format for quadrilateral bounding boxes.
+        Return QBB in 8-point (xyxyxyxy) coordinate format for quadrilateral bounding boxes.
 
         Returns:
-            (torch.Tensor | np.ndarray): Rotated bounding boxes in xyxyxyxy format with shape (N, 4, 2), where N is
+            (torch.Tensor | np.ndarray): Quadrilateral bounding boxes in xyxyxyxy format with shape (N, 4, 2), where N is
                 the number of boxes. Each box is represented by 4 points (x, y), starting from the top-left corner and
                 moving clockwise.
 
         Examples:
-            >>> qbb = QBB(torch.tensor([[100, 100, 50, 30, 0.5, 0.9, 0]]), orig_shape=(640, 640))
+            >>> qbb = QBB(torch.tensor([[x1, y1, x2, y2, x3, y3, x4, y4, 0.9, 0]]), orig_shape=(640, 640))
             >>> xyxyxyxy = qbb.xyxyxyxy
             >>> print(xyxyxyxy.shape)
             torch.Size([1, 4, 2])
         """
-        return ops.xywhr2xyxyxyxy(self.xywhr)
+        # QBB는 이미 xyxyxyxy 형식으로 저장되어 있음 (처음 8개 값)
+        return self.data[:, :8].reshape(-1, 4, 2)
 
     @property
     @lru_cache(maxsize=2)

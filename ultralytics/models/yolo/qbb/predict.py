@@ -120,7 +120,10 @@ class QBBPredictor(DetectionPredictor):
                 bounding boxes.
         """
         # QBB는 8개 좌표를 스케일링
-        pred[:, :8] = ops.scale_boxes(img.shape[2:], pred[:, :8], orig_img.shape, padding=False)
+        # pred[:, :8] = ops.scale_boxes(img.shape[2:], pred[:, :8], orig_img.shape, padding=False)
+        # 대신 아래 것을 사용
+        gain = min(img.shape[2] / orig_img.shape[0], img.shape[3] / orig_img.shape[1])
+        pred[:, :8] /= gain
 
         # Results 객체 생성 - QBB는 10개 값 전체 전달 (8 coords + conf + cls)
         return Results(orig_img, path=img_path, names=self.model.names, qbb=pred)
