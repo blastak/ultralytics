@@ -1,0 +1,11 @@
+# QBB Single Class Training Dataset Configuration
+# Test dataset from JSON conversion
+
+path: ultralytics/assets/test_qbb_singleclass
+train: images/train
+val: images/val
+test: images/test
+
+# Classes
+names:
+  0: plate
