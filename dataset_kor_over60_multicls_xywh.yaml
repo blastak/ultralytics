@@ -1,0 +1,5 @@
+path: /workspace/repo/ultralytics/ultralytics/assets/kor_over60_multicls_xywh
+train: images/train
+val: images/val
+nc: 6
+names: ['P1-1', 'P1-2', 'P1-3', 'P2', 'P3', 'P4']
