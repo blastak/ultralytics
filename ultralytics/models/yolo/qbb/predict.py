@@ -121,9 +121,14 @@ class QBBPredictor(DetectionPredictor):
         """
         # QBB는 8개 좌표를 스케일링
         # pred[:, :8] = ops.scale_boxes(img.shape[2:], pred[:, :8], orig_img.shape, padding=False)
-        # 대신 아래 것을 사용
+        # 대신 아래 것을 사용 - gain 기반 스케일링 + padding 보정
         gain = min(img.shape[2] / orig_img.shape[0], img.shape[3] / orig_img.shape[1])
-        pred[:, :8] /= gain
+        pad_x = round((img.shape[3] - orig_img.shape[1] * gain) / 2 - 0.1)
+        pad_y = round((img.shape[2] - orig_img.shape[0] * gain) / 2 - 0.1)
+
+        # 8개 좌표 처리 (x는 짝수 인덱스, y는 홀수 인덱스)
+        pred[:, 0::2] = (pred[:, 0::2] - pad_x) / gain  # x 좌표들 (0, 2, 4, 6)
+        pred[:, 1::2] = (pred[:, 1::2] - pad_y) / gain  # y 좌표들 (1, 3, 5, 7)
 
         # Results 객체 생성 - QBB는 10개 값 전체 전달 (8 coords + conf + cls)
         return Results(orig_img, path=img_path, names=self.model.names, qbb=pred)
