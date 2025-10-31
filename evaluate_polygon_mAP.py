@@ -319,8 +319,22 @@ def main():
     
     print(f"\n{'='*80}\n")
 
-    # 결과를 CSV 파일로 저장
-    output_file = 'polygon_iou_evaluation_results.csv'
+    # 결과를 CSV 파일로 저장 - runs 폴더에 저장
+    # 첫 번째 pred-csv 경로에서 runs 디렉토리를 찾아 그곳에 저장
+    first_csv_path = Path(args.pred_csv[0])
+    # runs 디렉토리까지 올라가기
+    runs_dir = None
+    for parent in first_csv_path.parents:
+        if parent.name == 'runs':
+            runs_dir = parent
+            break
+
+    if runs_dir is None:
+        # runs 디렉토리를 찾지 못한 경우 현재 디렉토리에 저장
+        output_file = Path('polygon_iou_evaluation_results.csv')
+    else:
+        output_file = runs_dir / 'polygon_iou_evaluation_results.csv'
+
     with open(output_file, 'w') as f:
         f.write("Model,AP@0.5,AP@0.75,AP@0.95,mAP@0.5:0.95\n")
         for model_name, model_results in results.items():
