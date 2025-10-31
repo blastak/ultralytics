@@ -28,10 +28,10 @@ def inference_to_csv(
         conf_threshold: Confidence threshold
         iou_threshold: IoU threshold for NMS
 
-    CSV 형식:
-        - AABB: class, x1, y1, x2, y2, confidence (좌상단, 우하단)
-        - OBB: class, x1, y1, x2, y2, x3, y3, x4, y4, confidence (4점 좌표)
-        - QBB: class, x1, y1, x2, y2, x3, y3, x4, y4, confidence (4점 좌표)
+    CSV 형식 (모두 10개 항목으로 통일):
+        - AABB: class, x1, y1, x2, y1, x2, y2, x1, y2, confidence (좌상단부터 시계방향 4점)
+        - OBB: class, x1, y1, x2, y2, x3, y3, x4, y4, confidence (회전된 4점 좌표)
+        - QBB: class, x1, y1, x2, y2, x3, y3, x4, y4, confidence (자유 형태 4점 좌표)
     """
     # 모델 로드
     print(f"모델 로드 중: {model_path}")
@@ -138,13 +138,15 @@ def inference_to_csv(
                 # 클래스 이름
                 class_name = result.names[int(clss[i].item())]
 
-                # 4개 좌표 (x1, y1, x2, y2)
-                coords = xyxy[i].tolist()
+                # 4개 좌표 (x1, y1, x2, y2)를 xyxyxyxy 형식으로 변환
+                # 좌상단부터 시계방향: (x1,y1), (x2,y1), (x2,y2), (x1,y2)
+                x1, y1, x2, y2 = xyxy[i].tolist()
+                coords = [x1, y1, x2, y1, x2, y2, x1, y2]
 
                 # Confidence
                 conf = float(confs[i].item())
 
-                # CSV 행: class, x1, y1, x2, y2, confidence
+                # CSV 행: class, x1, y1, x2, y1, x2, y2, x1, y2, confidence (10개 항목)
                 row = [class_name] + coords + [conf]
                 csv_rows.append(row)
                 total_detections += 1
