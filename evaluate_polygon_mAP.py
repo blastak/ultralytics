@@ -302,24 +302,34 @@ def main():
         
         results[model_name] = model_results
     
+    # 결과 출력 순서 정의 (AABB, OBB, QBB)
+    model_order = ['AABB', 'OBB', 'QBB']
+    # 결과에 있는 모델만 순서대로 정렬
+    sorted_model_names = [name for name in model_order if name in results]
+    # 순서에 없는 모델이 있다면 뒤에 추가
+    for name in results.keys():
+        if name not in sorted_model_names:
+            sorted_model_names.append(name)
+
     # 결과 출력
     print(f"\n{'='*80}")
     print("📊 Final Results - Polygon IoU based mAP")
     print(f"{'='*80}\n")
-    
+
     print(f"{'Model':<15} {'AP@0.5':<10} {'AP@0.75':<10} {'AP@0.95':<10} {'mAP@0.5:0.95':<15}")
     print("-" * 80)
-    
-    for model_name, model_results in results.items():
+
+    for model_name in sorted_model_names:
+        model_results = results[model_name]
         print(f"{model_name:<15} ", end="")
         print(f"{model_results.get('AP@0.5', 0):<10.4f} ", end="")
         print(f"{model_results.get('AP@0.75', 0):<10.4f} ", end="")
         print(f"{model_results.get('AP@0.95', 0):<10.4f} ", end="")
         print(f"{model_results.get('mAP@0.5:0.95', 0):<15.4f}")
-    
+
     print(f"\n{'='*80}\n")
 
-    # 결과를 CSV 파일로 저장 - runs 폴더에 저장
+    # 결과를 TXT 파일로 저장 - runs 폴더에 저장
     # 첫 번째 pred-csv 경로에서 runs 디렉토리를 찾아 그곳에 저장
     first_csv_path = Path(args.pred_csv[0])
     # runs 디렉토리까지 올라가기
@@ -331,18 +341,58 @@ def main():
 
     if runs_dir is None:
         # runs 디렉토리를 찾지 못한 경우 현재 디렉토리에 저장
-        output_file = Path('polygon_iou_evaluation_results.csv')
+        base_dir = Path('.')
     else:
-        output_file = runs_dir / 'polygon_iou_evaluation_results.csv'
+        base_dir = runs_dir
+
+    # 파일명에 번호 추가 (01부터 시작)
+    counter = 1
+    while True:
+        output_file = base_dir / f'polygon_iou_evaluation_results_{counter:02d}.txt'
+        if not output_file.exists():
+            break
+        counter += 1
 
     with open(output_file, 'w') as f:
-        f.write("Model,AP@0.5,AP@0.75,AP@0.95,mAP@0.5:0.95\n")
-        for model_name, model_results in results.items():
-            f.write(f"{model_name},")
-            f.write(f"{model_results.get('AP@0.5', 0):.4f},")
-            f.write(f"{model_results.get('AP@0.75', 0):.4f},")
-            f.write(f"{model_results.get('AP@0.95', 0):.4f},")
-            f.write(f"{model_results.get('mAP@0.5:0.95', 0):.4f}\n")
+        f.write("="*80 + "\n")
+        f.write("Polygon IoU based mAP Evaluation Results\n")
+        f.write("="*80 + "\n\n")
+
+        # 평가 설정 정보
+        f.write("Evaluation Configuration:\n")
+        f.write("-"*80 + "\n")
+        f.write(f"Ground Truth Labels: {args.gt_labels}\n")
+        f.write(f"Image Width: {args.img_width}\n")
+        f.write(f"Image Height: {args.img_height}\n")
+        f.write(f"Total GT Images: {len(gt_dict)}\n")
+        f.write("\n")
+
+        # 모델별 예측 경로 (정렬된 순서로)
+        f.write("Model Prediction Paths:\n")
+        f.write("-"*80 + "\n")
+        # 모델 이름과 CSV 경로 매핑
+        model_csv_map = dict(zip(args.model_names, args.pred_csv))
+        for model_name in sorted_model_names:
+            csv_dir = model_csv_map.get(model_name, "N/A")
+            f.write(f"{model_name}: {csv_dir}\n")
+        f.write("\n")
+
+        # 결과 테이블
+        f.write("="*80 + "\n")
+        f.write("Results:\n")
+        f.write("="*80 + "\n\n")
+        f.write(f"{'Model':<15} {'AP@0.5':<10} {'AP@0.75':<10} {'AP@0.95':<10} {'mAP@0.5:0.95':<15}\n")
+        f.write("-" * 80 + "\n")
+
+        for model_name in sorted_model_names:
+            model_results = results[model_name]
+            f.write(f"{model_name:<15} ")
+            f.write(f"{model_results.get('AP@0.5', 0):<10.4f} ")
+            f.write(f"{model_results.get('AP@0.75', 0):<10.4f} ")
+            f.write(f"{model_results.get('AP@0.95', 0):<10.4f} ")
+            f.write(f"{model_results.get('mAP@0.5:0.95', 0):<15.4f}\n")
+
+        f.write("\n" + "="*80 + "\n")
 
     print(f"\n💾 Results saved to: {output_file}")
 
