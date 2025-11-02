@@ -1,44 +1,119 @@
 from datetime import date
-import argparse
 
 from ultralytics import YOLO
 
-
 if __name__ == '__main__':
-    parser = argparse.ArgumentParser(description='YOLO Training Entrypoint')
-    parser.add_argument('--model', type=str, default='yolov8n-qbb.yaml', help='Model config file')
-    parser.add_argument('--data', type=str, default='webpm_obb1944.yaml', help='Data config file')
-    parser.add_argument('--epochs', type=int, default=200, help='Number of epochs')
-    parser.add_argument('--batch', type=int, default=16, help='Batch size')
-    parser.add_argument('--imgsz', type=int, default=640, help='Image size')
-    parser.add_argument('--workers', type=int, default=8, help='Number of workers')
-    parser.add_argument('--device', type=str, default='0,1', help='Device (e.g., 0 or 0,1)')
-    parser.add_argument('--name', type=str, default=None, help='Experiment name')
-    parser.add_argument('--fliplr', type=float, default=0.0, help='Horizontal flip probability')
-    parser.add_argument('--dfl', type=float, default=5.0, help='DFL loss weight')
-    parser.add_argument('--patience', type=int, default=100, help='Early stopping patience')
-    parser.add_argument('--save_period', type=int, default=-1, help='Save checkpoint every x epochs')
+    today_str = date.today().strftime("%m%d")  # "2025-mm-dd"
 
-    args = parser.parse_args()
+    ################# 기존 코드 (주석 처리)
+    # ################# CCPD Over60 - AABB Training (YOLOv11n)
+    # print("\n" + "="*80)
+    # print("Starting AABB Training (YOLOv11n) - CCPD Over60")
+    # print("="*80 + "\n")
+    # model = YOLO('yolo11n.pt')
+    # results = model.train(
+    #     name='ccpd_over60_yolov11n_aabb',
+    #     data='dataset_ccpd_over60_xywh.yaml',
+    #     epochs=100,
+    #     batch=64,
+    #     workers=32,
+    #     imgsz=640,
+    #     plots=True,
+    #     device="0,1,2,3,4,5,6,7"
+    # )
 
-    today_str = date.today().strftime("%m%d")
-    exp_name = args.name if args.name else f'train{today_str}_'
+    # ################# CCPD Over60 - OBB Training (YOLOv11n)
+    # print("\n" + "="*80)
+    # print("Starting OBB Training (YOLOv11n) - CCPD Over60")
+    # print("="*80 + "\n")
+    # model = YOLO('yolo11n-obb.pt')
+    # results = model.train(
+    #     name='ccpd_over60_yolov11n_obb',
+    #     data='dataset_ccpd_over60_xyxyxyxy.yaml',
+    #     epochs=100,
+    #     batch=64,
+    #     workers=32,
+    #     imgsz=640,
+    #     plots=True,
+    #     device="0,1,2,3,4,5,6,7"
+    # )
 
-    # Load model
-    model = YOLO(args.model)
+    # ################# CCPD 1/10 - AABB Training (YOLOv8n)
+    # print("\n" + "="*80)
+    # print("Starting AABB Training (YOLOv8n) - CCPD 1/10")
+    # print("="*80 + "\n")
+    # model = YOLO('yolov8n.pt')
+    # results = model.train(
+    #     name='ccpd_1over10_yolov8n_aabb',
+    #     data='dataset_ccpd_1over10_xywh.yaml',
+    #     epochs=100,
+    #     batch=64,
+    #     workers=32,
+    #     imgsz=640,
+    #     plots=True,
+    #     device="0,1,2,3,4,5,6,7"
+    # )
 
-    # Train
+    # ################# CCPD 1/10 - OBB Training (YOLOv8n)
+    # print("\n" + "="*80)
+    # print("Starting OBB Training (YOLOv8n) - CCPD 1/10")
+    # print("="*80 + "\n")
+    # model = YOLO('yolov8n-obb.pt')
+    # results = model.train(
+    #     name='ccpd_1over10_yolov8n_obb',
+    #     data='dataset_ccpd_1over10_xyxyxyxy.yaml',
+    #     epochs=100,
+    #     batch=64,
+    #     workers=32,
+    #     imgsz=640,
+    #     plots=True,
+    #     device="0,1,2,3,4,5,6,7"
+    # )
+
+    # ################# CCPD 1/10 - QBB Training (YOLOv8n)
+    # print("\n" + "="*80)
+    # print("Starting QBB Training (YOLOv8n) - CCPD 1/10")
+    # print("="*80 + "\n")
+    # model = YOLO('yolov8n-qbb.yaml')
+    # results = model.train(
+    #     name='ccpd_1over10_yolov8n_qbb',
+    #     data='dataset_ccpd_1over10_xyxyxyxy.yaml',
+    #     epochs=100,
+    #     batch=64,
+    #     workers=32,
+    #     imgsz=640,
+    #     plots=True,
+    #     device="0,1,2,3,4,5,6,7"
+    # )
+
+    ################# CCPD 1/10 - AABB Training (YOLOv11n)
+    print("\n" + "="*80)
+    print("Starting AABB Training (YOLOv11n) - CCPD 1/10")
+    print("="*80 + "\n")
+    model = YOLO('yolo11n.pt')
     results = model.train(
-        name=exp_name,
-        data=args.data,
-        epochs=args.epochs,
-        fliplr=args.fliplr,
-        batch=args.batch,
-        workers=args.workers,
-        imgsz=args.imgsz,
+        name='ccpd_1over10_yolo11n_aabb',
+        data='dataset_ccpd_1over10_xywh.yaml',
+        epochs=100,
+        batch=64,
+        workers=32,
+        imgsz=640,
         plots=True,
-        device=args.device,
-        dfl=args.dfl,
-        patience=args.patience,
-        save_period=args.save_period
+        device="0,1,2,3,4,5,6,7"
+    )
+
+    ################# CCPD 1/10 - OBB Training (YOLOv11n)
+    print("\n" + "="*80)
+    print("Starting OBB Training (YOLOv11n) - CCPD 1/10")
+    print("="*80 + "\n")
+    model = YOLO('yolo11n-obb.pt')
+    results = model.train(
+        name='ccpd_1over10_yolo11n_obb',
+        data='dataset_ccpd_1over10_xyxyxyxy.yaml',
+        epochs=100,
+        batch=64,
+        workers=32,
+        imgsz=640,
+        plots=True,
+        device="0,1,2,3,4,5,6,7"
     )

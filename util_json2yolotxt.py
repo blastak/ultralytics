@@ -301,7 +301,8 @@ def convert_json_to_yolo(
     folder_pattern: Optional[str] = None,
     class_prefix: Optional[str] = None,
     label_based_class: bool = False,
-    label_separator: str = "_"
+    label_separator: str = "_",
+    fraction: float = 1.0
 ):
     """
     JSON 폴더를 YOLO txt로 변환 및 train/val/test 분할
@@ -317,6 +318,7 @@ def convert_json_to_yolo(
         class_prefix: 멀티클래스 모드에서 클래스 이름 추출용 접두사 (예: "GoodMatches_")
         label_based_class: JSON label 필드에서 클래스 추출 (multiclass=True일 때만 유효)
         label_separator: label 기반 클래스 추출 시 구분자 (기본값: "_")
+        fraction: 사용할 데이터의 비율 (0.0 ~ 1.0, 기본값: 1.0)
     """
     assert abs(train_ratio + val_ratio + test_ratio - 1.0) < 1e-6, "비율의 합은 1이어야 합니다"
 
@@ -415,6 +417,12 @@ def convert_json_to_yolo(
 
     # 랜덤 셔플
     random.shuffle(json_files)
+
+    # Fraction 적용 (데이터 샘플링)
+    if fraction < 1.0:
+        n_sample = int(len(json_files) * fraction)
+        json_files = json_files[:n_sample]
+        print(f"Fraction {fraction:.1%} 적용: {n_sample}개 파일 사용")
 
     # Train/Val/Test 분할
     n_total = len(json_files)
@@ -622,6 +630,12 @@ if __name__ == '__main__':
         default='_',
         help='label 기반 클래스 추출 시 구분자 (기본값: "_")'
     )
+    parser.add_argument(
+        '--fraction',
+        type=float,
+        default=1.0,
+        help='사용할 데이터의 비율 (0.0 ~ 1.0, 기본값: 1.0)'
+    )
 
     args = parser.parse_args()
 
@@ -640,5 +654,6 @@ if __name__ == '__main__':
         folder_pattern=args.folder_pattern,
         class_prefix=args.class_prefix,
         label_based_class=args.label_based_class,
-        label_separator=args.label_separator
+        label_separator=args.label_separator,
+        fraction=args.fraction
     )
