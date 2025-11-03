@@ -325,8 +325,8 @@ def main():
 
         results[model_name] = model_results
 
-    # 결과 출력 순서 정의 (v8AABB, v11AABB, v8OBB, v11OBB, v8QBB)
-    model_order = ['v8AABB', 'v11AABB', 'v8OBB', 'v11OBB', 'v8QBB']
+    # 결과 출력 순서 정의 (v8AABB, v11AABB, v8OBB, v11OBB, IWPOD, v8QBB)
+    model_order = ['v8AABB', 'v11AABB', 'v8OBB', 'v11OBB', 'IWPOD', 'v8QBB']
     # 결과에 있는 모델만 순서대로 정렬
     sorted_model_names = [name for name in model_order if name in results]
     # 순서에 없는 모델이 있다면 뒤에 추가
