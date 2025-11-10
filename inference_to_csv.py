@@ -16,9 +16,7 @@ def inference_to_csv(
     model_path: str,
     image_folder: str,
     output_csv_folder: str = None,
-    dataset_name: str = None,
-    conf_threshold: float = 0.25,
-    iou_threshold: float = 0.7
+    dataset_name: str = None
 ):
     """
     YOLO 모델(AABB/OBB/QBB)로 inference를 수행하고 각 이미지마다 CSV 파일 생성
@@ -28,14 +26,19 @@ def inference_to_csv(
         image_folder: 입력 이미지 폴더 경로
         output_csv_folder: CSV 파일 저장 폴더 경로 (None이면 모델 경로 기준 자동 설정)
         dataset_name: 데이터셋 이름 (None이면 기본값 'inference_csv' 사용)
-        conf_threshold: Confidence threshold
-        iou_threshold: IoU threshold for NMS
 
     CSV 형식 (모두 10개 항목으로 통일):
         - AABB: class, x1, y1, x2, y1, x2, y2, x1, y2, confidence (좌상단부터 시계방향 4점)
         - OBB: class, x1, y1, x2, y2, x3, y3, x4, y4, confidence (회전된 4점 좌표)
         - QBB: class, x1, y1, x2, y2, x3, y3, x4, y4, confidence (자유 형태 4점 좌표)
+
+    고정 설정:
+        - Confidence threshold: 0.25
+        - IoU threshold for NMS: 0.7
     """
+    # 고정 threshold 값
+    conf_threshold = 0.25
+    iou_threshold = 0.7
     # 모델 로드
     print(f"모델 로드 중: {model_path}")
     model = YOLO(model_path)
@@ -234,18 +237,6 @@ if __name__ == '__main__':
         default=None,
         help='데이터셋 이름 (폴더명에 포함됨, 예: ccpd_over60_xyxyxyxy)'
     )
-    parser.add_argument(
-        '--conf',
-        type=float,
-        default=0.25,
-        help='Confidence threshold'
-    )
-    parser.add_argument(
-        '--iou',
-        type=float,
-        default=0.7,
-        help='IoU threshold for NMS'
-    )
 
     args = parser.parse_args()
 
@@ -253,7 +244,5 @@ if __name__ == '__main__':
         model_path=args.model,
         image_folder=args.images,
         output_csv_folder=args.output,
-        dataset_name=args.dataset_name,
-        conf_threshold=args.conf,
-        iou_threshold=args.iou
+        dataset_name=args.dataset_name
     )

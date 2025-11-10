@@ -352,21 +352,9 @@ def main():
 
     print(f"\n{'='*80}\n")
 
-    # 결과를 TXT 파일로 저장 - runs 폴더에 저장
-    # 첫 번째 pred-csv 경로에서 runs 디렉토리를 찾아 그곳에 저장
-    first_csv_path = Path(args.pred_csv[0])
-    # runs 디렉토리까지 올라가기
-    runs_dir = None
-    for parent in first_csv_path.parents:
-        if parent.name == 'runs':
-            runs_dir = parent
-            break
-
-    if runs_dir is None:
-        # runs 디렉토리를 찾지 못한 경우 현재 디렉토리에 저장
-        base_dir = Path('.')
-    else:
-        base_dir = runs_dir
+    # 결과를 TXT 파일로 저장 - runs/analysis/evaluation_results/normal_iou 폴더에 저장
+    base_dir = Path('runs/analysis/evaluation_results/normal_iou')
+    base_dir.mkdir(parents=True, exist_ok=True)
 
     # 파일명에 번호 추가 (01부터 시작)
     counter = 1
