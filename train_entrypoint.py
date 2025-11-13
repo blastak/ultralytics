@@ -136,15 +136,34 @@ if __name__ == '__main__':
     #     fliplr=0.0
     # )
 
-    ################# CCPD Over60 - QBB Training (YOLOv11m) - Full Training
+    # ################# CCPD Over60 - QBB Training (YOLOv11m) - Full Training
+    # print("\n" + "="*80)
+    # print("Starting QBB Training (YOLOv11m) - CCPD Over60")
+    # print("="*80 + "\n")
+    # model = YOLO('yolo11m-qbb.yaml')
+    # results = model.train(
+    #     name='ccpd_over60_yolo11m_qbb',
+    #     data='dataset_ccpd_over60_xyxyxyxy.yaml',
+    #     epochs=100,
+    #     batch=64,
+    #     workers=32,
+    #     imgsz=640,
+    #     plots=True,
+    #     device="0,1,2,3,4,5,6,7",
+    #     dfl=5.0,
+    #     fliplr=0.0
+    # )
+
+    ################# QBB with Differentiable Polygon IoU - 10 Epoch Test
     print("\n" + "="*80)
-    print("Starting QBB Training (YOLOv11m) - CCPD Over60")
+    print("🧪 QBB with Differentiable Polygon IoU - 10 Epoch Test")
+    print("Experiment: Testing gradient flow with new IoU loss")
     print("="*80 + "\n")
-    model = YOLO('yolo11m-qbb.yaml')
+    model = YOLO('yolov8n-qbb.yaml')
     results = model.train(
-        name='ccpd_over60_yolo11m_qbb',
-        data='dataset_ccpd_over60_xyxyxyxy.yaml',
-        epochs=100,
+        name='qbb_polyiou_10ep_test',
+        data='dataset_ccpd_1over10_xyxyxyxy.yaml',
+        epochs=10,
         batch=64,
         workers=32,
         imgsz=640,

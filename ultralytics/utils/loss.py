@@ -11,7 +11,7 @@ from ultralytics.utils.ops import crop_mask, xywh2xyxy, xyxy2xywh
 from ultralytics.utils.tal import RotatedTaskAlignedAssigner, TaskAlignedAssigner, dist2bbox, dist2rbox, dist2quad, make_anchors, QuadrilateralTaskAlignedAssigner
 from ultralytics.utils.torch_utils import autocast
 
-from .metrics import bbox_iou, probiou, quad_iou_8coords
+from .metrics import bbox_iou, probiou, quad_iou_8coords, differentiable_quad_iou_8coords
 from .tal import bbox2dist, quad2dist
 
 
@@ -211,7 +211,8 @@ class QuadrilateralBboxLoss(BboxLoss):
     ) -> Tuple[torch.Tensor, torch.Tensor]:
         """Compute IoU and DFL losses for quadrilateral bounding boxes."""
         weight = target_scores.sum(-1)[fg_mask].unsqueeze(-1)
-        iou = quad_iou_8coords(pred_bboxes[fg_mask], target_bboxes[fg_mask], use_shapely=False)
+        # Differentiable Polygon IoU 사용 (AABB fallback 대신)
+        iou = differentiable_quad_iou_8coords(pred_bboxes[fg_mask], target_bboxes[fg_mask])
         loss_iou = ((1.0 - iou) * weight).sum() / target_scores_sum
 
         # DFL loss - 8개 좌표 직접 처리

@@ -334,6 +334,178 @@ def _quad_iou_aabb_fallback(quad1: torch.Tensor, quad2: torch.Tensor, eps: float
     return iou.clamp(0, 1).unsqueeze(-1)  # 차원 맞추기
 
 
+def _line_intersection(p1: torch.Tensor, p2: torch.Tensor, p3: torch.Tensor, p4: torch.Tensor, eps: float = 1e-9) -> tuple:
+    """
+    두 선분 (p1-p2)와 (p3-p4)의 교점을 계산 (배치 처리)
+
+    Args:
+        p1, p2: 첫 번째 선분의 시작점과 끝점 (N, 2)
+        p3, p4: 두 번째 선분의 시작점과 끝점 (N, 2)
+        eps: numerical stability를 위한 epsilon
+
+    Returns:
+        intersection_point: 교점 좌표 (N, 2)
+        valid: 유효한 교점인지 여부 (N,)
+    """
+    # 벡터 계산
+    d1 = p2 - p1  # (N, 2)
+    d2 = p4 - p3  # (N, 2)
+    d3 = p3 - p1  # (N, 2)
+
+    # 외적 계산 (2D cross product)
+    cross_d1_d2 = d1[:, 0] * d2[:, 1] - d1[:, 1] * d2[:, 0]  # (N,)
+
+    # 평행한 경우 체크
+    parallel = torch.abs(cross_d1_d2) < eps
+
+    # t1, t2 파라미터 계산
+    t1 = (d3[:, 0] * d2[:, 1] - d3[:, 1] * d2[:, 0]) / (cross_d1_d2 + eps)
+    t2 = (d3[:, 0] * d1[:, 1] - d3[:, 1] * d1[:, 0]) / (cross_d1_d2 + eps)
+
+    # 유효한 교점: 두 선분 내부에 있는 경우
+    valid = ~parallel & (t1 >= 0) & (t1 <= 1) & (t2 >= 0) & (t2 <= 1)
+
+    # 교점 계산
+    intersection = p1 + t1.unsqueeze(-1) * d1
+
+    return intersection, valid
+
+
+def _point_in_quad(points: torch.Tensor, quad: torch.Tensor, eps: float = 1e-9) -> torch.Tensor:
+    """
+    점이 사각형 내부에 있는지 확인 (배치 처리, cross product 기반)
+
+    Args:
+        points: 확인할 점들 (N, 2)
+        quad: 사각형 좌표 (N, 4, 2) - 반시계방향
+        eps: numerical stability
+
+    Returns:
+        inside: 내부에 있는지 여부 (N,)
+    """
+    # 각 edge에 대해 점이 같은 방향에 있는지 확인
+    N = points.shape[0]
+    inside = torch.ones(N, dtype=torch.bool, device=points.device)
+
+    for i in range(4):
+        # Edge: quad[:, i] -> quad[:, (i+1)%4]
+        edge_start = quad[:, i]
+        edge_end = quad[:, (i + 1) % 4]
+
+        # 벡터 계산
+        edge_vec = edge_end - edge_start
+        point_vec = points - edge_start
+
+        # Cross product (2D)
+        cross = edge_vec[:, 0] * point_vec[:, 1] - edge_vec[:, 1] * point_vec[:, 0]
+
+        # 모든 edge에 대해 같은 방향이어야 함 (반시계방향 가정)
+        inside = inside & (cross >= -eps)
+
+    return inside
+
+
+def differentiable_quad_iou_8coords(quad1: torch.Tensor, quad2: torch.Tensor, eps: float = 1e-7) -> torch.Tensor:
+    """
+    Differentiable Polygon IoU 계산 (line intersection 기반)
+    완전한 PyTorch 연산으로 gradient 지원
+
+    Args:
+        quad1: 첫 번째 사각형 (N, 8) - [x1,y1,x2,y2,x3,y3,x4,y4]
+        quad2: 두 번째 사각형 (N, 8) - [x1,y1,x2,y2,x3,y3,x4,y4]
+        eps: numerical stability
+
+    Returns:
+        iou: IoU 값 (N, 1)
+    """
+    N = quad1.shape[0]
+    device = quad1.device
+
+    # 8좌표를 (N, 4, 2) 형태로 변환
+    q1 = quad1.reshape(N, 4, 2)
+    q2 = quad2.reshape(N, 4, 2)
+
+    # 1. 교점 수집
+    intersection_points = []
+
+    # 각 edge 쌍에 대해 교점 계산
+    for i in range(4):
+        for j in range(4):
+            p1 = q1[:, i]
+            p2 = q1[:, (i + 1) % 4]
+            p3 = q2[:, j]
+            p4 = q2[:, (j + 1) % 4]
+
+            point, valid = _line_intersection(p1, p2, p3, p4)
+            intersection_points.append((point, valid))
+
+    # 2. q1의 점 중 q2 내부에 있는 점
+    for i in range(4):
+        point = q1[:, i]
+        inside = _point_in_quad(point, q2)
+        intersection_points.append((point, inside))
+
+    # 3. q2의 점 중 q1 내부에 있는 점
+    for i in range(4):
+        point = q2[:, i]
+        inside = _point_in_quad(point, q1)
+        intersection_points.append((point, inside))
+
+    # 4. 교집합 다각형의 넓이 계산 (Shoelace formula)
+    # 유효한 점들만 수집하여 넓이 계산
+    intersection_areas = []
+
+    for batch_idx in range(N):
+        valid_points = []
+        for point, valid in intersection_points:
+            if valid[batch_idx]:
+                valid_points.append(point[batch_idx])
+
+        if len(valid_points) < 3:
+            # 교집합이 다각형을 이루지 못함
+            intersection_areas.append(torch.tensor(0.0, device=device, dtype=quad1.dtype))
+        else:
+            # 점들을 스택하여 처리
+            points_tensor = torch.stack(valid_points)  # (M, 2)
+
+            # 중심점 기준으로 정렬 (반시계방향)
+            center = points_tensor.mean(dim=0)
+            angles = torch.atan2(points_tensor[:, 1] - center[1], points_tensor[:, 0] - center[0])
+            sorted_indices = torch.argsort(angles)
+            sorted_points = points_tensor[sorted_indices]
+
+            # Shoelace formula로 넓이 계산
+            x = sorted_points[:, 0]
+            y = sorted_points[:, 1]
+            area = 0.5 * torch.abs(torch.sum(x * torch.roll(y, -1) - y * torch.roll(x, -1)))
+            intersection_areas.append(area)
+
+    intersection_area = torch.stack(intersection_areas)
+
+    # 5. 각 사각형의 넓이 계산
+    def polygon_area(quad):
+        """Shoelace formula로 다각형 넓이 계산"""
+        x = quad[:, :, 0]  # (N, 4)
+        y = quad[:, :, 1]  # (N, 4)
+        # Shoelace: 0.5 * |sum(x_i * y_{i+1} - x_{i+1} * y_i)|
+        area = 0.5 * torch.abs(
+            x[:, 0] * y[:, 1] - x[:, 1] * y[:, 0] +
+            x[:, 1] * y[:, 2] - x[:, 2] * y[:, 1] +
+            x[:, 2] * y[:, 3] - x[:, 3] * y[:, 2] +
+            x[:, 3] * y[:, 0] - x[:, 0] * y[:, 3]
+        )
+        return area
+
+    area1 = polygon_area(q1)
+    area2 = polygon_area(q2)
+
+    # 6. IoU 계산
+    union_area = area1 + area2 - intersection_area
+    iou = intersection_area / (union_area + eps)
+
+    return iou.clamp(0, 1).unsqueeze(-1)
+
+
 def quad_iou_8coords(quad1: torch.Tensor, quad2: torch.Tensor, eps: float = 1e-7, use_shapely: bool = False) -> torch.Tensor:
     """
     QBB IoU 계산 - gradient 호환성을 고려한 선택적 구현
