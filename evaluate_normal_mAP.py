@@ -10,6 +10,8 @@ import numpy as np
 import argparse
 from pathlib import Path
 from tqdm import tqdm
+from datetime import datetime
+import pytz
 
 
 def load_ground_truth(label_dir):
@@ -265,6 +267,15 @@ def main():
     gt_dict = load_ground_truth(args.gt_labels)
     print(f"Loaded {len(gt_dict)} ground truth images")
 
+    # 클래스 개수 확인 (단일 클래스면 AP, 다중 클래스면 mAP 표기)
+    all_classes = set()
+    for boxes in gt_dict.values():
+        for box in boxes:
+            all_classes.add(box['class'])
+    num_classes = len(all_classes)
+    metric_prefix = 'AP' if num_classes == 1 else 'mAP'
+    print(f"Detected {num_classes} class(es), using '{metric_prefix}' notation")
+
     # 결과 저장
     results = {}
 
@@ -300,8 +311,10 @@ def main():
                 img_height=args.img_height
             )
 
-            model_results[f'AP@{iou_thresh}'] = ap
-            print(f"  AP@{iou_thresh}: {ap:.4f}")
+            # 표기: AP50, AP75, AP95
+            thresh_label = int(iou_thresh * 100)
+            model_results[f'{metric_prefix}{thresh_label}'] = ap
+            print(f"  {metric_prefix}{thresh_label}: {ap:.4f}")
 
         # mAP 계산 (0.5:0.95)
         ap_values = []
@@ -321,7 +334,8 @@ def main():
             ap_values.append(ap)
 
         mAP = np.mean(ap_values)
-        model_results['mAP@0.5:0.95'] = mAP
+        # 표기: AP50-95 (단일 클래스) 또는 mAP50-95 (다중 클래스)
+        model_results[f'{metric_prefix}50-95'] = mAP
 
         results[model_name] = model_results
 
@@ -336,19 +350,19 @@ def main():
 
     # 결과 출력
     print(f"\n{'='*80}")
-    print("📊 Final Results - Normal IoU (AABB) based mAP")
+    print(f"📊 Final Results - Normal IoU (AABB) based {metric_prefix}")
     print(f"{'='*80}\n")
 
-    print(f"{'Model':<15} {'AP@0.5':<10} {'AP@0.75':<10} {'AP@0.95':<10} {'mAP@0.5:0.95':<15}")
+    print(f"{'Model':<15} {f'{metric_prefix}50':<10} {f'{metric_prefix}75':<10} {f'{metric_prefix}95':<10} {f'{metric_prefix}50-95':<15}")
     print("-" * 80)
 
     for model_name in sorted_model_names:
         model_results = results[model_name]
         print(f"{model_name:<15} ", end="")
-        print(f"{model_results.get('AP@0.5', 0):<10.4f} ", end="")
-        print(f"{model_results.get('AP@0.75', 0):<10.4f} ", end="")
-        print(f"{model_results.get('AP@0.95', 0):<10.4f} ", end="")
-        print(f"{model_results.get('mAP@0.5:0.95', 0):<15.4f}")
+        print(f"{model_results.get(f'{metric_prefix}50', 0):<10.4f} ", end="")
+        print(f"{model_results.get(f'{metric_prefix}75', 0):<10.4f} ", end="")
+        print(f"{model_results.get(f'{metric_prefix}95', 0):<10.4f} ", end="")
+        print(f"{model_results.get(f'{metric_prefix}50-95', 0):<15.4f}")
 
     print(f"\n{'='*80}\n")
 
@@ -356,17 +370,15 @@ def main():
     base_dir = Path('runs/analysis/evaluation_results/normal_iou')
     base_dir.mkdir(parents=True, exist_ok=True)
 
-    # 파일명에 번호 추가 (01부터 시작)
-    counter = 1
-    while True:
-        output_file = base_dir / f'normal_iou_evaluation_results_{counter:02d}.txt'
-        if not output_file.exists():
-            break
-        counter += 1
+    # KST 타임스탬프로 파일명 생성
+    kst = pytz.timezone('Asia/Seoul')
+    now_kst = datetime.now(kst)
+    timestamp = now_kst.strftime('%Y%m%d_%H%M%S')
+    output_file = base_dir / f'normal_iou_evaluation_results_{timestamp}.txt'
 
     with open(output_file, 'w') as f:
         f.write("="*80 + "\n")
-        f.write("Normal IoU (AABB) based mAP Evaluation Results\n")
+        f.write(f"Normal IoU (AABB) based {metric_prefix} Evaluation Results\n")
         f.write("="*80 + "\n\n")
 
         # 평가 설정 정보
@@ -376,6 +388,8 @@ def main():
         f.write(f"Image Width: {args.img_width}\n")
         f.write(f"Image Height: {args.img_height}\n")
         f.write(f"Total GT Images: {len(gt_dict)}\n")
+        f.write(f"Number of Classes: {num_classes}\n")
+        f.write(f"Metric Notation: {metric_prefix}\n")
         f.write("\n")
 
         # 모델별 예측 경로 (정렬된 순서로)
@@ -392,16 +406,16 @@ def main():
         f.write("="*80 + "\n")
         f.write("Results:\n")
         f.write("="*80 + "\n\n")
-        f.write(f"{'Model':<15} {'AP@0.5':<10} {'AP@0.75':<10} {'AP@0.95':<10} {'mAP@0.5:0.95':<15}\n")
+        f.write(f"{'Model':<15} {f'{metric_prefix}50':<10} {f'{metric_prefix}75':<10} {f'{metric_prefix}95':<10} {f'{metric_prefix}50-95':<15}\n")
         f.write("-" * 80 + "\n")
 
         for model_name in sorted_model_names:
             model_results = results[model_name]
             f.write(f"{model_name:<15} ")
-            f.write(f"{model_results.get('AP@0.5', 0):<10.4f} ")
-            f.write(f"{model_results.get('AP@0.75', 0):<10.4f} ")
-            f.write(f"{model_results.get('AP@0.95', 0):<10.4f} ")
-            f.write(f"{model_results.get('mAP@0.5:0.95', 0):<15.4f}\n")
+            f.write(f"{model_results.get(f'{metric_prefix}50', 0):<10.4f} ")
+            f.write(f"{model_results.get(f'{metric_prefix}75', 0):<10.4f} ")
+            f.write(f"{model_results.get(f'{metric_prefix}95', 0):<10.4f} ")
+            f.write(f"{model_results.get(f'{metric_prefix}50-95', 0):<15.4f}\n")
 
         f.write("\n" + "="*80 + "\n")
 
