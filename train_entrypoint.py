@@ -154,16 +154,16 @@ if __name__ == '__main__':
     #     fliplr=0.0
     # )
 
-    ################# QBB with Differentiable Polygon IoU - 10 Epoch Test
+    ################# QBB with Differentiable Polygon IoU - 100 Epoch Full Training
     print("\n" + "="*80)
-    print("🧪 QBB with Differentiable Polygon IoU - 10 Epoch Test")
-    print("Experiment: Testing gradient flow with new IoU loss")
+    print("🚀 QBB with Differentiable Polygon IoU - 100 Epoch Full Training")
+    print("Experiment: ccpd_1over10_yolov8n_qbb_polyiou")
     print("="*80 + "\n")
     model = YOLO('yolov8n-qbb.yaml')
     results = model.train(
-        name='qbb_polyiou_10ep_test',
+        name='ccpd_1over10_yolov8n_qbb_polyiou',
         data='dataset_ccpd_1over10_xyxyxyxy.yaml',
-        epochs=10,
+        epochs=100,
         batch=64,
         workers=32,
         imgsz=640,
