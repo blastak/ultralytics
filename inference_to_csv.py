@@ -8,8 +8,90 @@ import csv
 import time
 from pathlib import Path
 import argparse
+import numpy as np
 
 from ultralytics import YOLO
+
+
+def normalize_obb_points(xyxyxyxy):
+    """
+    OBB 4개 점을 정규화 (PCA로 주축 찾아서 좌상단부터 시계방향)
+
+    Args:
+        xyxyxyxy: (N, 4, 2) or (4, 2) numpy array - 4개 꼭짓점 좌표
+
+    Returns:
+        (N, 4, 2) or (4, 2) - 정규화된 4개 꼭짓점 좌표 (좌상단부터 시계방향)
+    """
+    if xyxyxyxy.ndim == 2:
+        xyxyxyxy = xyxyxyxy[np.newaxis, :]
+        squeeze = True
+    else:
+        squeeze = False
+
+    n = len(xyxyxyxy)
+    normalized = np.zeros_like(xyxyxyxy)
+
+    for i in range(n):
+        points = xyxyxyxy[i]  # (4, 2)
+
+        # PCA를 사용하여 주축 찾기
+        # 중심점
+        center = points.mean(axis=0)
+
+        # 중심화된 점들
+        centered = points - center
+
+        # 공분산 행렬
+        cov = np.cov(centered.T)
+
+        # 고유값, 고유벡터 계산
+        eigenvalues, eigenvectors = np.linalg.eig(cov)
+
+        # 가장 큰 고유값에 해당하는 고유벡터 (주축)
+        main_axis_idx = np.argmax(eigenvalues)
+        main_axis = eigenvectors[:, main_axis_idx]
+
+        # 주축에 수직인 벡터 (부축)
+        minor_axis_idx = 1 - main_axis_idx
+        minor_axis = eigenvectors[:, minor_axis_idx]
+
+        # 주축 방향으로 투영 (왼쪽/오른쪽 구분용)
+        main_projections = centered @ main_axis
+
+        # 부축 방향으로 투영 (위/아래 구분용)
+        minor_projections = centered @ minor_axis
+
+        # 왼쪽 점들 (주축 투영값이 작은 2개)
+        sorted_main_indices = np.argsort(main_projections)
+        left_indices = sorted_main_indices[:2]
+        right_indices = sorted_main_indices[2:]
+
+        # 왼쪽에서 y값이 작은 점 (1번 점 - 좌상단)
+        left_y_values = points[left_indices][:, 1]
+        p1_idx = left_indices[np.argmin(left_y_values)]
+
+        # 왼쪽에서 y값이 큰 점 (4번 점 - 좌하단)
+        p4_idx = left_indices[np.argmax(left_y_values)]
+
+        # 오른쪽에서 y값이 작은 점 (2번 점 - 우상단)
+        right_y_values = points[right_indices][:, 1]
+        p2_idx = right_indices[np.argmin(right_y_values)]
+
+        # 오른쪽에서 y값이 큰 점 (3번 점 - 우하단)
+        p3_idx = right_indices[np.argmax(right_y_values)]
+
+        # 시계방향 순서로 재배열: 좌상(1) -> 우상(2) -> 우하(3) -> 좌하(4)
+        normalized[i] = np.array([
+            points[p1_idx],
+            points[p2_idx],
+            points[p3_idx],
+            points[p4_idx]
+        ])
+
+    if squeeze:
+        return normalized[0]
+    return normalized
 
 
 def inference_to_csv(
@@ -130,7 +212,9 @@ def inference_to_csv(
         # OBB 결과 처리
         elif hasattr(result, 'obb') and result.obb is not None and len(result.obb) > 0:
             # OBB 결과가 있는 경우
-            xyxyxyxy = result.obb.xyxyxyxy  # (N, 4, 2)
+            # xyxyxyxy에서 직접 긴 축을 찾아 정규화 (긴 축의 왼쪽 점부터 시계방향)
+            xyxyxyxy = result.obb.xyxyxyxy.cpu().numpy()  # (N, 4, 2)
+            normalized_coords = normalize_obb_points(xyxyxyxy)  # (N, 4, 2)
             confs = result.obb.conf  # (N,)
             clss = result.obb.cls  # (N,)
 
@@ -138,8 +222,8 @@ def inference_to_csv(
                 # 클래스 이름
                 class_name = result.names[int(clss[i].item())]
 
-                # 8개 좌표 (절대 좌표)
-                coords = xyxyxyxy[i].reshape(-1).tolist()
+                # 8개 좌표 (절대 좌표) - 정규화된 순서
+                coords = normalized_coords[i].reshape(-1).tolist()
 
                 # Confidence
                 conf = float(confs[i].item())
