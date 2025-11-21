@@ -360,11 +360,14 @@ class QBB(Detect):
         """Initialize QBB with number of classes `nc` and layer channels `ch`."""
         super().__init__(nc, ch)
         self.ne = ne
+
+        # QBB는 Smooth L1 loss 사용, DFL 불필요 -> reg_max=1로 변경
+        self.reg_max = 1
         self.no = nc + self.reg_max * 8
 
         self.dfl = DFL_QBB(self.reg_max) if self.reg_max > 1 else nn.Identity()
 
-        # cv2를 8*reg_max로 확장
+        # cv2를 8*reg_max로 확장 (reg_max=1이므로 8 channels)
         c2 = max(ch[0] // 4, 4 * self.reg_max)
         self.cv2 = nn.ModuleList(
             nn.Sequential(Conv(x, c2, 3), Conv(c2, c2, 3), nn.Conv2d(c2, 8 * self.reg_max, 1))

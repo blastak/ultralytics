@@ -154,16 +154,35 @@ if __name__ == '__main__':
     #     fliplr=0.0
     # )
 
-    ################# QBB with Differentiable Polygon IoU - 100 Epoch Full Training
+    # ################# QBB with Differentiable Polygon IoU - 100 Epoch Full Training
+    # print("\n" + "="*80)
+    # print("🚀 QBB with Differentiable Polygon IoU - 100 Epoch Full Training")
+    # print("Experiment: ccpd_1over10_yolov8n_qbb_polyiou")
+    # print("="*80 + "\n")
+    # model = YOLO('yolov8n-qbb.yaml')
+    # results = model.train(
+    #     name='ccpd_1over10_yolov8n_qbb_polyiou',
+    #     data='dataset_ccpd_1over10_xyxyxyxy.yaml',
+    #     epochs=100,
+    #     batch=64,
+    #     workers=32,
+    #     imgsz=640,
+    #     plots=True,
+    #     device="0,1,2,3,4,5,6,7",
+    #     dfl=5.0,
+    #     fliplr=0.0
+    # )
+
+    ################# QBB reg_max=1 Test - 2 Epoch
     print("\n" + "="*80)
-    print("🚀 QBB with Differentiable Polygon IoU - 100 Epoch Full Training")
-    print("Experiment: ccpd_1over10_yolov8n_qbb_polyiou")
+    print("🧪 QBB reg_max=1 Test - 2 Epoch Training")
+    print("Experiment: regmax1_test")
     print("="*80 + "\n")
     model = YOLO('yolov8n-qbb.yaml')
     results = model.train(
-        name='ccpd_1over10_yolov8n_qbb_polyiou',
+        name='regmax1_test',
         data='dataset_ccpd_1over10_xyxyxyxy.yaml',
-        epochs=100,
+        epochs=2,
         batch=64,
         workers=32,
         imgsz=640,

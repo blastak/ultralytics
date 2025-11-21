@@ -18,7 +18,7 @@ class QBBTrainer(yolo.detect.DetectionTrainer):
 
     Attributes:
         loss_names (tuple): Names of the loss components used during training including box_loss, cls_loss,
-            and dfl_loss.
+            and coord_loss.
 
     Methods:
         get_model: Return QBBModel initialized with specified config and weights.
@@ -83,7 +83,7 @@ class QBBTrainer(yolo.detect.DetectionTrainer):
 
     def get_validator(self):
         """Return an instance of QBBValidator for validation of YOLO model."""
-        self.loss_names = "qbox_loss", "cls_loss", "dfl_loss"
+        self.loss_names = "qbox_loss", "cls_loss", "coord_loss"
         return yolo.qbb.QBBValidator(
             self.test_loader, save_dir=self.save_dir, args=copy(self.args), _callbacks=self.callbacks
         )
