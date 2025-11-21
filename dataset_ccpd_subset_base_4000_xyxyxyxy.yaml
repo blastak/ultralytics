@@ -1,0 +1,6 @@
+path: /workspace/repo/ultralytics/ultralytics/assets/ccpd_subset_base_4000_xyxyxyxy
+train: images/train
+val: images/val
+test: images/test
+nc: 1
+names: ['license_plate']
