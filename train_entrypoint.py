@@ -173,16 +173,16 @@ if __name__ == '__main__':
     #     fliplr=0.0
     # )
 
-    ################# QBB reg_max=1 Test - 2 Epoch
+    ################# QBB reg_max=1 Full Training - 100 Epoch
     print("\n" + "="*80)
-    print("🧪 QBB reg_max=1 Test - 2 Epoch Training")
-    print("Experiment: regmax1_test")
+    print("🚀 QBB reg_max=1 Full Training - 100 Epoch")
+    print("Experiment: ccpd_1over10_yolov8n_qbb_regmax1")
     print("="*80 + "\n")
     model = YOLO('yolov8n-qbb.yaml')
     results = model.train(
-        name='regmax1_test',
+        name='ccpd_1over10_yolov8n_qbb_regmax1',
         data='dataset_ccpd_1over10_xyxyxyxy.yaml',
-        epochs=2,
+        epochs=100,
         batch=64,
         workers=32,
         imgsz=640,
