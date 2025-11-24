@@ -126,16 +126,19 @@ def calculate_polygon_iou(poly1, poly2):
 
 def calculate_ap(precisions, recalls):
     """
-    11-point interpolation으로 AP 계산
+    All-point interpolation으로 AP 계산 (VOC 2010+ / COCO 방식)
+    - 기존 11-point 방식은 recall=1.0 미달성 시 큰 패널티 발생
+    - All-point 방식이 더 공정한 평가 제공
     """
-    ap = 0.0
-    for t in np.linspace(0, 1, 11):
-        if np.sum(recalls >= t) == 0:
-            p = 0
-        else:
-            p = np.max(precisions[recalls >= t])
-        ap += p / 11
-    
+    # Precision을 monotonically decreasing으로 만들기 (오른쪽에서 왼쪽으로)
+    precisions = precisions.copy()
+    for i in range(len(precisions) - 2, -1, -1):
+        precisions[i] = max(precisions[i], precisions[i + 1])
+
+    # Recall 변화가 있는 지점에서 precision * delta_recall 합산
+    recall_diff = np.diff(recalls, prepend=0)
+    ap = np.sum(precisions * recall_diff)
+
     return ap
 
 
