@@ -108,33 +108,6 @@ def visualize_csv_results(
                     pt2 = tuple(points[(i + 1) % 4])
                     cv2.line(img, pt1, pt2, color, line_thickness)
 
-                # Confidence 텍스트 표시 (좌상단 점 위에)
-                text = f"{confidence:.3f}"
-                text_pos = (int(points[0][0]), int(points[0][1]) - 5)
-
-                # 텍스트 배경 그리기
-                (text_width, text_height), baseline = cv2.getTextSize(
-                    text, cv2.FONT_HERSHEY_SIMPLEX, font_scale, font_thickness
-                )
-                cv2.rectangle(
-                    img,
-                    (text_pos[0], text_pos[1] - text_height - baseline),
-                    (text_pos[0] + text_width, text_pos[1] + baseline),
-                    (0, 255, 0),
-                    -1
-                )
-
-                # 텍스트 그리기
-                cv2.putText(
-                    img,
-                    text,
-                    text_pos,
-                    cv2.FONT_HERSHEY_SIMPLEX,
-                    font_scale,
-                    (0, 0, 0),
-                    font_thickness
-                )
-
                 total_detections += 1
 
             except Exception as e:
