@@ -15,7 +15,7 @@ def visualize_csv_results(
     csv_folder: str,
     image_folder: str,
     output_prefix: str = "box_",
-    line_thickness: int = 2,
+    line_thickness: int = 10,
     font_scale: float = 0.6,
     font_thickness: int = 2
 ):

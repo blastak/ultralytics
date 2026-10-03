@@ -173,15 +173,111 @@ if __name__ == '__main__':
     #     fliplr=0.0
     # )
 
-    ################# QBB reg_max=1 Full Training - 100 Epoch
+    # ################# QBB reg_max=1 Full Training - 100 Epoch
+    # print("\n" + "="*80)
+    # print("🚀 QBB reg_max=1 Full Training - 100 Epoch")
+    # print("Experiment: ccpd_1over10_yolov8n_qbb_regmax1")
+    # print("="*80 + "\n")
+    # model = YOLO('yolov8n-qbb.yaml')
+    # results = model.train(
+    #     name='ccpd_1over10_yolov8n_qbb_regmax1',
+    #     data='dataset_ccpd_1over10_xyxyxyxy.yaml',
+    #     epochs=100,
+    #     batch=64,
+    #     workers=32,
+    #     imgsz=640,
+    #     plots=True,
+    #     device="0,1,2,3,4,5,6,7",
+    #     dfl=5.0,
+    #     fliplr=0.0
+    # )
+
+    # ################# 한국 번호판 멀티클래스 QBB 학습 (reg_max=1, PolyIoU)
+    # print("\n" + "="*80)
+    # print("🚀 한국 번호판 멀티클래스 QBB 학습 (reg_max=1, PolyIoU)")
+    # print("Experiment: kor_all_multicls_qbb_polyiou_regmax1")
+    # print("="*80 + "\n")
+    # model = YOLO('yolov8n-qbb.yaml')
+    # results = model.train(
+    #     name='kor_all_multicls_qbb_polyiou_regmax1',
+    #     data='dataset_kor_all_multicls_xyxyxyxy.yaml',
+    #     epochs=100,
+    #     batch=64,
+    #     workers=32,
+    #     imgsz=640,
+    #     plots=True,
+    #     device="0,1,2,3,4,5,6,7",
+    #     dfl=5.0,
+    #     fliplr=0.0
+    # )
+
+    # ################# 한국 번호판 단일클래스 QBB 학습 (reg_max=1, PolyIoU)
+    # print("\n" + "="*80)
+    # print("🚀 한국 번호판 단일클래스 QBB 학습 (reg_max=1, PolyIoU)")
+    # print("Experiment: kor_all_singlecls_qbb_polyiou_regmax1")
+    # print("="*80 + "\n")
+    # model = YOLO('yolov8n-qbb.yaml')
+    # results = model.train(
+    #     name='kor_all_singlecls_qbb_polyiou_regmax1',
+    #     data='dataset_kor_all_multicls_xyxyxyxy.yaml',
+    #     epochs=100,
+    #     batch=64,
+    #     workers=32,
+    #     imgsz=640,
+    #     plots=True,
+    #     device="0,1,2,3,4,5,6,7",
+    #     dfl=5.0,
+    #     fliplr=0.0,
+    #     single_cls=True
+    # )
+
+    # ################# CRPD 중국 번호판 QBB 학습 (reg_max=1, PolyIoU)
+    # print("\n" + "="*80)
+    # print("🚀 CRPD 중국 번호판 QBB 학습 (reg_max=1, PolyIoU)")
+    # print("Experiment: crpd_multi_qbb_polyiou_regmax1")
+    # print("="*80 + "\n")
+    # model = YOLO('yolov8n-qbb.yaml')
+    # results = model.train(
+    #     name='crpd_multi_qbb_polyiou_regmax1',
+    #     data='dataset_crpd_multi_xyxyxyxy6.yaml',
+    #     epochs=100,
+    #     batch=64,
+    #     workers=32,
+    #     imgsz=640,
+    #     plots=True,
+    #     device="0,1,2,3,4,5,6,7",
+    #     dfl=5.0,
+    #     fliplr=0.0
+    # )
+
+    # ################# CCPD 1/10 QBB 학습 (reg_max=1, PolyIoU)
+    # print("\n" + "="*80)
+    # print("🚀 CCPD 1/10 QBB 학습 (reg_max=1, PolyIoU)")
+    # print("Experiment: ccpd_1over10_yolov8n_qbb_polyiou_regmax1")
+    # print("="*80 + "\n")
+    # model = YOLO('yolov8n-qbb.yaml')
+    # results = model.train(
+    #     name='ccpd_1over10_yolov8n_qbb_polyiou_regmax1',
+    #     data='dataset_ccpd_1over10_xyxyxyxy.yaml',
+    #     epochs=100,
+    #     batch=64,
+    #     workers=32,
+    #     imgsz=640,
+    #     plots=True,
+    #     device="0,1,2,3,4,5,6,7",
+    #     dfl=5.0,
+    #     fliplr=0.0
+    # )
+
+    ################# CCPD De-ID QBB 학습 (reg_max=1, PolyIoU)
     print("\n" + "="*80)
-    print("🚀 QBB reg_max=1 Full Training - 100 Epoch")
-    print("Experiment: ccpd_1over10_yolov8n_qbb_regmax1")
+    print("🚀 CCPD De-ID QBB 학습 (reg_max=1, PolyIoU)")
+    print("Experiment: ccpd_de-id_yolov8n_qbb_polyiou_regmax1")
     print("="*80 + "\n")
     model = YOLO('yolov8n-qbb.yaml')
     results = model.train(
-        name='ccpd_1over10_yolov8n_qbb_regmax1',
-        data='dataset_ccpd_1over10_xyxyxyxy.yaml',
+        name='ccpd_de-id_yolov8n_qbb_polyiou_regmax1',
+        data='dataset_ccpd_de-id_xyxyxyxy.yaml',
         epochs=100,
         batch=64,
         workers=32,

@@ -1,0 +1,2402 @@
+[
+  {
+    "filename": "0571-14_42-220&459_530&613-484&546_220&613_266&526_530&459-0_0_5_18_31_27_25-104-158.jpg",
+    "gt": "皖AFU731",
+    "pred": "川66",
+    "exact_match": false,
+    "1char_match": false,
+    "2char_match": false
+  },
+  {
+    "filename": "0571-14_47-113&362_421&517-421&517_172&452_113&362_362&427-0_0_13_11_31_26_29-108-34.jpg",
+    "gt": "皖APM725",
+    "pred": "皖AA6",
+    "exact_match": false,
+    "1char_match": false,
+    "2char_match": false
+  },
+  {
+    "filename": "0573-21_45-353&445_612&630-568&545_353&630_397&530_612&445-0_0_20_26_25_31_1-108-214.jpg",
+    "gt": "皖AW217B",
+    "pred": "皖A6660",
+    "exact_match": false,
+    "1char_match": false,
+    "2char_match": false
+  },
+  {
+    "filename": "0573-22_41-230&448_486&635-486&635_263&544_230&448_453&539-0_6_7_16_24_25_24-80-190.jpg",
+    "gt": "皖GHS010",
+    "pred": "川66",
+    "exact_match": false,
+    "1char_match": false,
+    "2char_match": false
+  },
+  {
+    "filename": "0573-24_33-246&371_481&575-465&474_246&575_262&472_481&371-0_0_0_25_33_24_19-93-25.jpg",
+    "gt": "皖AA190V",
+    "pred": "川A4410",
+    "exact_match": false,
+    "1char_match": false,
+    "2char_match": false
+  },
+  {
+    "filename": "0573-24_49-116&455_364&648-364&648_161&554_116&455_319&549-0_0_23_30_21_24_27-84-190.jpg",
+    "gt": "皖AZ6X03",
+    "pred": "川A770",
+    "exact_match": false,
+    "1char_match": false,
+    "2char_match": false
+  },
+  {
+    "filename": "0573-47_39-171&406_341&688-325&688_171&522_187&406_341&572-0_0_0_32_33_28_32-43-149.jpg",
+    "gt": "皖AA8948",
+    "pred": "川A6",
+    "exact_match": false,
+    "1char_match": false,
+    "2char_match": false
+  },
+  {
+    "filename": "0574-21_40-386&503_636&695-601&609_386&695_421&589_636&503-0_0_6_25_33_29_22-60-176.jpg",
+    "gt": "皖AG195Y",
+    "pred": "皖AA5",
+    "exact_match": false,
+    "1char_match": false,
+    "2char_match": false
+  },
+  {
+    "filename": "0575-17_40-226&474_507&645-468&567_226&645_265&552_507&474-0_0_23_15_29_24_29-63-24.jpg",
+    "gt": "皖AZR505",
+    "pred": "皖A0",
+    "exact_match": false,
+    "1char_match": false,
+    "2char_match": false
+  },
+  {
+    "filename": "0575-19_42-185&479_455&657-455&657_228&578_185&479_412&558-0_0_26_32_24_13_32-96-64.jpg",
+    "gt": "皖A280P8",
+    "pred": "沪A966",
+    "exact_match": false,
+    "1char_match": false,
+    "2char_match": false
+  },
+  {
+    "filename": "0575-25_41-174&541_403&751-403&751_206&655_174&541_371&637-11_0_15_30_15_24_25-99-67.jpg",
+    "gt": "浙AR6R01",
+    "pred": "川A6",
+    "exact_match": false,
+    "1char_match": false,
+    "2char_match": false
+  },
+  {
+    "filename": "0576-21_42-170&475_426&663-426&663_210&579_170&475_386&559-0_0_15_26_3_25_25-108-46.jpg",
+    "gt": "皖AR2D11",
+    "pred": "川A78",
+    "exact_match": false,
+    "1char_match": false,
+    "2char_match": false
+  },
+  {
+    "filename": "0576-21_42-184&435_450&616-450&616_218&524_184&435_416&527-0_0_11_28_30_32_27-69-54.jpg",
+    "gt": "皖AM4683",
+    "pred": "皖A6666",
+    "exact_match": false,
+    "1char_match": false,
+    "2char_match": false
+  },
+  {
+    "filename": "0576-8_35-82&570_431&708-431&708_129&662_82&570_384&616-0_0_27_26_16_26_27-22-6.jpg",
+    "gt": "皖A32S23",
+    "pred": "川A2",
+    "exact_match": false,
+    "1char_match": false,
+    "2char_match": false
+  },
+  {
+    "filename": "0577-21_44-325&473_580&662-535&578_325&662_370&557_580&473-0_0_9_6_29_25_25-150-255.jpg",
+    "gt": "皖AKG511",
+    "pred": "湘A8",
+    "exact_match": false,
+    "1char_match": false,
+    "2char_match": false
+  },
+  {
+    "filename": "0578-18_47-247&428_520&605-520&605_303&531_247&428_464&502-0_0_3_26_33_32_20-110-29.jpg",
+    "gt": "皖AD298W",
+    "pred": "川A666",
+    "exact_match": false,
+    "1char_match": false,
+    "2char_match": false
+  },
+  {
+    "filename": "0578-28_38-251&407_478&620-478&620_269&507_251&407_460&520-14_0_28_17_32_24_24-119-126.jpg",
+    "gt": "赣A4T800",
+    "pred": "川A6",
+    "exact_match": false,
+    "1char_match": false,
+    "2char_match": false
+  },
+  {
+    "filename": "0579-19_39-237&450_497&636-460&555_237&636_274&531_497&450-0_0_5_23_31_24_30-73-56.jpg",
+    "gt": "皖AFZ706",
+    "pred": "川A5",
+    "exact_match": false,
+    "1char_match": false,
+    "2char_match": false
+  },
+  {
+    "filename": "0579-20_46-213&431_488&607-442&523_213&607_259&515_488&431-0_0_23_31_22_29_30-88-164.jpg",
+    "gt": "皖AZ7Y56",
+    "pred": "皖A60",
+    "exact_match": false,
+    "1char_match": false,
+    "2char_match": false
+  },
+  {
+    "filename": "0580-17_40-253&478_545&644-507&565_253&644_291&557_545&478-0_16_6_2_25_27_30-96-270.jpg",
+    "gt": "皖SGC136",
+    "pred": "冀A05",
+    "exact_match": false,
+    "1char_match": false,
+    "2char_match": false
+  },
+  {
+    "filename": "0581-22_43-305&508_569&692-532&600_305&692_342&600_569&508-0_0_5_21_24_24_28-75-188.jpg",
+    "gt": "皖AFX004",
+    "pred": "川AA0",
+    "exact_match": false,
+    "1char_match": false,
+    "2char_match": false
+  },
+  {
+    "filename": "0581-39_47-209&328_408&572-408&572_223&422_209&328_394&478-0_0_30_15_28_27_26-83-22.jpg",
+    "gt": "皖A6R432",
+    "pred": "苏A6",
+    "exact_match": false,
+    "1char_match": false,
+    "2char_match": false
+  },
+  {
+    "filename": "0582-25_37-51&451_286&658-286&658_73&556_51&451_264&553-0_0_7_32_24_25_32-143-121.jpg",
+    "gt": "皖AH8018",
+    "pred": "川AA66677",
+    "exact_match": false,
+    "1char_match": false,
+    "2char_match": false
+  },
+  {
+    "filename": "0585-17_36-177&473_458&647-458&647_209&568_177&473_426&552-0_0_24_33_11_25_29-66-39.jpg",
+    "gt": "皖A09M15",
+    "pred": "川AA888",
+    "exact_match": false,
+    "1char_match": false,
+    "2char_match": false
+  },
+  {
+    "filename": "0585-35_47-288&433_498&666-498&666_310&533_288&433_476&566-13_0_13_0_27_32_24-41-67.jpg",
+    "gt": "闽APA380",
+    "pred": "川AA2",
+    "exact_match": false,
+    "1char_match": false,
+    "2char_match": false
+  },
+  {
+    "filename": "0587-24_40-280&419_529&616-502&514_280&616_307&521_529&419-0_0_0_27_29_24_5-76-223.jpg",
+    "gt": "皖AA350F",
+    "pred": "皖A5",
+    "exact_match": false,
+    "1char_match": false,
+    "2char_match": false
+  },
+  {
+    "filename": "0587-39_40-154&410_337&678-337&678_156&529_154&410_335&559-0_0_16_5_30_24_24-117-32.jpg",
+    "gt": "皖ASF600",
+    "pred": "川A11",
+    "exact_match": false,
+    "1char_match": false,
+    "2char_match": false
+  },
+  {
+    "filename": "0587931034483-111_53-130&380_436&577-431&589_150&464_126&361_407&486-0_0_20_31_24_26_6-71-186.jpg",
+    "gt": "皖AW702G",
+    "pred": "川A46",
+    "exact_match": false,
+    "1char_match": false,
+    "2char_match": false
+  },
+  {
+    "filename": "0588-15_39-203&443_516&600-516&600_240&525_203&443_479&518-0_0_11_32_13_29_29-46-17.jpg",
+    "gt": "皖AM8P55",
+    "pred": "川AA6",
+    "exact_match": false,
+    "1char_match": false,
+    "2char_match": false
+  },
+  {
+    "filename": "0589-30_44-220&456_448&672-424&553_220&672_244&575_448&456-0_0_17_10_31_33_24-64-220.jpg",
+    "gt": "皖ATL790",
+    "pred": "湘0",
+    "exact_match": false,
+    "1char_match": false,
+    "2char_match": false
+  },
+  {
+    "filename": "0589-43_55-343&378_528&644-528&644_366&488_343&378_505&534-0_0_33_27_12_31_27-67-192.jpg",
+    "gt": "皖A93N73",
+    "pred": "川AA6",
+    "exact_match": false,
+    "1char_match": false,
+    "2char_match": false
+  },
+  {
+    "filename": "0590-14_44-131&422_445&579-445&579_184&512_131&422_392&489-11_0_30_32_32_29_8-124-167.jpg",
+    "gt": "浙A6885J",
+    "pred": "川A1",
+    "exact_match": false,
+    "1char_match": false,
+    "2char_match": false
+  },
+  {
+    "filename": "0590-19_47-143&460_423&636-423&636_193&555_143&460_373&541-0_0_10_2_28_29_32-109-217.jpg",
+    "gt": "皖ALC458",
+    "pred": "川A7766",
+    "exact_match": false,
+    "1char_match": false,
+    "2char_match": false
+  },
+  {
+    "filename": "0590-21_41-206&285_464&476-427&387_206&476_243&374_464&285-0_0_13_2_29_31_33-128-172.jpg",
+    "gt": "皖APC579",
+    "pred": "皖A0",
+    "exact_match": false,
+    "1char_match": false,
+    "2char_match": false
+  },
+  {
+    "filename": "0592-28_44-262&448_491&664-460&557_262&664_293&555_491&448-0_0_3_30_26_27_28-93-117.jpg",
+    "gt": "皖AD6234",
+    "pred": "川AA41",
+    "exact_match": false,
+    "1char_match": false,
+    "2char_match": false
+  },
+  {
+    "filename": "0592-28_48-240&405_478&613-478&613_276&503_240&405_442&515-0_0_30_15_31_29_24-99-78.jpg",
+    "gt": "皖A6R750",
+    "pred": "川A60",
+    "exact_match": false,
+    "1char_match": false,
+    "2char_match": false
+  },
+  {
+    "filename": "0592-30_37-273&458_498&678-498&678_285&554_273&458_486&582-2_8_16_18_30_27_33-103-377.jpg",
+    "gt": "津JSU639",
+    "pred": "川A0",
+    "exact_match": false,
+    "1char_match": false,
+    "2char_match": false
+  },
+  {
+    "filename": "0593-15_47-228&452_538&612-538&612_283&540_228&452_483&524-0_0_6_23_33_33_31-91-112.jpg",
+    "gt": "皖AGZ997",
+    "pred": "苏A906",
+    "exact_match": false,
+    "1char_match": false,
+    "2char_match": false
+  },
+  {
+    "filename": "0593-17_44-175&455_463&627-415&550_175&627_223&532_463&455-0_0_32_29_32_21_25-121-216.jpg",
+    "gt": "皖A858X1",
+    "pred": "皖A785",
+    "exact_match": false,
+    "1char_match": false,
+    "2char_match": false
+  },
+  {
+    "filename": "0594-33_38-359&300_566&540-556&411_359&540_369&429_566&300-0_12_23_27_27_27_10-112-283.jpg",
+    "gt": "皖NZ333L",
+    "pred": "川0",
+    "exact_match": false,
+    "1char_match": false,
+    "2char_match": false
+  },
+  {
+    "filename": "0596-8_26-184&392_512&544-512&544_219&500_184&392_477&436-0_0_1_9_27_31_30-22-2.jpg",
+    "gt": "皖ABK376",
+    "pred": "川2",
+    "exact_match": false,
+    "1char_match": false,
+    "2char_match": false
+  },
+  {
+    "filename": "0597-31_49-124&358_354&575-354&575_156&454_124&358_322&479-0_0_17_33_31_31_2-129-127.jpg",
+    "gt": "皖AT977C",
+    "pred": "皖A666",
+    "exact_match": false,
+    "1char_match": false,
+    "2char_match": false
+  },
+  {
+    "filename": "0598-16_47-177&439_480&604-480&604_228&527_177&439_429&516-0_0_25_25_26_8_25-85-48.jpg",
+    "gt": "皖A112J1",
+    "pred": "皖AA66",
+    "exact_match": false,
+    "1char_match": false,
+    "2char_match": false
+  },
+  {
+    "filename": "0599-21_40-229&520_491&711-458&619_229&711_262&612_491&520-0_0_17_27_25_27_23-47-58.jpg",
+    "gt": "皖AT313Z",
+    "pred": "湘A6",
+    "exact_match": false,
+    "1char_match": false,
+    "2char_match": false
+  },
+  {
+    "filename": "0599-26_45-388&423_637&624-605&515_388&624_420&532_637&423-0_0_16_26_24_30_23-71-221.jpg",
+    "gt": "皖AS206Z",
+    "pred": "皖A0",
+    "exact_match": false,
+    "1char_match": false,
+    "2char_match": false
+  },
+  {
+    "filename": "0599-26_46-298&510_540&717-540&717_336&614_298&510_502&613-0_0_29_31_2_24_26-79-22.jpg",
+    "gt": "皖A57C02",
+    "pred": "苏AA66",
+    "exact_match": false,
+    "1char_match": false,
+    "2char_match": false
+  },
+  {
+    "filename": "06-109_53-131&464_477&660-477&672_162&545_137&433_452&560-0_0_13_28_28_33_31-96-71.jpg",
+    "gt": "皖AP4497",
+    "pred": "川AA6",
+    "exact_match": false,
+    "1char_match": false,
+    "2char_match": false
+  },
+  {
+    "filename": "0601-14_43-144&506_468&661-468&661_192&592_144&506_420&575-0_0_30_30_30_3_29-45-47.jpg",
+    "gt": "皖A666D5",
+    "pred": "苏AA66",
+    "exact_match": false,
+    "1char_match": false,
+    "2char_match": false
+  },
+  {
+    "filename": "0601-15_33-195&446_458&637-458&637_237&575_195&446_416&508-0_0_22_7_30_25_25-105-98.jpg",
+    "gt": "皖AYH611",
+    "pred": "皖AA6666",
+    "exact_match": false,
+    "1char_match": false,
+    "2char_match": false
+  },
+  {
+    "filename": "0603-26_40-188&410_435&614-435&614_211&502_188&410_412&522-16_15_10_24_29_29_24-86-125.jpg",
+    "gt": "豫RL0550",
+    "pred": "皖66",
+    "exact_match": false,
+    "1char_match": false,
+    "2char_match": false
+  },
+  {
+    "filename": "0603831417624-98_52-164&453_593&605-600&617_180&539_129&434_549&512-0_0_10_28_16_24_32-107-54.jpg",
+    "gt": "皖AL4S08",
+    "pred": "皖AR065",
+    "exact_match": false,
+    "1char_match": false,
+    "2char_match": false
+  },
+  {
+    "filename": "0605-33_49-184&419_400&653-400&653_216&532_184&419_368&540-0_0_7_24_30_24_28-122-256.jpg",
+    "gt": "皖AH0604",
+    "pred": "川A666",
+    "exact_match": false,
+    "1char_match": false,
+    "2char_match": false
+  },
+  {
+    "filename": "0606-39_42-340&419_537&676-537&676_346&521_340&419_531&574-0_7_21_32_30_24_23-162-84.jpg",
+    "gt": "皖HX860Z",
+    "pred": "川A66",
+    "exact_match": false,
+    "1char_match": false,
+    "2char_match": false
+  },
+  {
+    "filename": "0607-34_43-152&371_366&608-349&473_152&608_169&506_366&371-0_0_16_28_22_29_30-100-132.jpg",
+    "gt": "皖AS4Y56",
+    "pred": "川A6",
+    "exact_match": false,
+    "1char_match": false,
+    "2char_match": false
+  },
+  {
+    "filename": "0607-34_49-256&346_470&583-440&457_256&583_286&472_470&346-0_0_15_30_30_29_10-109-211.jpg",
+    "gt": "皖AR665L",
+    "pred": "皖A68",
+    "exact_match": false,
+    "1char_match": false,
+    "2char_match": false
+  },
+  {
+    "filename": "0607-37_42-201&386_404&636-404&636_209&484_201&386_396&538-12_12_26_24_23_21_30-58-139.jpg",
+    "gt": "京N20ZX6",
+    "pred": "苏AA6",
+    "exact_match": false,
+    "1char_match": false,
+    "2char_match": false
+  },
+  {
+    "filename": "0608-1_18-84&366_597&465-597&465_109&449_84&366_572&382-0_0_33_27_8_32_24-28-18.jpg",
+    "gt": "皖A93J80",
+    "pred": "苏A2",
+    "exact_match": false,
+    "1char_match": false,
+    "2char_match": false
+  },
+  {
+    "filename": "0609-20_44-170&448_456&626-456&626_209&534_170&448_417&540-16_12_6_14_33_29_24-82-245.jpg",
+    "gt": "豫NGQ950",
+    "pred": "川A0",
+    "exact_match": false,
+    "1char_match": false,
+    "2char_match": false
+  },
+  {
+    "filename": "0609-32_45-311&395_525&633-499&512_311&633_337&516_525&395-0_0_24_29_25_27_28-119-362.jpg",
+    "gt": "皖A05134",
+    "pred": "川A6",
+    "exact_match": false,
+    "1char_match": false,
+    "2char_match": false
+  },
+  {
+    "filename": "0610-24_46-214&490_473&687-433&587_214&687_254&590_473&490-0_0_22_7_33_30_25-94-48.jpg",
+    "gt": "皖AYH961",
+    "pred": "皖A68",
+    "exact_match": false,
+    "1char_match": false,
+    "2char_match": false
+  },
+  {
+    "filename": "0610-34_42-305&390_509&640-491&512_305&640_323&518_509&390-0_0_10_24_32_30_4-58-27.jpg",
+    "gt": "皖AL086E",
+    "pred": "皖A6",
+    "exact_match": false,
+    "1char_match": false,
+    "2char_match": false
+  },
+  {
+    "filename": "0611-31_53-210&434_441&655-441&655_253&541_210&434_398&548-0_0_7_33_25_28_15-103-55.jpg",
+    "gt": "皖AH914R",
+    "pred": "皖A66L",
+    "exact_match": false,
+    "1char_match": false,
+    "2char_match": false
+  },
+  {
+    "filename": "0611-34_39-242&403_454&644-454&644_252&506_242&403_444&541-10_0_16_14_28_32_31-147-39.jpg",
+    "gt": "苏ASQ487",
+    "pred": "川A6",
+    "exact_match": false,
+    "1char_match": false,
+    "2char_match": false
+  },
+  {
+    "filename": "0612-20_35-104&419_350&627-318&545_104&627_136&501_350&419-0_0_7_16_26_31_32-54-125.jpg",
+    "gt": "皖AHS278",
+    "pred": "川5",
+    "exact_match": false,
+    "1char_match": false,
+    "2char_match": false
+  },
+  {
+    "filename": "0612-22_35-318&478_590&666-570&562_318&666_338&582_590&478-0_12_8_8_30_29_30-49-170.jpg",
+    "gt": "皖NJJ656",
+    "pred": "川49",
+    "exact_match": false,
+    "1char_match": false,
+    "2char_match": false
+  },
+  {
+    "filename": "0612-38_52-168&408_375&655-375&655_194&513_168&408_349&550-0_0_17_32_11_26_29-54-57.jpg",
+    "gt": "皖AT8M25",
+    "pred": "川AA70",
+    "exact_match": false,
+    "1char_match": false,
+    "2char_match": false
+  },
+  {
+    "filename": "0615-26_44-359&306_606&514-572&408_359&514_393&412_606&306-0_0_13_7_24_26_30-105-145.jpg",
+    "gt": "皖APH026",
+    "pred": "皖A6",
+    "exact_match": false,
+    "1char_match": false,
+    "2char_match": false
+  },
+  {
+    "filename": "0617-21_48-259&389_541&572-541&572_302&476_259&389_498&485-0_0_5_26_31_27_24-61-97.jpg",
+    "gt": "皖AF2730",
+    "pred": "川AA6",
+    "exact_match": false,
+    "1char_match": false,
+    "2char_match": false
+  },
+  {
+    "filename": "0619-22_36-149&569_405&771-405&771_175&675_149&569_379&665-7_0_4_33_25_16_31-34-140.jpg",
+    "gt": "辽AE91S7",
+    "pred": "皖AA666",
+    "exact_match": false,
+    "1char_match": false,
+    "2char_match": false
+  },
+  {
+    "filename": "0619-26_30-348&409_561&652-561&652_356&548_348&409_553&513-0_12_32_5_30_31_32-153-218.jpg",
+    "gt": "皖N8F678",
+    "pred": "川A76666",
+    "exact_match": false,
+    "1char_match": false,
+    "2char_match": false
+  },
+  {
+    "filename": "0620-19_50-293&416_589&591-534&507_293&591_348&500_589&416-0_0_22_25_25_28_22-129-250.jpg",
+    "gt": "皖AY114Y",
+    "pred": "皖A19",
+    "exact_match": false,
+    "1char_match": false,
+    "2char_match": false
+  },
+  {
+    "filename": "0621-22_51-222&405_504&589-504&589_274&496_222&405_452&498-0_0_2_4_30_26_33-100-107.jpg",
+    "gt": "皖ACE629",
+    "pred": "川A6",
+    "exact_match": false,
+    "1char_match": false,
+    "2char_match": false
+  },
+  {
+    "filename": "0621-33_48-271&384_492&619-462&494_271&619_301&509_492&384-0_0_11_10_25_26_31-77-223.jpg",
+    "gt": "皖AML127",
+    "pred": "川A775",
+    "exact_match": false,
+    "1char_match": false,
+    "2char_match": false
+  },
+  {
+    "filename": "0621-38_57-283&384_493&631-493&631_322&496_283&384_454&519-0_0_30_18_33_29_30-142-264.jpg",
+    "gt": "皖A6U956",
+    "pred": "川AA6",
+    "exact_match": false,
+    "1char_match": false,
+    "2char_match": false
+  },
+  {
+    "filename": "0622-18_49-183&488_487&659-433&576_183&659_237&571_487&488-0_0_32_26_29_20_32-56-49.jpg",
+    "gt": "皖A825W8",
+    "pred": "皖A0",
+    "exact_match": false,
+    "1char_match": false,
+    "2char_match": false
+  },
+  {
+    "filename": "0622-23_39-186&487_450&684-450&684_213&580_186&487_423&591-0_0_31_22_32_30_30-39-33.jpg",
+    "gt": "皖A7Y866",
+    "pred": "苏AA5",
+    "exact_match": false,
+    "1char_match": false,
+    "2char_match": false
+  },
+  {
+    "filename": "0623-16_43-196&490_504&659-504&659_244&583_196&490_456&566-19_1_24_28_29_32_12-116-76.jpg",
+    "gt": "粤B0458N",
+    "pred": "川A66",
+    "exact_match": false,
+    "1char_match": false,
+    "2char_match": false
+  },
+  {
+    "filename": "0623-18_44-213&456_499&638-449&559_213&638_263&535_499&456-0_0_19_32_25_32_32-80-424.jpg",
+    "gt": "皖AV8188",
+    "pred": "湘65",
+    "exact_match": false,
+    "1char_match": false,
+    "2char_match": false
+  },
+  {
+    "filename": "0623-27_42-169&420_417&630-392&515_169&630_194&535_417&420-0_0_17_20_31_27_27-89-76.jpg",
+    "gt": "皖ATW733",
+    "pred": "川6",
+    "exact_match": false,
+    "1char_match": false,
+    "2char_match": false
+  },
+  {
+    "filename": "0625-30_41-257&430_485&659-463&538_257&659_279&551_485&430-0_0_3_26_26_32_0-89-38.jpg",
+    "gt": "皖AD228A",
+    "pred": "川A6",
+    "exact_match": false,
+    "1char_match": false,
+    "2char_match": false
+  },
+  {
+    "filename": "0626-28_41-306&449_545&668-523&549_306&668_328&568_545&449-0_0_2_29_26_31_11-92-67.jpg",
+    "gt": "皖AC527M",
+    "pred": "川6",
+    "exact_match": false,
+    "1char_match": false,
+    "2char_match": false
+  },
+  {
+    "filename": "0626-36_53-235&394_445&643-410&512_235&643_270&525_445&394-0_0_1_8_29_30_32-131-152.jpg",
+    "gt": "皖ABJ568",
+    "pred": "川AA41",
+    "exact_match": false,
+    "1char_match": false,
+    "2char_match": false
+  },
+  {
+    "filename": "0627-18_45-246&463_542&640-492&559_246&640_296&544_542&463-0_0_32_26_33_22_26-114-166.jpg",
+    "gt": "皖A829Y2",
+    "pred": "湘A760",
+    "exact_match": false,
+    "1char_match": false,
+    "2char_match": false
+  },
+  {
+    "filename": "0627-23_41-234&411_492&614-458&517_234&614_268&508_492&411-0_0_0_6_30_27_26-95-261.jpg",
+    "gt": "皖AAG632",
+    "pred": "川A76",
+    "exact_match": false,
+    "1char_match": false,
+    "2char_match": false
+  },
+  {
+    "filename": "0628-14_43-196&432_520&594-469&524_196&594_247&502_520&432-0_0_12_33_24_33_32-98-168.jpg",
+    "gt": "皖AN9098",
+    "pred": "川A66",
+    "exact_match": false,
+    "1char_match": false,
+    "2char_match": false
+  },
+  {
+    "filename": "0628-33_32-241&431_447&686-443&686_241&550_245&431_447&567-0_0_8_23_26_31_26-87-32.jpg",
+    "gt": "皖AJZ272",
+    "pred": "川AK0",
+    "exact_match": false,
+    "1char_match": false,
+    "2char_match": false
+  },
+  {
+    "filename": "0629-33_47-203&446_425&683-425&683_229&551_203&446_399&578-0_0_25_12_33_29_26-74-103.jpg",
+    "gt": "皖A1N952",
+    "pred": "川A70",
+    "exact_match": false,
+    "1char_match": false,
+    "2char_match": false
+  },
+  {
+    "filename": "0630-9_33-245&485_568&648-516&601_245&648_297&532_568&485-0_0_7_25_11_30_33-31-13.jpg",
+    "gt": "皖AH1M69",
+    "pred": "苏A2",
+    "exact_match": false,
+    "1char_match": false,
+    "2char_match": false
+  },
+  {
+    "filename": "0631-24_46-125&453_386&655-386&655_164&552_125&453_347&556-0_5_30_33_30_24_31-68-34.jpg",
+    "gt": "皖F69607",
+    "pred": "苏A6",
+    "exact_match": false,
+    "1char_match": false,
+    "2char_match": false
+  },
+  {
+    "filename": "0631417624521-98_57-162&471_613&633-616&638_170&556_119&464_565&546-0_0_16_33_31_26_17-87-53.jpg",
+    "gt": "皖AS972T",
+    "pred": "皖AA66L",
+    "exact_match": false,
+    "1char_match": false,
+    "2char_match": false
+  },
+  {
+    "filename": "0632-33_35-314&462_527&710-527&710_318&573_314&462_523&599-12_13_3_32_3_31_27-114-115.jpg",
+    "gt": "京PD8D73",
+    "pred": "川A6",
+    "exact_match": false,
+    "1char_match": false,
+    "2char_match": false
+  },
+  {
+    "filename": "0633-28_45-117&409_369&619-369&619_146&500_117&409_340&528-0_0_32_26_29_32_25-92-179.jpg",
+    "gt": "皖A82581",
+    "pred": "川AA6",
+    "exact_match": false,
+    "1char_match": false,
+    "2char_match": false
+  },
+  {
+    "filename": "0634-14_37-208&484_527&650-527&650_245&575_208&484_490&559-3_5_1_17_29_26_29-102-51.jpg",
+    "gt": "渝FBT525",
+    "pred": "川796",
+    "exact_match": false,
+    "1char_match": false,
+    "2char_match": false
+  },
+  {
+    "filename": "0635-18_44-137&471_432&651-384&569_137&651_185&553_432&471-0_0_17_25_32_31_21-109-289.jpg",
+    "gt": "皖AT187X",
+    "pred": "苏AH775",
+    "exact_match": false,
+    "1char_match": false,
+    "2char_match": false
+  },
+  {
+    "filename": "0635-31_39-244&425_468&662-454&532_244&662_258&555_468&425-0_12_0_12_30_25_33-133-125.jpg",
+    "gt": "皖NAN619",
+    "pred": "皖A766",
+    "exact_match": false,
+    "1char_match": false,
+    "2char_match": false
+  },
+  {
+    "filename": "0635-32_46-357&401_579&640-579&640_388&520_357&401_548&521-0_0_13_6_27_25_30-173-55.jpg",
+    "gt": "皖APG316",
+    "pred": "川A666955",
+    "exact_match": false,
+    "1char_match": false,
+    "2char_match": false
+  },
+  {
+    "filename": "0638-16_51-159&423_486&586-428&506_159&586_217&503_486&423-1_2_29_26_17_30_26-80-79.jpg",
+    "gt": "沪C52T62",
+    "pred": "皖A0",
+    "exact_match": false,
+    "1char_match": false,
+    "2char_match": false
+  },
+  {
+    "filename": "0638-19_45-356&511_646&695-599&607_356&695_403&599_646&511-0_0_9_33_32_29_22-27-167.jpg",
+    "gt": "皖AK985Y",
+    "pred": "川2",
+    "exact_match": false,
+    "1char_match": false,
+    "2char_match": false
+  },
+  {
+    "filename": "0639-33_47-334&326_546&578-514&457_334&578_366&447_546&326-0_0_7_17_33_29_30-62-350.jpg",
+    "gt": "皖AHT956",
+    "pred": "湘75",
+    "exact_match": false,
+    "1char_match": false,
+    "2char_match": false
+  },
+  {
+    "filename": "0639-38_44-327&362_538&615-538&615_338&457_327&362_527&520-1_2_31_5_29_16_32-76-88.jpg",
+    "gt": "沪C7F5S8",
+    "pred": "川AA6",
+    "exact_match": false,
+    "1char_match": false,
+    "2char_match": false
+  },
+  {
+    "filename": "0640-19_44-285&455_574&640-531&551_285&640_328&544_574&455-0_0_20_32_21_31_32-69-95.jpg",
+    "gt": "皖AW8X78",
+    "pred": "皖A40",
+    "exact_match": false,
+    "1char_match": false,
+    "2char_match": false
+  },
+  {
+    "filename": "0640-25_38-61&425_322&630-322&630_81&514_61&425_302&541-11_0_1_33_33_25_14-122-167.jpg",
+    "gt": "浙AB991Q",
+    "pred": "川A66",
+    "exact_match": false,
+    "1char_match": false,
+    "2char_match": false
+  },
+  {
+    "filename": "0640-29_45-374&488_613&712-581&596_374&712_406&604_613&488-0_0_8_23_27_30_25-46-33.jpg",
+    "gt": "皖AJZ361",
+    "pred": "湘A75",
+    "exact_match": false,
+    "1char_match": false,
+    "2char_match": false
+  },
+  {
+    "filename": "0641-33_54-216&425_445&659-445&659_261&539_216&425_400&545-0_0_5_23_31_24_31-87-55.jpg",
+    "gt": "皖AFZ707",
+    "pred": "川AA66",
+    "exact_match": false,
+    "1char_match": false,
+    "2char_match": false
+  },
+  {
+    "filename": "0642-35_45-199&459_420&702-420&702_217&559_199&459_402&602-11_1_32_21_3_29_32-110-186.jpg",
+    "gt": "浙B8XD58",
+    "pred": "川A66",
+    "exact_match": false,
+    "1char_match": false,
+    "2char_match": false
+  },
+  {
+    "filename": "0643-20_47-113&431_396&621-341&537_113&621_168&515_396&431-0_0_22_25_27_26_10-78-222.jpg",
+    "gt": "皖AY132L",
+    "pred": "湘008",
+    "exact_match": false,
+    "1char_match": false,
+    "2char_match": false
+  },
+  {
+    "filename": "0643-25_44-217&438_467&653-428&552_217&653_256&539_467&438-0_0_16_11_31_27_25-86-34.jpg",
+    "gt": "皖ASM731",
+    "pred": "川A8",
+    "exact_match": false,
+    "1char_match": false,
+    "2char_match": false
+  },
+  {
+    "filename": "0643642241379-109_69-166&416_513&640-506&650_173&503_149&395_482&542-0_0_17_4_27_26_33-29-19.jpg",
+    "gt": "皖ATE329",
+    "pred": "苏AA76",
+    "exact_match": false,
+    "1char_match": false,
+    "2char_match": false
+  },
+  {
+    "filename": "0644-19_37-261&434_533&632-495&549_261&632_299&517_533&434-0_0_9_28_28_28_3-84-56.jpg",
+    "gt": "皖AK444D",
+    "pred": "川A5",
+    "exact_match": false,
+    "1char_match": false,
+    "2char_match": false
+  },
+  {
+    "filename": "0644-34_39-308&417_526&664-526&664_317&519_308&417_517&562-0_0_17_26_25_33_7-91-16.jpg",
+    "gt": "皖AT219H",
+    "pred": "皖AA6",
+    "exact_match": false,
+    "1char_match": false,
+    "2char_match": false
+  },
+  {
+    "filename": "0645-28_40-276&520_528&734-528&734_294&607_276&520_510&647-10_0_31_29_33_22_32-93-222.jpg",
+    "gt": "苏A759Y8",
+    "pred": "川A666",
+    "exact_match": false,
+    "1char_match": false,
+    "2char_match": false
+  },
+  {
+    "filename": "0645-34_41-233&411_453&656-453&656_245&511_233&411_441&556-0_0_19_29_15_29_32-92-45.jpg",
+    "gt": "皖AV5R58",
+    "pred": "川A6",
+    "exact_match": false,
+    "1char_match": false,
+    "2char_match": false
+  },
+  {
+    "filename": "0646-17_21-223&439_497&636-490&550_223&636_230&525_497&439-0_0_21_21_33_24_24-107-37.jpg",
+    "gt": "皖AXX900",
+    "pred": "川2",
+    "exact_match": false,
+    "1char_match": false,
+    "2char_match": false
+  },
+  {
+    "filename": "0646-32_42-387&461_612&701-592&571_387&701_407&591_612&461-0_0_16_24_23_30_26-90-97.jpg",
+    "gt": "皖AS0Z62",
+    "pred": "皖A40",
+    "exact_match": false,
+    "1char_match": false,
+    "2char_match": false
+  },
+  {
+    "filename": "0647-24_41-174&435_434&643-434&643_207&540_174&435_401&538-11_0_0_30_29_30_11-78-104.jpg",
+    "gt": "浙AA656M",
+    "pred": "苏A6",
+    "exact_match": false,
+    "1char_match": false,
+    "2char_match": false
+  },
+  {
+    "filename": "0647-32_38-344&500_562&748-550&615_344&748_356&633_562&500-0_0_27_7_33_30_31-100-171.jpg",
+    "gt": "皖A3H967",
+    "pred": "皖A4666",
+    "exact_match": false,
+    "1char_match": false,
+    "2char_match": false
+  },
+  {
+    "filename": "0648-17_46-113&432_426&605-376&523_113&605_163&514_426&432-0_0_21_29_22_30_33-82-47.jpg",
+    "gt": "皖AX5Y69",
+    "pred": "皖A0",
+    "exact_match": false,
+    "1char_match": false,
+    "2char_match": false
+  },
+  {
+    "filename": "0649-17_54-195&434_518&602-518&602_259&519_195&434_454&517-0_0_25_33_27_15_27-62-139.jpg",
+    "gt": "皖A193R3",
+    "pred": "川0",
+    "exact_match": false,
+    "1char_match": false,
+    "2char_match": false
+  },
+  {
+    "filename": "0649-33_48-135&433_365&669-365&669_161&532_135&433_339&570-0_0_24_31_27_8_25-94-96.jpg",
+    "gt": "皖A073J1",
+    "pred": "川AA6",
+    "exact_match": false,
+    "1char_match": false,
+    "2char_match": false
+  },
+  {
+    "filename": "065-17_45-209&446_521&620-521&620_259&538_209&446_471&528-0_0_19_14_24_24_26-99-74.jpg",
+    "gt": "皖AVQ002",
+    "pred": "川AA46666",
+    "exact_match": false,
+    "1char_match": false,
+    "2char_match": false
+  },
+  {
+    "filename": "065-18_51-79&431_391&605-391&605_139&523_79&431_331&513-0_0_13_7_27_27_24-58-147.jpg",
+    "gt": "皖APH330",
+    "pred": "川AA76",
+    "exact_match": false,
+    "1char_match": false,
+    "2char_match": false
+  },
+  {
+    "filename": "0650-16_36-260&495_557&678-517&602_260&678_300&571_557&495-0_0_29_26_27_15_33-94-28.jpg",
+    "gt": "皖A523R9",
+    "pred": "皖A8",
+    "exact_match": false,
+    "1char_match": false,
+    "2char_match": false
+  },
+  {
+    "filename": "0651-13_45-240&455_598&607-598&607_287&530_240&455_551&532-0_12_0_16_26_27_33-95-207.jpg",
+    "gt": "皖NAS239",
+    "pred": "川A70",
+    "exact_match": false,
+    "1char_match": false,
+    "2char_match": false
+  },
+  {
+    "filename": "0651-15_53-192&512_528&674-528&674_260&599_192&512_460&587-16_0_25_9_23_32_26-77-65.jpg",
+    "gt": "豫A1KZ82",
+    "pred": "苏A6666",
+    "exact_match": false,
+    "1char_match": false,
+    "2char_match": false
+  },
+  {
+    "filename": "0651-20_40-246&429_518&629-478&541_246&629_286&517_518&429-19_9_9_9_26_29_26-139-197.jpg",
+    "gt": "粤KKK252",
+    "pred": "川AA16",
+    "exact_match": false,
+    "1char_match": false,
+    "2char_match": false
+  },
+  {
+    "filename": "0651-22_45-204&445_480&642-438&544_204&642_246&543_480&445-0_0_8_32_10_25_29-83-175.jpg",
+    "gt": "皖AJ8L15",
+    "pred": "川66",
+    "exact_match": false,
+    "1char_match": false,
+    "2char_match": false
+  },
+  {
+    "filename": "0652-16_43-144&405_450&583-400&506_144&583_194&482_450&405-0_0_15_30_24_24_8-61-104.jpg",
+    "gt": "皖AR600J",
+    "pred": "皖A0",
+    "exact_match": false,
+    "1char_match": false,
+    "2char_match": false
+  },
+  {
+    "filename": "0655-0_1-122&424_681&522-681&514_126&522_122&432_677&424-0_0_25_25_6_33_31-84-235.jpg",
+    "gt": "皖A11G97",
+    "pred": "皖A88",
+    "exact_match": false,
+    "1char_match": false,
+    "2char_match": false
+  },
+  {
+    "filename": "0655-0_43-133&510_593&629-593&623_244&629_133&516_482&510-0_0_21_28_8_28_28-79-69.jpg",
+    "gt": "皖AX4J44",
+    "pred": "苏A968",
+    "exact_match": false,
+    "1char_match": false,
+    "2char_match": false
+  },
+  {
+    "filename": "0656-18_51-25&270_344&442-344&442_81&355_25&270_288&357-0_0_16_31_31_32_5-28-86.jpg",
+    "gt": "皖AS778F",
+    "pred": "川A2",
+    "exact_match": false,
+    "1char_match": false,
+    "2char_match": false
+  },
+  {
+    "filename": "0657-21_39-240&431_508&636-469&547_240&636_279&520_508&431-0_0_3_2_27_27_26-126-153.jpg",
+    "gt": "皖ADC332",
+    "pred": "川16",
+    "exact_match": false,
+    "1char_match": false,
+    "2char_match": false
+  },
+  {
+    "filename": "0658-32_44-153&406_389&639-389&639_175&504_153&406_367&541-0_16_3_19_31_32_33-62-40.jpg",
+    "gt": "皖SDV789",
+    "pred": "苏A6",
+    "exact_match": false,
+    "1char_match": false,
+    "2char_match": false
+  },
+  {
+    "filename": "0658-3_30-101&447_567&565-567&565_150&543_101&447_518&469-0_0_11_23_26_26_28-64-19.jpg",
+    "gt": "皖AMZ224",
+    "pred": "苏AA966",
+    "exact_match": false,
+    "1char_match": false,
+    "2char_match": false
+  },
+  {
+    "filename": "0659-15_46-168&426_496&594-496&594_224&520_168&426_440&500-0_0_32_14_33_32_29-108-313.jpg",
+    "gt": "皖A8Q985",
+    "pred": "川AA66",
+    "exact_match": false,
+    "1char_match": false,
+    "2char_match": false
+  },
+  {
+    "filename": "0659-25_42-134&480_394&692-394&692_163&580_134&480_365&592-0_7_3_8_27_26_26-26-213.jpg",
+    "gt": "皖HDJ322",
+    "pred": "川A2",
+    "exact_match": false,
+    "1char_match": false,
+    "2char_match": false
+  },
+  {
+    "filename": "0661-15_41-181&476_520&639-480&558_181&639_221&557_520&476-0_0_9_33_28_24_32-107-275.jpg",
+    "gt": "皖AK9408",
+    "pred": "川15",
+    "exact_match": false,
+    "1char_match": false,
+    "2char_match": false
+  },
+  {
+    "filename": "0661-34_42-295&421_516&671-516&671_311&530_295&421_500&562-0_0_5_17_32_33_29-110-81.jpg",
+    "gt": "皖AFT895",
+    "pred": "川AA6",
+    "exact_match": false,
+    "1char_match": false,
+    "2char_match": false
+  },
+  {
+    "filename": "0661-7_52-190&476_612&607-526&562_190&607_276&521_612&476-0_0_14_22_33_26_32-105-121.jpg",
+    "gt": "皖AQY928",
+    "pred": "川A08",
+    "exact_match": false,
+    "1char_match": false,
+    "2char_match": false
+  },
+  {
+    "filename": "0662-45_44-238&438_425&734-424&734_238&545_239&438_425&627-0_3_0_31_30_32_33-81-195.jpg",
+    "gt": "皖DA7689",
+    "pred": "川A76",
+    "exact_match": false,
+    "1char_match": false,
+    "2char_match": false
+  },
+  {
+    "filename": "0663-27_38-337&303_589&523-569&402_337&523_357&424_589&303-0_0_4_4_32_29_32-50-75.jpg",
+    "gt": "皖AEE858",
+    "pred": "川6",
+    "exact_match": false,
+    "1char_match": false,
+    "2char_match": false
+  },
+  {
+    "filename": "0663-36_35-293&369_496&642-496&493_295&642_293&518_494&369-0_0_7_32_31_31_6-102-64.jpg",
+    "gt": "皖AH877G",
+    "pred": "川A6",
+    "exact_match": false,
+    "1char_match": false,
+    "2char_match": false
+  },
+  {
+    "filename": "0664-23_46-291&496_563&700-518&601_291&700_336&595_563&496-0_0_30_26_4_24_32-132-349.jpg",
+    "gt": "皖A62E08",
+    "pred": "川4461",
+    "exact_match": false,
+    "1char_match": false,
+    "2char_match": false
+  },
+  {
+    "filename": "0666-24_42-389&441_658&648-624&543_389&648_423&546_658&441-0_0_26_29_32_32_33-87-93.jpg",
+    "gt": "皖A25889",
+    "pred": "川66",
+    "exact_match": false,
+    "1char_match": false,
+    "2char_match": false
+  },
+  {
+    "filename": "0666-30_46-292&396_528&632-495&511_292&632_325&517_528&396-0_0_32_29_24_15_31-25-135.jpg",
+    "gt": "皖A850R7",
+    "pred": "川76",
+    "exact_match": false,
+    "1char_match": false,
+    "2char_match": false
+  },
+  {
+    "filename": "0668-22_41-277&517_556&717-519&619_277&717_314&615_556&517-0_0_24_30_30_23_27-111-108.jpg",
+    "gt": "皖A066Z3",
+    "pred": "皖AY",
+    "exact_match": false,
+    "1char_match": false,
+    "2char_match": false
+  },
+  {
+    "filename": "0672-31_42-366&495_599&736-578&604_366&736_387&627_599&495-0_0_7_32_29_25_23-95-83.jpg",
+    "gt": "皖AH851Z",
+    "pred": "皖A610",
+    "exact_match": false,
+    "1char_match": false,
+    "2char_match": false
+  },
+  {
+    "filename": "0672-6_49-151&410_590&538-590&538_234&499_151&410_507&449-10_4_27_27_1_25_2-68-58.jpg",
+    "gt": "苏E33B1C",
+    "pred": "皖AA7998",
+    "exact_match": false,
+    "1char_match": false,
+    "2char_match": false
+  },
+  {
+    "filename": "0673-15_47-230&459_561&629-504&552_230&629_287&536_561&459-0_0_23_31_31_30_29-99-63.jpg",
+    "gt": "皖AZ7765",
+    "pred": "皖AA0",
+    "exact_match": false,
+    "1char_match": false,
+    "2char_match": false
+  },
+  {
+    "filename": "0673-21_44-245&526_538&718-498&620_245&718_285&624_538&526-0_0_2_24_22_31_32-62-140.jpg",
+    "gt": "皖AC0Y78",
+    "pred": "蒙A8",
+    "exact_match": false,
+    "1char_match": false,
+    "2char_match": false
+  },
+  {
+    "filename": "0674-22_46-323&438_594&646-544&553_323&646_373&531_594&438-0_0_15_19_29_31_29-88-254.jpg",
+    "gt": "皖ARV575",
+    "pred": "皖A666",
+    "exact_match": false,
+    "1char_match": false,
+    "2char_match": false
+  },
+  {
+    "filename": "0674-25_43-143&435_405&650-405&650_180&545_143&435_368&540-0_0_0_33_19_30_24-79-138.jpg",
+    "gt": "皖AA9V60",
+    "pred": "川AA266",
+    "exact_match": false,
+    "1char_match": false,
+    "2char_match": false
+  },
+  {
+    "filename": "0674-26_36-145&523_393&750-393&750_165&638_145&523_373&635-17_0_28_5_4_26_26-100-133.jpg",
+    "gt": "鄂A4FE22",
+    "pred": "苏A111",
+    "exact_match": false,
+    "1char_match": false,
+    "2char_match": false
+  },
+  {
+    "filename": "0675-15_48-274&464_616&629-557&553_274&629_333&540_616&464-0_0_7_7_33_27_27-90-66.jpg",
+    "gt": "皖AHH933",
+    "pred": "皖A460",
+    "exact_match": false,
+    "1char_match": false,
+    "2char_match": false
+  },
+  {
+    "filename": "0675-26_39-48&377_313&590-313&590_70&471_48&377_291&496-0_15_5_33_24_33_25-71-108.jpg",
+    "gt": "皖RF9091",
+    "pred": "川A6",
+    "exact_match": false,
+    "1char_match": false,
+    "2char_match": false
+  },
+  {
+    "filename": "0676-21_43-232&468_516&667-474&573_232&667_274&562_516&468-0_0_13_26_25_31_1-108-95.jpg",
+    "gt": "皖AP217B",
+    "pred": "川7600",
+    "exact_match": false,
+    "1char_match": false,
+    "2char_match": false
+  },
+  {
+    "filename": "0677-24_37-201&407_469&618-469&618_225&507_201&407_445&518-0_0_21_13_27_24_30-74-154.jpg",
+    "gt": "皖AXP306",
+    "pred": "苏A6",
+    "exact_match": false,
+    "1char_match": false,
+    "2char_match": false
+  },
+  {
+    "filename": "0679-15_48-215&434_551&603-551&603_274&525_215&434_492&512-0_0_26_31_26_2_33-78-58.jpg",
+    "gt": "皖A272C9",
+    "pred": "川AA6",
+    "exact_match": false,
+    "1char_match": false,
+    "2char_match": false
+  },
+  {
+    "filename": "0679-39_45-393&393_598&670-584&514_393&670_407&549_598&393-0_0_31_18_29_33_24-94-63.jpg",
+    "gt": "皖A7U590",
+    "pred": "川A6",
+    "exact_match": false,
+    "1char_match": false,
+    "2char_match": false
+  },
+  {
+    "filename": "0679310344828-100_65-133&448_580&610-587&618_164&526_112&436_535&528-0_0_0_1_32_26_30-74-23.jpg",
+    "gt": "皖AAB826",
+    "pred": "川A66",
+    "exact_match": false,
+    "1char_match": false,
+    "2char_match": false
+  },
+  {
+    "filename": "0681-30_37-141&444_366&697-352&571_141&697_155&570_366&444-0_0_7_27_28_32_22-76-76.jpg",
+    "gt": "皖AH348Y",
+    "pred": "皖A66",
+    "exact_match": false,
+    "1char_match": false,
+    "2char_match": false
+  },
+  {
+    "filename": "0683-17_45-161&451_487&626-487&626_206&537_161&451_442&540-10_0_31_4_33_7_33-136-328.jpg",
+    "gt": "苏A7E9H9",
+    "pred": "川A6666",
+    "exact_match": false,
+    "1char_match": false,
+    "2char_match": false
+  },
+  {
+    "filename": "0684-23_43-125&396_396&607-396&607_165&507_125&396_356&496-0_0_0_15_31_31_31-96-24.jpg",
+    "gt": "皖AAR777",
+    "pred": "川AA6600",
+    "exact_match": false,
+    "1char_match": false,
+    "2char_match": false
+  },
+  {
+    "filename": "0685-18_43-184&463_490&650-490&650_230&562_184&463_444&551-0_0_33_31_31_21_25-53-20.jpg",
+    "gt": "皖A977X1",
+    "pred": "川AA5",
+    "exact_match": false,
+    "1char_match": false,
+    "2char_match": false
+  },
+  {
+    "filename": "0685-22_37-281&523_545&740-514&643_281&740_312&620_545&523-0_0_26_31_33_29_27-62-177.jpg",
+    "gt": "皖A27953",
+    "pred": "川776",
+    "exact_match": false,
+    "1char_match": false,
+    "2char_match": false
+  },
+  {
+    "filename": "0685-30_42-293&325_542&555-542&555_314&423_293&325_521&457-0_0_5_32_29_30_32-130-107.jpg",
+    "gt": "皖AF8568",
+    "pred": "川6",
+    "exact_match": false,
+    "1char_match": false,
+    "2char_match": false
+  },
+  {
+    "filename": "0686-24_31-183&467_439&691-439&691_197&579_183&467_425&579-0_7_25_33_24_32_25-110-46.jpg",
+    "gt": "皖H19081",
+    "pred": "川666",
+    "exact_match": false,
+    "1char_match": false,
+    "2char_match": false
+  },
+  {
+    "filename": "0686-29_39-399&429_631&676-609&555_399&676_421&550_631&429-0_0_10_24_7_26_24-72-58.jpg",
+    "gt": "皖AL0H20",
+    "pred": "川8",
+    "exact_match": false,
+    "1char_match": false,
+    "2char_match": false
+  },
+  {
+    "filename": "0686-29_51-219&431_474&656-474&656_260&535_219&431_433&552-0_0_3_16_27_26_27-99-46.jpg",
+    "gt": "皖ADS323",
+    "pred": "皖AA666",
+    "exact_match": false,
+    "1char_match": false,
+    "2char_match": false
+  },
+  {
+    "filename": "0686-30_41-353&427_593&666-572&536_353&666_374&557_593&427-0_0_11_25_24_33_13-86-110.jpg",
+    "gt": "皖AM109P",
+    "pred": "皖A70",
+    "exact_match": false,
+    "1char_match": false,
+    "2char_match": false
+  },
+  {
+    "filename": "0686-36_47-271&466_484&735-461&592_271&735_294&609_484&466-0_0_19_14_32_29_33-34-206.jpg",
+    "gt": "皖AVQ859",
+    "pred": "川A8",
+    "exact_match": false,
+    "1char_match": false,
+    "2char_match": false
+  },
+  {
+    "filename": "0687-11_40-172&478_520&643-520&643_233&587_172&478_459&534-0_0_7_1_29_30_25-130-313.jpg",
+    "gt": "皖AHB561",
+    "pred": "川J68",
+    "exact_match": false,
+    "1char_match": false,
+    "2char_match": false
+  },
+  {
+    "filename": "0688-23_39-168&407_438&620-408&514_168&620_198&513_438&407-0_0_33_29_32_28_26-93-96.jpg",
+    "gt": "皖A95842",
+    "pred": "皖A60",
+    "exact_match": false,
+    "1char_match": false,
+    "2char_match": false
+  },
+  {
+    "filename": "0688-24_43-224&384_498&594-462&486_224&594_260&492_498&384-0_0_5_16_33_25_26-81-107.jpg",
+    "gt": "皖AFS912",
+    "pred": "皖A0",
+    "exact_match": false,
+    "1char_match": false,
+    "2char_match": false
+  },
+  {
+    "filename": "0688-29_44-209&380_459&610-459&610_235&482_209&380_433&508-0_0_19_32_10_30_24-123-375.jpg",
+    "gt": "皖AV8L60",
+    "pred": "川5",
+    "exact_match": false,
+    "1char_match": false,
+    "2char_match": false
+  },
+  {
+    "filename": "0689-11_53-230&441_622&588-622&588_302&522_230&441_550&507-0_0_20_33_26_29_3-68-15.jpg",
+    "gt": "皖AW925D",
+    "pred": "川AA0",
+    "exact_match": false,
+    "1char_match": false,
+    "2char_match": false
+  },
+  {
+    "filename": "0689-28_46-289&331_546&555-512&435_289&555_323&451_546&331-0_0_31_32_7_33_29-118-336.jpg",
+    "gt": "皖A78H95",
+    "pred": "皖A44J1",
+    "exact_match": false,
+    "1char_match": false,
+    "2char_match": false
+  },
+  {
+    "filename": "0692-25_36-188&438_451&658-451&658_206&539_188&438_433&557-11_8_23_4_31_27_33-100-325.jpg",
+    "gt": "浙JZE739",
+    "pred": "川AA0",
+    "exact_match": false,
+    "1char_match": false,
+    "2char_match": false
+  },
+  {
+    "filename": "0692-29_41-209&487_448&729-421&609_209&729_236&607_448&487-0_0_30_24_32_0_32-84-239.jpg",
+    "gt": "皖A608A8",
+    "pred": "川A40",
+    "exact_match": false,
+    "1char_match": false,
+    "2char_match": false
+  },
+  {
+    "filename": "0693-15_46-238&444_560&624-494&554_238&624_304&514_560&444-0_0_11_31_32_28_33-92-148.jpg",
+    "gt": "皖AM7849",
+    "pred": "皖AA2",
+    "exact_match": false,
+    "1char_match": false,
+    "2char_match": false
+  },
+  {
+    "filename": "0693-20_47-215&403_515&596-515&596_266&504_215&403_464&495-0_0_33_12_33_31_31-94-34.jpg",
+    "gt": "皖A9N977",
+    "pred": "川A66",
+    "exact_match": false,
+    "1char_match": false,
+    "2char_match": false
+  },
+  {
+    "filename": "0693-21_41-234&326_518&530-518&530_273&434_234&326_479&422-0_0_7_24_27_33_8-86-80.jpg",
+    "gt": "皖AH039J",
+    "pred": "皖AA66",
+    "exact_match": false,
+    "1char_match": false,
+    "2char_match": false
+  },
+  {
+    "filename": "0693-42_57-86&396_299&668-299&668_115&502_86&396_270&562-0_0_18_26_29_28_32-62-107.jpg",
+    "gt": "皖AU2548",
+    "pred": "苏A6",
+    "exact_match": false,
+    "1char_match": false,
+    "2char_match": false
+  },
+  {
+    "filename": "0693-8_49-102&488_534&622-534&622_176&571_102&488_460&539-0_0_22_33_30_24_28-113-60.jpg",
+    "gt": "皖AY9604",
+    "pred": "川A71",
+    "exact_match": false,
+    "1char_match": false,
+    "2char_match": false
+  },
+  {
+    "filename": "0694-14_38-238&477_579&647-579&647_280&570_238&477_537&554-0_10_1_32_25_26_27-141-106.jpg",
+    "gt": "皖LB8123",
+    "pred": "川A6666",
+    "exact_match": false,
+    "1char_match": false,
+    "2char_match": false
+  },
+  {
+    "filename": "0694-15_44-196&456_520&635-463&560_196&635_253&531_520&456-0_0_7_17_31_26_30-39-16.jpg",
+    "gt": "皖AHT726",
+    "pred": "川2",
+    "exact_match": false,
+    "1char_match": false,
+    "2char_match": false
+  },
+  {
+    "filename": "0694-1_15-89&467_669&567-669&567_109&548_89&467_649&486-10_0_26_4_17_24_26-96-255.jpg",
+    "gt": "苏A2ET02",
+    "pred": "川A701",
+    "exact_match": false,
+    "1char_match": false,
+    "2char_match": false
+  },
+  {
+    "filename": "0694-24_42-279&468_544&687-507&582_279&687_316&573_544&468-0_0_25_32_24_32_25-129-158.jpg",
+    "gt": "皖A18081",
+    "pred": "皖76",
+    "exact_match": false,
+    "1char_match": false,
+    "2char_match": false
+  },
+  {
+    "filename": "0694-28_37-173&447_422&680-422&680_190&555_173&447_405&572-0_0_24_26_26_10_30-131-327.jpg",
+    "gt": "皖A022L6",
+    "pred": "川A6",
+    "exact_match": false,
+    "1char_match": false,
+    "2char_match": false
+  },
+  {
+    "filename": "0695-27_49-178&434_442&654-442&654_222&540_178&434_398&548-0_0_7_2_24_28_33-100-183.jpg",
+    "gt": "皖AHC049",
+    "pred": "川A466",
+    "exact_match": false,
+    "1char_match": false,
+    "2char_match": false
+  },
+  {
+    "filename": "0696-16_47-164&487_491&665-491&665_226&588_164&487_429&564-0_0_22_22_31_32_31-60-72.jpg",
+    "gt": "皖AYY787",
+    "pred": "苏AA66",
+    "exact_match": false,
+    "1char_match": false,
+    "2char_match": false
+  },
+  {
+    "filename": "0697-25_43-150&360_421&575-389&461_150&575_182&474_421&360-0_0_4_33_31_33_2-96-226.jpg",
+    "gt": "皖AE979C",
+    "pred": "川AK666",
+    "exact_match": false,
+    "1char_match": false,
+    "2char_match": false
+  },
+  {
+    "filename": "0697-7_43-184&451_603&590-537&543_184&590_250&498_603&451-0_0_33_24_28_27_27-49-113.jpg",
+    "gt": "皖A90433",
+    "pred": "苏AE2",
+    "exact_match": false,
+    "1char_match": false,
+    "2char_match": false
+  },
+  {
+    "filename": "0698-17_44-241&438_545&630-545&630_298&551_241&438_488&517-0_0_21_3_24_25_27-112-40.jpg",
+    "gt": "皖AXD013",
+    "pred": "川A76666",
+    "exact_match": false,
+    "1char_match": false,
+    "2char_match": false
+  },
+  {
+    "filename": "0698-19_43-241&482_545&674-499&585_241&674_287&571_545&482-0_0_24_27_33_20_33-98-59.jpg",
+    "gt": "皖A039W9",
+    "pred": "皖A0",
+    "exact_match": false,
+    "1char_match": false,
+    "2char_match": false
+  },
+  {
+    "filename": "0698-24_40-274&369_544&585-512&478_274&585_306&476_544&369-0_0_13_31_26_24_32-101-106.jpg",
+    "gt": "皖AP7208",
+    "pred": "川A166",
+    "exact_match": false,
+    "1char_match": false,
+    "2char_match": false
+  },
+  {
+    "filename": "0700-40_41-386&303_592&587-592&587_389&415_386&303_589&475-19_16_28_25_8_29_25-133-227.jpg",
+    "gt": "粤S41J51",
+    "pred": "皖A6",
+    "exact_match": false,
+    "1char_match": false,
+    "2char_match": false
+  },
+  {
+    "filename": "0700670498084-100_55-167&423_580&596-580&606_217&523_165&417_528&500-0_0_7_4_30_26_26-81-282.jpg",
+    "gt": "皖AHE622",
+    "pred": "皖A66",
+    "exact_match": false,
+    "1char_match": false,
+    "2char_match": false
+  },
+  {
+    "filename": "0701-32_44-163&338_404&581-404&581_183&438_163&338_384&481-13_1_10_31_32_30_24-104-79.jpg",
+    "gt": "闽BL7860",
+    "pred": "川A6",
+    "exact_match": false,
+    "1char_match": false,
+    "2char_match": false
+  },
+  {
+    "filename": "0702-8_60-134&493_607&617-607&617_223&562_134&493_518&548-0_0_21_32_25_33_18-36-28.jpg",
+    "gt": "皖AX819U",
+    "pred": "川AA2",
+    "exact_match": false,
+    "1char_match": false,
+    "2char_match": false
+  },
+  {
+    "filename": "0703-22_48-197&432_485&636-433&539_197&636_249&529_485&432-0_0_22_24_24_32_32-66-226.jpg",
+    "gt": "皖AY0088",
+    "pred": "川A6",
+    "exact_match": false,
+    "1char_match": false,
+    "2char_match": false
+  },
+  {
+    "filename": "0704-2_25-65&452_620&558-620&558_101&535_65&452_584&475-0_0_2_24_25_31_10-57-166.jpg",
+    "gt": "皖AC017L",
+    "pred": "川A7606",
+    "exact_match": false,
+    "1char_match": false,
+    "2char_match": false
+  },
+  {
+    "filename": "0704-37_45-191&395_413&660-413&660_206&502_191&395_398&553-0_0_28_29_32_13_32-79-158.jpg",
+    "gt": "皖A458P8",
+    "pred": "川A76",
+    "exact_match": false,
+    "1char_match": false,
+    "2char_match": false
+  },
+  {
+    "filename": "0705-22_43-346&361_628&570-584&473_346&570_390&458_628&361-0_0_12_10_25_32_33-159-53.jpg",
+    "gt": "皖ANL189",
+    "pred": "皖A6666",
+    "exact_match": false,
+    "1char_match": false,
+    "2char_match": false
+  },
+  {
+    "filename": "0706-30_46-203&406_452&643-420&517_203&643_235&532_452&406-0_0_7_33_31_24_13-70-398.jpg",
+    "gt": "皖AH970P",
+    "pred": "川A449",
+    "exact_match": false,
+    "1char_match": false,
+    "2char_match": false
+  },
+  {
+    "filename": "0713-2_6-83&460_625&570-625&570_89&546_83&460_619&484-0_16_10_29_31_32_18-86-78.jpg",
+    "gt": "皖SL578U",
+    "pred": "川AA97888",
+    "exact_match": false,
+    "1char_match": false,
+    "2char_match": false
+  },
+  {
+    "filename": "0714-22_40-209&482_500&687-500&687_241&580_209&482_468&589-13_2_24_25_32_12_27-157-431.jpg",
+    "gt": "闽C018N3",
+    "pred": "皖AC5662",
+    "exact_match": false,
+    "1char_match": false,
+    "2char_match": false
+  },
+  {
+    "filename": "0714-39_38-275&479_478&773-478&607_279&773_275&645_474&479-0_0_6_5_31_26_27-89-311.jpg",
+    "gt": "皖AGF723",
+    "pred": "川15",
+    "exact_match": false,
+    "1char_match": false,
+    "2char_match": false
+  },
+  {
+    "filename": "0715-25_38-189&417_439&656-405&555_189&656_223&518_439&417-0_0_24_30_28_27_25-119-148.jpg",
+    "gt": "皖A06431",
+    "pred": "川A11",
+    "exact_match": false,
+    "1char_match": false,
+    "2char_match": false
+  },
+  {
+    "filename": "0715-30_44-307&401_555&642-529&510_307&642_333&533_555&401-0_0_22_24_30_30_18-67-85.jpg",
+    "gt": "皖AY066U",
+    "pred": "川70",
+    "exact_match": false,
+    "1char_match": false,
+    "2char_match": false
+  },
+  {
+    "filename": "0717-14_32-199&440_530&621-530&621_232&544_199&440_497&517-0_0_17_23_33_30_29-30-10.jpg",
+    "gt": "皖ATZ965",
+    "pred": "苏AA2",
+    "exact_match": false,
+    "1char_match": false,
+    "2char_match": false
+  },
+  {
+    "filename": "0717-17_47-273&488_606&668-606&668_328&583_273&488_551&573-0_0_5_31_30_25_23-112-31.jpg",
+    "gt": "皖AF761Z",
+    "pred": "皖1U",
+    "exact_match": false,
+    "1char_match": false,
+    "2char_match": false
+  },
+  {
+    "filename": "0717-20_41-218&461_513&664-472&568_218&664_259&557_513&461-0_0_3_33_10_32_26-26-62.jpg",
+    "gt": "皖AD9L82",
+    "pred": "川A2",
+    "exact_match": false,
+    "1char_match": false,
+    "2char_match": false
+  },
+  {
+    "filename": "0718-15_42-256&434_605&606-558&524_256&606_303&516_605&434-0_0_28_12_26_24_26-134-130.jpg",
+    "gt": "皖A4N202",
+    "pred": "皖A60",
+    "exact_match": false,
+    "1char_match": false,
+    "2char_match": false
+  },
+  {
+    "filename": "0718-27_38-326&354_588&583-588&583_345&454_326&354_569&483-0_0_10_16_25_31_30-111-81.jpg",
+    "gt": "皖ALS176",
+    "pred": "川A75",
+    "exact_match": false,
+    "1char_match": false,
+    "2char_match": false
+  },
+  {
+    "filename": "0719-14_36-246&392_559&584-559&584_294&514_246&392_511&462-0_0_9_12_24_27_30-18-5.jpg",
+    "gt": "皖AKN036",
+    "pred": "川2",
+    "exact_match": false,
+    "1char_match": false,
+    "2char_match": false
+  },
+  {
+    "filename": "0719492337165-103_61-138&447_503&633-520&660_158&546_124&427_486&541-0_0_24_24_4_30_30-97-186.jpg",
+    "gt": "皖A00E66",
+    "pred": "川A5",
+    "exact_match": false,
+    "1char_match": false,
+    "2char_match": false
+  },
+  {
+    "filename": "0720-14_48-120&398_478&566-415&490_120&566_183&474_478&398-0_0_3_32_3_26_30-112-61.jpg",
+    "gt": "皖AD8D26",
+    "pred": "皖A66",
+    "exact_match": false,
+    "1char_match": false,
+    "2char_match": false
+  },
+  {
+    "filename": "0720-33_43-271&415_508&669-487&527_271&669_292&557_508&415-0_0_21_29_25_31_16-65-41.jpg",
+    "gt": "皖AX517S",
+    "pred": "皖A5",
+    "exact_match": false,
+    "1char_match": false,
+    "2char_match": false
+  },
+  {
+    "filename": "0722-14_39-190&485_537&659-537&659_237&584_190&485_490&560-0_0_30_29_2_33_30-144-47.jpg",
+    "gt": "皖A65C96",
+    "pred": "川A66",
+    "exact_match": false,
+    "1char_match": false,
+    "2char_match": false
+  },
+  {
+    "filename": "0722-5_49-115&499_618&619-618&619_191&578_115&499_542&540-0_0_28_25_27_33_31-118-17.jpg",
+    "gt": "皖A41397",
+    "pred": "皖AA6000",
+    "exact_match": false,
+    "1char_match": false,
+    "2char_match": false
+  },
+  {
+    "filename": "0723-40_24-284&388_491&680-491&540_329&680_284&528_446&388-0_0_5_30_31_31_2-119-139.jpg",
+    "gt": "皖AF677C",
+    "pred": "川A7115",
+    "exact_match": false,
+    "1char_match": false,
+    "2char_match": false
+  },
+  {
+    "filename": "0724-12_42-206&456_575&620-522&548_206&620_259&528_575&456-0_0_9_26_26_26_21-88-168.jpg",
+    "gt": "皖AK222X",
+    "pred": "川A778",
+    "exact_match": false,
+    "1char_match": false,
+    "2char_match": false
+  },
+  {
+    "filename": "0727-30_42-174&425_426&666-426&666_195&528_174&425_405&563-0_0_13_3_25_30_24-47-100.jpg",
+    "gt": "皖APD160",
+    "pred": "川AA76",
+    "exact_match": false,
+    "1char_match": false,
+    "2char_match": false
+  },
+  {
+    "filename": "0729-11_52-95&430_501&580-434&509_95&580_162&501_501&430-0_0_21_26_12_30_31-71-349.jpg",
+    "gt": "皖AX2N67",
+    "pred": "湘A8",
+    "exact_match": false,
+    "1char_match": false,
+    "2char_match": false
+  },
+  {
+    "filename": "0731-15_41-297&537_640&715-596&630_297&715_341&622_640&537-0_0_1_27_5_26_25-84-69.jpg",
+    "gt": "皖AB3F21",
+    "pred": "皖AA0",
+    "exact_match": false,
+    "1char_match": false,
+    "2char_match": false
+  },
+  {
+    "filename": "0731-30_52-151&273_410&509-410&509_193&380_151&273_368&402-22_1_18_21_26_30_30-86-61.jpg",
+    "gt": "川BUX266",
+    "pred": "川476966",
+    "exact_match": false,
+    "1char_match": false,
+    "2char_match": false
+  },
+  {
+    "filename": "0733-16_47-154&474_508&647-456&560_154&647_206&561_508&474-0_0_9_11_31_24_30-82-47.jpg",
+    "gt": "皖AKM706",
+    "pred": "川6",
+    "exact_match": false,
+    "1char_match": false,
+    "2char_match": false
+  },
+  {
+    "filename": "0734-10_51-127&438_533&589-456&528_127&589_204&499_533&438-0_0_19_33_33_27_20-117-24.jpg",
+    "gt": "皖AV993W",
+    "pred": "皖A66",
+    "exact_match": false,
+    "1char_match": false,
+    "2char_match": false
+  },
+  {
+    "filename": "0735-21_44-240&445_541&649-500&545_240&649_281&549_541&445-0_12_26_6_32_24_26-68-106.jpg",
+    "gt": "皖N2G802",
+    "pred": "皖A0",
+    "exact_match": false,
+    "1char_match": false,
+    "2char_match": false
+  },
+  {
+    "filename": "0735-34_37-235&513_466&779-466&779_240&623_235&513_461&669-0_0_17_26_27_27_22-87-308.jpg",
+    "gt": "皖AT233Y",
+    "pred": "苏66",
+    "exact_match": false,
+    "1char_match": false,
+    "2char_match": false
+  },
+  {
+    "filename": "0735-39_42-199&410_416&693-416&693_204&518_199&410_411&585-0_0_26_7_30_30_30-70-419.jpg",
+    "gt": "皖A2H666",
+    "pred": "川A5",
+    "exact_match": false,
+    "1char_match": false,
+    "2char_match": false
+  },
+  {
+    "filename": "0736-32_45-168&397_415&646-415&646_193&505_168&397_390&538-11_0_27_27_24_14_19-105-188.jpg",
+    "gt": "浙A330QV",
+    "pred": "川A666",
+    "exact_match": false,
+    "1char_match": false,
+    "2char_match": false
+  },
+  {
+    "filename": "0737-17_42-228&428_559&614-514&525_228&614_273&517_559&428-10_10_33_32_27_27_17-97-118.jpg",
+    "gt": "苏L9833T",
+    "pred": "湘6",
+    "exact_match": false,
+    "1char_match": false,
+    "2char_match": false
+  },
+  {
+    "filename": "0738-2_26-34&464_657&563-657&563_66&535_34&464_625&492-0_0_9_32_11_24_24-119-122.jpg",
+    "gt": "皖AK8M00",
+    "pred": "湘BW7868",
+    "exact_match": false,
+    "1char_match": false,
+    "2char_match": false
+  },
+  {
+    "filename": "0742-32_43-247&477_500&722-500&722_267&576_247&477_480&623-0_11_27_29_29_33_33-112-163.jpg",
+    "gt": "皖M35599",
+    "pred": "川A446",
+    "exact_match": false,
+    "1char_match": false,
+    "2char_match": false
+  },
+  {
+    "filename": "0742-5_53-118&483_672&595-597&551_118&595_193&527_672&483-0_3_6_24_24_30_8-95-85.jpg",
+    "gt": "皖DG006J",
+    "pred": "川A40",
+    "exact_match": false,
+    "1char_match": false,
+    "2char_match": false
+  },
+  {
+    "filename": "0744-36_41-417&407_648&676-648&676_427&514_417&407_638&569-0_1_30_10_32_29_30-91-217.jpg",
+    "gt": "皖B6L856",
+    "pred": "川A66",
+    "exact_match": false,
+    "1char_match": false,
+    "2char_match": false
+  },
+  {
+    "filename": "0745-26_40-134&489_417&709-417&709_158&581_134&489_393&617-19_4_17_8_29_30_29-96-233.jpg",
+    "gt": "粤ETJ565",
+    "pred": "川A96166",
+    "exact_match": false,
+    "1char_match": false,
+    "2char_match": false
+  },
+  {
+    "filename": "0746-14_47-200&478_569&647-510&569_200&647_259&556_569&478-0_0_17_22_29_30_31-65-187.jpg",
+    "gt": "皖ATY567",
+    "pred": "湘7666",
+    "exact_match": false,
+    "1char_match": false,
+    "2char_match": false
+  },
+  {
+    "filename": "0746-26_46-304&435_575&665-532&552_304&665_347&548_575&435-0_0_21_7_29_29_33-49-187.jpg",
+    "gt": "皖AXH559",
+    "pred": "川A8",
+    "exact_match": false,
+    "1char_match": false,
+    "2char_match": false
+  },
+  {
+    "filename": "0746-36_47-317&508_547&779-522&629_317&779_342&658_547&508-0_0_7_27_31_30_18-28-98.jpg",
+    "gt": "皖AH376U",
+    "pred": "湘A8",
+    "exact_match": false,
+    "1char_match": false,
+    "2char_match": false
+  },
+  {
+    "filename": "0747-33_50-334&275_575&534-538&399_334&534_371&410_575&275-0_0_14_2_31_24_26-111-133.jpg",
+    "gt": "皖AQC702",
+    "pred": "皖AA4660",
+    "exact_match": false,
+    "1char_match": false,
+    "2char_match": false
+  },
+  {
+    "filename": "0749-21_42-258&424_562&630-562&630_294&522_258&424_526&532-7_0_23_30_27_23_32-114-50.jpg",
+    "gt": "辽AZ63Z8",
+    "pred": "皖AA698",
+    "exact_match": false,
+    "1char_match": false,
+    "2char_match": false
+  },
+  {
+    "filename": "0750-15_48-192&500_546&677-482&597_192&677_256&580_546&500-0_0_2_24_24_30_15-83-54.jpg",
+    "gt": "皖AC006R",
+    "pred": "皖A0",
+    "exact_match": false,
+    "1char_match": false,
+    "2char_match": false
+  },
+  {
+    "filename": "0750-22_45-139&412_442&619-442&619_181&512_139&412_400&519-0_0_11_27_33_33_20-119-248.jpg",
+    "gt": "皖AM399W",
+    "pred": "川AJ6",
+    "exact_match": false,
+    "1char_match": false,
+    "2char_match": false
+  },
+  {
+    "filename": "0750-4_48-61&466_588&585-588&585_147&554_61&466_502&497-0_0_0_20_33_24_33-135-71.jpg",
+    "gt": "皖AAW909",
+    "pred": "苏8",
+    "exact_match": false,
+    "1char_match": false,
+    "2char_match": false
+  },
+  {
+    "filename": "0751-21_50-194&500_511&698-511&698_248&597_194&500_457&601-0_0_30_33_32_24_28-88-63.jpg",
+    "gt": "皖A69804",
+    "pred": "川A0",
+    "exact_match": false,
+    "1char_match": false,
+    "2char_match": false
+  },
+  {
+    "filename": "0752-6_52-87&488_594&612-517&562_87&612_164&538_594&488-0_0_23_25_31_25_24-71-203.jpg",
+    "gt": "皖AZ1710",
+    "pred": "豫A5",
+    "exact_match": false,
+    "1char_match": false,
+    "2char_match": false
+  },
+  {
+    "filename": "0755-27_47-330&314_602&546-563&424_330&546_369&436_602&314-0_0_10_18_26_33_24-72-237.jpg",
+    "gt": "皖ALU290",
+    "pred": "川A760",
+    "exact_match": false,
+    "1char_match": false,
+    "2char_match": false
+  },
+  {
+    "filename": "0758-0_33-26&471_635&575-635&575_90&571_26&471_571&475-0_0_25_2_29_32_32-123-208.jpg",
+    "gt": "皖A1C588",
+    "pred": "冀A11",
+    "exact_match": false,
+    "1char_match": false,
+    "2char_match": false
+  },
+  {
+    "filename": "0761-29_46-259&417_525&656-525&656_292&524_259&417_492&549-0_0_22_24_32_31_2-91-295.jpg",
+    "gt": "皖AY087C",
+    "pred": "川A1",
+    "exact_match": false,
+    "1char_match": false,
+    "2char_match": false
+  },
+  {
+    "filename": "0761-36_38-204&456_431&736-431&736_208&570_204&456_427&622-4_5_32_33_32_14_16-102-250.jpg",
+    "gt": "冀F898QS",
+    "pred": "川AA466",
+    "exact_match": false,
+    "1char_match": false,
+    "2char_match": false
+  },
+  {
+    "filename": "0762-19_45-141&427_466&623-418&524_141&623_189&526_466&427-10_5_23_25_30_24_0-118-127.jpg",
+    "gt": "苏FZ160A",
+    "pred": "皖A47666",
+    "exact_match": false,
+    "1char_match": false,
+    "2char_match": false
+  },
+  {
+    "filename": "0762-26_38-326&352_596&588-572&464_326&588_350&476_596&352-0_0_24_26_33_15_24-20-126.jpg",
+    "gt": "皖A029R0",
+    "pred": "湘AA2",
+    "exact_match": false,
+    "1char_match": false,
+    "2char_match": false
+  },
+  {
+    "filename": "0762-30_43-288&368_534&627-534&627_318&499_288&368_504&496-0_0_31_30_14_29_26-74-79.jpg",
+    "gt": "皖A76Q52",
+    "pred": "川A0",
+    "exact_match": false,
+    "1char_match": false,
+    "2char_match": false
+  },
+  {
+    "filename": "0763-25_37-205&445_480&677-480&677_227&555_205&445_458&567-16_0_12_29_33_0_24-78-173.jpg",
+    "gt": "豫AN59A0",
+    "pred": "川A66",
+    "exact_match": false,
+    "1char_match": false,
+    "2char_match": false
+  },
+  {
+    "filename": "0764-16_41-354&355_703&538-658&449_354&538_399&444_703&355-0_0_22_33_17_30_33-176-67.jpg",
+    "gt": "皖AY9T69",
+    "pred": "苏A9F1",
+    "exact_match": false,
+    "1char_match": false,
+    "2char_match": false
+  },
+  {
+    "filename": "0764-22_41-189&429_490&641-456&528_189&641_223&542_490&429-0_0_23_33_33_31_10-92-51.jpg",
+    "gt": "皖AZ997L",
+    "pred": "皖AA60",
+    "exact_match": false,
+    "1char_match": false,
+    "2char_match": false
+  },
+  {
+    "filename": "0765-47_47-295&383_487&716-487&716_296&511_295&383_486&588-0_3_3_11_31_30_30-84-102.jpg",
+    "gt": "皖DDM766",
+    "pred": "川AA6",
+    "exact_match": false,
+    "1char_match": false,
+    "2char_match": false
+  },
+  {
+    "filename": "0766-0_5-0&490_610&595-610&595_2&590_0&490_601&495-0_0_10_8_26_27_27-66-84.jpg",
+    "gt": "皖ALJ233",
+    "pred": "皖A888",
+    "exact_match": false,
+    "1char_match": false,
+    "2char_match": false
+  },
+  {
+    "filename": "0766-16_36-197&415_541&601-508&507_197&601_230&509_541&415-0_0_1_30_21_26_29-105-143.jpg",
+    "gt": "皖AB6X25",
+    "pred": "皖A65",
+    "exact_match": false,
+    "1char_match": false,
+    "2char_match": false
+  },
+  {
+    "filename": "0767-25_39-262&438_542&667-514&549_262&667_290&556_542&438-0_0_25_10_26_32_27-92-230.jpg",
+    "gt": "皖A1L283",
+    "pred": "川A8",
+    "exact_match": false,
+    "1char_match": false,
+    "2char_match": false
+  },
+  {
+    "filename": "0769-10_45-192&448_615&600-615&600_254&535_192&448_553&513-0_0_20_7_31_26_29-122-65.jpg",
+    "gt": "皖AWH725",
+    "pred": "川AA6668",
+    "exact_match": false,
+    "1char_match": false,
+    "2char_match": false
+  },
+  {
+    "filename": "0771-18_41-213&424_540&621-497&526_213&621_256&519_540&424-0_0_7_31_25_29_20-115-69.jpg",
+    "gt": "皖AH715W",
+    "pred": "川CJR5",
+    "exact_match": false,
+    "1char_match": false,
+    "2char_match": false
+  },
+  {
+    "filename": "0771-18_48-121&459_448&656-448&656_183&566_121&459_386&549-0_0_26_23_33_29_25-61-47.jpg",
+    "gt": "皖A2Z951",
+    "pred": "川AA08",
+    "exact_match": false,
+    "1char_match": false,
+    "2char_match": false
+  },
+  {
+    "filename": "0771-20_41-130&416_449&618-449&618_166&512_130&416_413&522-11_0_31_33_31_23_11-115-137.jpg",
+    "gt": "浙A797ZM",
+    "pred": "皖A66666",
+    "exact_match": false,
+    "1char_match": false,
+    "2char_match": false
+  },
+  {
+    "filename": "0773-2_28-80&410_678&518-678&518_124&498_80&410_634&430-0_0_11_10_26_24_25-93-130.jpg",
+    "gt": "皖AML201",
+    "pred": "皖AB9998",
+    "exact_match": false,
+    "1char_match": false,
+    "2char_match": false
+  },
+  {
+    "filename": "0775-13_40-180&463_538&644-482&571_180&644_236&536_538&463-0_0_26_24_25_4_30-97-47.jpg",
+    "gt": "皖A201E6",
+    "pred": "冀A95",
+    "exact_match": false,
+    "1char_match": false,
+    "2char_match": false
+  },
+  {
+    "filename": "0775-17_47-189&432_523&626-459&542_189&626_253&516_523&432-0_7_7_2_24_24_26-80-407.jpg",
+    "gt": "皖HHC002",
+    "pred": "川166",
+    "exact_match": false,
+    "1char_match": false,
+    "2char_match": false
+  },
+  {
+    "filename": "0776-12_40-156&418_531&591-531&591_210&519_156&418_477&490-0_0_17_27_24_25_22-91-24.jpg",
+    "gt": "皖AT301Y",
+    "pred": "川A8",
+    "exact_match": false,
+    "1char_match": false,
+    "2char_match": false
+  },
+  {
+    "filename": "0776-34_48-152&393_395&660-395&660_181&512_152&393_366&541-0_0_27_32_27_3_31-60-73.jpg",
+    "gt": "皖A383D7",
+    "pred": "川AA6",
+    "exact_match": false,
+    "1char_match": false,
+    "2char_match": false
+  },
+  {
+    "filename": "0777-15_42-230&504_593&683-546&597_230&683_277&590_593&504-0_0_21_30_29_33_7-78-91.jpg",
+    "gt": "皖AX659H",
+    "pred": "川6",
+    "exact_match": false,
+    "1char_match": false,
+    "2char_match": false
+  },
+  {
+    "filename": "0777-27_45-127&407_401&644-401&644_163&519_127&407_365&532-0_0_2_31_10_25_30-59-77.jpg",
+    "gt": "皖AC7L16",
+    "pred": "川AA05",
+    "exact_match": false,
+    "1char_match": false,
+    "2char_match": false
+  },
+  {
+    "filename": "0779-36_47-257&382_488&664-464&509_257&664_281&537_488&382-0_0_6_32_33_26_2-79-122.jpg",
+    "gt": "皖AG892C",
+    "pred": "川A0",
+    "exact_match": false,
+    "1char_match": false,
+    "2char_match": false
+  },
+  {
+    "filename": "0783-25_39-230&430_512&662-512&662_258&541_230&430_484&551-11_8_8_25_8_26_33-62-131.jpg",
+    "gt": "浙JJ1J29",
+    "pred": "川A706",
+    "exact_match": false,
+    "1char_match": false,
+    "2char_match": false
+  },
+  {
+    "filename": "0784-12_49-180&446_582&609-582&609_244&532_180&446_518&523-0_0_6_23_33_29_31-104-204.jpg",
+    "gt": "皖AGZ957",
+    "pred": "川AA76666",
+    "exact_match": false,
+    "1char_match": false,
+    "2char_match": false
+  },
+  {
+    "filename": "0787-12_36-137&435_517&608-517&608_181&533_137&435_473&510-17_0_2_33_31_33_29-111-141.jpg",
+    "gt": "鄂AC9795",
+    "pred": "川A66",
+    "exact_match": false,
+    "1char_match": false,
+    "2char_match": false
+  },
+  {
+    "filename": "0788-7_38-118&468_560&617-498&570_118&617_180&515_560&468-10_5_4_27_30_22_29-119-41.jpg",
+    "gt": "苏FE36Y5",
+    "pred": "冀17702",
+    "exact_match": false,
+    "1char_match": false,
+    "2char_match": false
+  },
+  {
+    "filename": "0789-28_44-209&513_477&759-444&631_209&759_242&641_477&513-0_0_9_24_33_33_24-80-179.jpg",
+    "gt": "皖AK0990",
+    "pred": "川A5",
+    "exact_match": false,
+    "1char_match": false,
+    "2char_match": false
+  },
+  {
+    "filename": "0791-11_46-129&441_542&601-476&533_129&601_195&509_542&441-0_0_5_26_12_31_31-104-78.jpg",
+    "gt": "皖AF2N77",
+    "pred": "川A2",
+    "exact_match": false,
+    "1char_match": false,
+    "2char_match": false
+  },
+  {
+    "filename": "0792-18_42-214&381_555&575-555&575_254&473_214&381_515&483-0_0_5_27_28_29_10-122-284.jpg",
+    "gt": "皖AF345L",
+    "pred": "川AA6",
+    "exact_match": false,
+    "1char_match": false,
+    "2char_match": false
+  },
+  {
+    "filename": "0793-14_46-236&495_596&679-531&601_236&679_301&573_596&495-0_0_24_12_30_32_32-94-111.jpg",
+    "gt": "皖A0N688",
+    "pred": "湘J66",
+    "exact_match": false,
+    "1char_match": false,
+    "2char_match": false
+  },
+  {
+    "filename": "0793-33_46-209&347_458&613-430&468_209&613_237&492_458&347-0_0_11_31_16_31_32-88-97.jpg",
+    "gt": "皖AM7S78",
+    "pred": "皖A60",
+    "exact_match": false,
+    "1char_match": false,
+    "2char_match": false
+  },
+  {
+    "filename": "0794-40_47-266&360_491&655-477&474_266&655_280&541_491&360-0_0_33_23_30_33_30-116-153.jpg",
+    "gt": "皖A9Z696",
+    "pred": "川A416",
+    "exact_match": false,
+    "1char_match": false,
+    "2char_match": false
+  },
+  {
+    "filename": "0796-28_38-197&344_460&597-439&466_197&597_218&475_460&344-0_0_7_31_27_33_26-148-95.jpg",
+    "gt": "皖AH7392",
+    "pred": "皖AR6666",
+    "exact_match": false,
+    "1char_match": false,
+    "2char_match": false
+  },
+  {
+    "filename": "0798263888889-95_65-27&449_620&580-654&599_59&533_30&437_625&503-0_0_7_32_30_30_23-114-155.jpg",
+    "gt": "皖AH866Z",
+    "pred": "川AA699",
+    "exact_match": false,
+    "1char_match": false,
+    "2char_match": false
+  },
+  {
+    "filename": "0799-41_56-246&375_474&668-474&668_281&499_246&375_439&544-0_0_20_10_32_27_28-94-395.jpg",
+    "gt": "皖AWL834",
+    "pred": "川A76",
+    "exact_match": false,
+    "1char_match": false,
+    "2char_match": false
+  },
+  {
+    "filename": "0800-13_46-175&422_566&593-566&593_237&517_175&422_504&498-17_0_24_31_24_25_26-39-43.jpg",
+    "gt": "鄂A07012",
+    "pred": "苏AA2",
+    "exact_match": false,
+    "1char_match": false,
+    "2char_match": false
+  },
+  {
+    "filename": "0800-13_51-176&458_581&623-581&623_244&544_176&458_513&537-0_0_24_7_30_29_31-87-64.jpg",
+    "gt": "皖A0H657",
+    "pred": "皖AA666",
+    "exact_match": false,
+    "1char_match": false,
+    "2char_match": false
+  },
+  {
+    "filename": "0800-20_37-117&309_425&526-425&526_155&427_117&309_387&408-0_0_13_0_24_27_26-91-17.jpg",
+    "gt": "皖APA032",
+    "pred": "川6",
+    "exact_match": false,
+    "1char_match": false,
+    "2char_match": false
+  },
+  {
+    "filename": "0801-14_45-159&449_521&634-459&555_159&634_221&528_521&449-0_0_32_31_31_26_25-111-226.jpg",
+    "gt": "皖A87721",
+    "pred": "川AA818",
+    "exact_match": false,
+    "1char_match": false,
+    "2char_match": false
+  },
+  {
+    "filename": "0801-39_45-240&324_470&615-470&615_252&435_240&324_458&504-7_7_5_6_32_29_29-114-201.jpg",
+    "gt": "辽HFG855",
+    "pred": "川A6",
+    "exact_match": false,
+    "1char_match": false,
+    "2char_match": false
+  },
+  {
+    "filename": "0801-41_49-250&357_474&656-474&656_268&475_250&357_456&538-0_0_6_28_28_32_32-113-95.jpg",
+    "gt": "皖AG4488",
+    "pred": "川AA6",
+    "exact_match": false,
+    "1char_match": false,
+    "2char_match": false
+  },
+  {
+    "filename": "0802-13_50-183&453_564&629-564&629_262&558_183&453_485&524-0_0_30_32_29_20_24-43-66.jpg",
+    "gt": "皖A685W0",
+    "pred": "川A066",
+    "exact_match": false,
+    "1char_match": false,
+    "2char_match": false
+  },
+  {
+    "filename": "0803-24_44-240&416_533&645-491&531_240&645_282&530_533&416-0_0_23_31_27_27_6-91-312.jpg",
+    "gt": "皖AZ733G",
+    "pred": "湘7166",
+    "exact_match": false,
+    "1char_match": false,
+    "2char_match": false
+  },
+  {
+    "filename": "0804-11_47-196&415_611&577-544&506_196&577_263&486_611&415-0_0_2_32_23_30_32-109-58.jpg",
+    "gt": "皖AC8Z68",
+    "pred": "川06",
+    "exact_match": false,
+    "1char_match": false,
+    "2char_match": false
+  },
+  {
+    "filename": "0804-34_47-183&351_423&631-391&487_183&631_215&495_423&351-0_0_23_5_33_26_27-104-40.jpg",
+    "gt": "皖AZF923",
+    "pred": "川A6",
+    "exact_match": false,
+    "1char_match": false,
+    "2char_match": false
+  },
+  {
+    "filename": "0807-8_33-123&460_550&618-550&618_172&563_123&460_501&515-12_12_1_33_30_14_30-187-44.jpg",
+    "gt": "京NB96Q6",
+    "pred": "川A666",
+    "exact_match": false,
+    "1char_match": false,
+    "2char_match": false
+  },
+  {
+    "filename": "0808-16_42-212&466_548&667-548&667_267&582_212&466_493&551-0_0_33_29_29_6_33-71-295.jpg",
+    "gt": "皖A955G9",
+    "pred": "川AA66",
+    "exact_match": false,
+    "1char_match": false,
+    "2char_match": false
+  },
+  {
+    "filename": "0808-23_34-89&492_385&720-385&720_111&601_89&492_363&611-10_0_17_27_27_27_5-99-109.jpg",
+    "gt": "苏AT333F",
+    "pred": "川A1",
+    "exact_match": false,
+    "1char_match": false,
+    "2char_match": false
+  }
+]

@@ -1,0 +1,10 @@
+# Reusability Evaluation Dataset - Blackbox
+# 评价数据有用性实验 - 黑框去识别化方法
+
+path: ultralytics/assets/reusability/blackbox
+train: images/test_300
+val: images/test_300
+test: images/test_300
+
+nc: 1
+names: ['plate']

@@ -1,0 +1,42 @@
+[
+  {
+    "method": "mpn",
+    "total": 300,
+    "exact_match": 0,
+    "1char_match": 0,
+    "2char_match": 0,
+    "exact_match_pct": 0.0,
+    "1char_match_pct": 0.0,
+    "2char_match_pct": 0.0
+  },
+  {
+    "method": "mosaic",
+    "total": 300,
+    "exact_match": 0,
+    "1char_match": 1,
+    "2char_match": 4,
+    "exact_match_pct": 0.0,
+    "1char_match_pct": 0.33333333333333337,
+    "2char_match_pct": 1.3333333333333335
+  },
+  {
+    "method": "blur",
+    "total": 300,
+    "exact_match": 0,
+    "1char_match": 0,
+    "2char_match": 0,
+    "exact_match_pct": 0.0,
+    "1char_match_pct": 0.0,
+    "2char_match_pct": 0.0
+  },
+  {
+    "method": "blackbox",
+    "total": 300,
+    "exact_match": 0,
+    "1char_match": 0,
+    "2char_match": 0,
+    "exact_match_pct": 0.0,
+    "1char_match_pct": 0.0,
+    "2char_match_pct": 0.0
+  }
+]

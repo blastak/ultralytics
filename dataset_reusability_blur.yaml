@@ -1,0 +1,10 @@
+# Reusability Evaluation Dataset - Gaussian Blur (σ=15)
+# 评价数据有用性实验 - 高斯模糊去识别化方法
+
+path: ultralytics/assets/reusability/blur
+train: images/test_300
+val: images/test_300
+test: images/test_300
+
+nc: 1
+names: ['plate']

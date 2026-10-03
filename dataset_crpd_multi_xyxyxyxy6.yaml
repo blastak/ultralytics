@@ -1,0 +1,6 @@
+path: /workspace/repo/ultralytics/ultralytics/assets/crpd_multi_xyxyxyxy6
+train: images/train
+val: images/val
+test: images/test
+nc: 4
+names: ['blue', 'green', 'yellow', 'white']
